@@ -33,10 +33,8 @@ class _MyHomePageState extends State<_MyHomePage> {
     final File imageFile =
         await ImagePicker.pickImage(source: ImageSource.gallery);
 
-    if (imageFile != null) {
-      _getImageSize(imageFile);
-      _scanImage(imageFile);
-    }
+    _getImageSize(imageFile);
+    _scanImage(imageFile);
 
     setState(() {
       _imageFile = imageFile;
@@ -164,30 +162,30 @@ class _MyHomePageState extends State<_MyHomePage> {
           PopupMenuButton<Detector>(
             onSelected: (Detector result) {
               _currentDetector = result;
-              if (_imageFile != null) _scanImage(_imageFile);
+              _scanImage(_imageFile);
             },
             itemBuilder: (BuildContext context) => <PopupMenuEntry<Detector>>[
-                  const PopupMenuItem<Detector>(
-                    child: Text('Detect Barcode'),
-                    value: Detector.barcode,
-                  ),
-                  const PopupMenuItem<Detector>(
-                    child: Text('Detect Face'),
-                    value: Detector.face,
-                  ),
-                  const PopupMenuItem<Detector>(
-                    child: Text('Detect Label'),
-                    value: Detector.label,
-                  ),
-                  const PopupMenuItem<Detector>(
-                    child: Text('Detect Cloud Label'),
-                    value: Detector.cloudLabel,
-                  ),
-                  const PopupMenuItem<Detector>(
-                    child: Text('Detect Text'),
-                    value: Detector.text,
-                  ),
-                ],
+              const PopupMenuItem<Detector>(
+                child: Text('Detect Barcode'),
+                value: Detector.barcode,
+              ),
+              const PopupMenuItem<Detector>(
+                child: Text('Detect Face'),
+                value: Detector.face,
+              ),
+              const PopupMenuItem<Detector>(
+                child: Text('Detect Label'),
+                value: Detector.label,
+              ),
+              const PopupMenuItem<Detector>(
+                child: Text('Detect Cloud Label'),
+                value: Detector.cloudLabel,
+              ),
+              const PopupMenuItem<Detector>(
+                child: Text('Detect Text'),
+                value: Detector.text,
+              ),
+            ],
           ),
         ],
       ),

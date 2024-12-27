@@ -25,35 +25,23 @@ class RemoteConfigValue {
 
   /// Decode value to int.
   int asInt() {
-    if (_value != null) {
-      final String strValue = const Utf8Codec().decode(_value);
-      final int intValue =
-          int.tryParse(strValue) ?? RemoteConfig.defaultValueForInt;
-      return intValue;
-    } else {
-      return RemoteConfig.defaultValueForInt;
-    }
+    final String strValue = const Utf8Codec().decode(_value);
+    final int intValue =
+        int.tryParse(strValue) ?? RemoteConfig.defaultValueForInt;
+    return intValue;
   }
 
   /// Decode value to double.
   double asDouble() {
-    if (_value != null) {
-      final String strValue = const Utf8Codec().decode(_value);
-      final double doubleValue =
-          double.tryParse(strValue) ?? RemoteConfig.defaultValueForDouble;
-      return doubleValue;
-    } else {
-      return RemoteConfig.defaultValueForDouble;
-    }
+    final String strValue = const Utf8Codec().decode(_value);
+    final double doubleValue =
+        double.tryParse(strValue) ?? RemoteConfig.defaultValueForDouble;
+    return doubleValue;
   }
 
   /// Decode value to bool.
   bool asBool() {
-    if (_value != null) {
-      final String strValue = const Utf8Codec().decode(_value);
-      return strValue.toLowerCase() == 'true';
-    } else {
-      return RemoteConfig.defaultValueForBool;
-    }
+    final String strValue = const Utf8Codec().decode(_value);
+    return strValue.toLowerCase() == 'true';
   }
 }

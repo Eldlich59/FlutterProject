@@ -60,7 +60,6 @@ Future<bool> launch(
   bool universalLinksOnly,
   Brightness statusBarBrightness,
 }) async {
-  assert(urlString != null);
   final Uri url = Uri.parse(urlString.trimLeft());
   final bool isWebURL = url.scheme == 'http' || url.scheme == 'https';
   if ((forceSafariVC == true || forceWebView == true) && !isWebURL) {
@@ -102,12 +101,6 @@ Future<bool> launch(
 /// Checks whether the specified URL can be handled by some app installed on the
 /// device.
 Future<bool> canLaunch(String urlString) async {
-  if (urlString == null) {
-    return false;
-  }
-  // TODO(amirh): remove this on when the invokeMethod update makes it to stable Flutter.
-  // https://github.com/flutter/flutter/issues/26431
-  // ignore: strong_mode_implicit_dynamic_method
   return await _channel.invokeMethod(
     'canLaunch',
     <String, Object>{'url': urlString},

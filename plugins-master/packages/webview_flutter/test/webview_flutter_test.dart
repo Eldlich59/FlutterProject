@@ -689,10 +689,8 @@ class FakePlatformWebView {
   FakePlatformWebView(int id, Map<dynamic, dynamic> params) {
     if (params.containsKey('initialUrl')) {
       final String initialUrl = params['initialUrl'];
-      if (initialUrl != null) {
-        history.add(initialUrl);
-        currentPosition++;
-      }
+      history.add(initialUrl);
+      currentPosition++;
     }
     if (params.containsKey('javascriptChannelNames')) {
       javascriptChannelNames =

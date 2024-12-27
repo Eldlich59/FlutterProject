@@ -28,12 +28,6 @@ class SKRequestMaker {
       '-[InAppPurchasePlugin startProductRequest:result:]',
       productIdentifiers,
     );
-    if (productResponseMap == null) {
-      throw PlatformException(
-        code: 'storekit_no_response',
-        message: 'StoreKit: Failed to get response from platform.',
-      );
-    }
     return SkProductResponseWrapper.fromJson(productResponseMap);
   }
 

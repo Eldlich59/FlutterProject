@@ -33,7 +33,6 @@ abstract class PerformanceAttributes {
   /// characters. Value of the attribute has max length of
   /// [maxAttributeValueLength] characters.
   void putAttribute(String attribute, String value) {
-    assert(attribute != null);
     assert(!attribute.startsWith(RegExp(r'[_\s]')));
     assert(!attribute.contains(RegExp(r'[_\s]$')));
     assert(attribute.length <= maxAttributeKeyLength);

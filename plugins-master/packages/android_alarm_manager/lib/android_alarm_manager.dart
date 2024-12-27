@@ -33,11 +33,6 @@ void _alarmManagerCallbackDispatcher() {
     // PluginUtilities.getCallbackFromHandle performs a lookup based on the
     // callback handle and returns a tear-off of the original callback.
     final Function closure = PluginUtilities.getCallbackFromHandle(handle);
-
-    if (closure == null) {
-      print('Fatal: could not find callback');
-      exit(-1);
-    }
     closure();
   });
 

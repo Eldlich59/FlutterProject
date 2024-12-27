@@ -19,6 +19,6 @@ class LocationMonitor {
     // null if the UI isolate has explicitly removed the mapping on shutdown.
     final SendPort uiSendPort =
         IsolateNameServer.lookupPortByName(kLocationPluginPortName);
-    uiSendPort?.send(location.toJson());
+    uiSendPort.send(location.toJson());
   }
 }

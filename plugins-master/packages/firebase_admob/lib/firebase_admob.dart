@@ -44,12 +44,13 @@ class MobileAdTargetingInfo {
   const MobileAdTargetingInfo(
       {this.keywords,
       this.contentUrl,
-      @Deprecated('This functionality is deprecated in AdMob without replacement.')
-          this.birthday,
-      @Deprecated('This functionality is deprecated in AdMob without replacement.')
-          this.gender,
-      @Deprecated('Use `childDirected` instead.')
-          this.designedForFamilies,
+      @Deprecated(
+          'This functionality is deprecated in AdMob without replacement.')
+      this.birthday,
+      @Deprecated(
+          'This functionality is deprecated in AdMob without replacement.')
+      this.gender,
+      @Deprecated('Use `childDirected` instead.') this.designedForFamilies,
       this.childDirected,
       this.testDevices,
       this.nonPersonalizedAds});
@@ -72,21 +73,18 @@ class MobileAdTargetingInfo {
       'requestAgent': 'flutter-alpha',
     };
 
-    if (keywords != null && keywords.isNotEmpty) {
-      assert(keywords.every((String s) => s != null && s.isNotEmpty));
+    if (keywords.isNotEmpty) {
+      assert(keywords.every((String s) => s.isNotEmpty));
       json['keywords'] = keywords;
     }
-    if (nonPersonalizedAds != null)
-      json['nonPersonalizedAds'] = nonPersonalizedAds;
-    if (contentUrl != null && contentUrl.isNotEmpty)
-      json['contentUrl'] = contentUrl;
-    if (birthday != null) json['birthday'] = birthday.millisecondsSinceEpoch;
-    if (gender != null) json['gender'] = gender.index;
-    if (designedForFamilies != null)
-      json['designedForFamilies'] = designedForFamilies;
-    if (childDirected != null) json['childDirected'] = childDirected;
-    if (testDevices != null && testDevices.isNotEmpty) {
-      assert(testDevices.every((String s) => s != null && s.isNotEmpty));
+    json['nonPersonalizedAds'] = nonPersonalizedAds;
+    if (contentUrl.isNotEmpty) json['contentUrl'] = contentUrl;
+    json['birthday'] = birthday.millisecondsSinceEpoch;
+    json['gender'] = gender.index;
+    json['designedForFamilies'] = designedForFamilies;
+    json['childDirected'] = childDirected;
+    if (testDevices.isNotEmpty) {
+      assert(testDevices.every((String s) => s.isNotEmpty));
       json['testDevices'] = testDevices;
     }
 
@@ -182,7 +180,7 @@ abstract class MobileAd {
       MobileAdTargetingInfo targetingInfo,
       this.listener})
       : _targetingInfo = targetingInfo ?? const MobileAdTargetingInfo() {
-    assert(adUnitId != null && adUnitId.isNotEmpty);
+    assert(adUnitId.isNotEmpty);
     assert(_allAds[id] == null);
     _allAds[id] = this;
   }
@@ -273,7 +271,7 @@ class BannerAd extends MobileAd {
     return _invokeBooleanMethod("loadBannerAd", <String, dynamic>{
       'id': id,
       'adUnitId': adUnitId,
-      'targetingInfo': targetingInfo?.toJson(),
+      'targetingInfo': targetingInfo.toJson(),
       'width': size.width,
       'height': size.height,
       'adSizeType': size.adSizeType.toString(),
@@ -307,7 +305,7 @@ class InterstitialAd extends MobileAd {
     return _invokeBooleanMethod("loadInterstitialAd", <String, dynamic>{
       'id': id,
       'adUnitId': adUnitId,
-      'targetingInfo': targetingInfo?.toJson(),
+      'targetingInfo': targetingInfo.toJson(),
     });
   }
 }
@@ -398,7 +396,7 @@ class RewardedVideoAd {
     assert(adUnitId.isNotEmpty);
     return _invokeBooleanMethod("loadRewardedVideoAd", <String, dynamic>{
       'adUnitId': adUnitId,
-      'targetingInfo': targetingInfo?.toJson(),
+      'targetingInfo': targetingInfo.toJson(),
     });
   }
 }
@@ -475,8 +473,7 @@ class FirebaseAdMob {
       {@required String appId,
       String trackingId,
       bool analyticsEnabled = false}) {
-    assert(appId != null && appId.isNotEmpty);
-    assert(analyticsEnabled != null);
+    assert(appId.isNotEmpty);
     return _invokeBooleanMethod("initialize", <String, dynamic>{
       'appId': appId,
       'trackingId': trackingId,
@@ -489,24 +486,13 @@ class FirebaseAdMob {
     final Map<dynamic, dynamic> argumentsMap = call.arguments;
     final RewardedVideoAdEvent rewardedEvent =
         _methodToRewardedVideoAdEvent[call.method];
-    if (rewardedEvent != null) {
-      if (RewardedVideoAd.instance.listener != null) {
-        if (rewardedEvent == RewardedVideoAdEvent.rewarded) {
-          RewardedVideoAd.instance.listener(rewardedEvent,
-              rewardType: argumentsMap['rewardType'],
-              rewardAmount: argumentsMap['rewardAmount']);
-        } else {
-          RewardedVideoAd.instance.listener(rewardedEvent);
-        }
-      }
-    } else {
-      final int id = argumentsMap['id'];
-      if (id != null && MobileAd._allAds[id] != null) {
-        final MobileAd ad = MobileAd._allAds[id];
-        final MobileAdEvent mobileAdEvent = _methodToMobileAdEvent[call.method];
-        if (mobileAdEvent != null && ad.listener != null) {
-          ad.listener(mobileAdEvent);
-        }
+    if (RewardedVideoAd.instance.listener != null) {
+      if (rewardedEvent == RewardedVideoAdEvent.rewarded) {
+        RewardedVideoAd.instance.listener(rewardedEvent,
+            rewardType: argumentsMap['rewardType'],
+            rewardAmount: argumentsMap['rewardAmount']);
+      } else {
+        RewardedVideoAd.instance.listener(rewardedEvent);
       }
     }
 

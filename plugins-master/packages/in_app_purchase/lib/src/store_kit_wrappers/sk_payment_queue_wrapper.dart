@@ -60,8 +60,6 @@ class SKPaymentQueueWrapper {
   /// to test the payment in the [sandbox](https://developer.apple.com/apple-pay/sandbox-testing/).
   /// This method calls StoreKit's [`-[SKPaymentQueue addPayment:]`] (https://developer.apple.com/documentation/storekit/skpaymentqueue/1506036-addpayment?preferredLanguage=occ).
   Future<void> addPayment(SKPaymentWrapper payment) async {
-    assert(_observer != null,
-        '[in_app_purchase]: Trying to add a payment without an observer. Observer must be set using `setTransactionObserver` before adding a payment `setTransactionObserver`. It is mandatory to set the observer at the moment when app launches.');
     Map requestMap = payment.toMap();
     await channel.invokeMethod(
       '-[InAppPurchasePlugin addPayment:result:]',
@@ -100,8 +98,6 @@ class SKPaymentQueueWrapper {
 
   // Triage a method channel call from the platform and triggers the correct observer method.
   Future<dynamic> _handleObserverCallbacks(MethodCall call) {
-    assert(_observer != null,
-        '[in_app_purchase]: (Fatal)The observer has not been set but we received a purchase transaction notification. Please ensure the observer has been set using `setTransactionObserver`. Make sure the observer is added right at the App Launch.');
     switch (call.method) {
       case 'updatedTransactions':
         {
@@ -191,7 +187,6 @@ class SKError {
   /// types of all of the members on this class.
   /// The `map` parameter must not be null.
   factory SKError.fromJson(Map map) {
-    assert(map != null);
     return _$SKErrorFromJson(map);
   }
 
@@ -240,7 +235,6 @@ class SKPaymentWrapper {
   /// types of all of the members on this class.
   /// The `map` parameter must not be null.
   factory SKPaymentWrapper.fromJson(Map map) {
-    assert(map != null);
     return _$SKPaymentWrapperFromJson(map);
   }
 

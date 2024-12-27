@@ -68,28 +68,22 @@ class SignInDemoState extends State<SignInDemo> {
     final Map<String, dynamic> data = json.decode(response.body);
     final String namedContact = _pickFirstNamedContact(data);
     setState(() {
-      if (namedContact != null) {
-        _contactText = "I see you know $namedContact!";
-      } else {
-        _contactText = "No contacts to display.";
-      }
+      _contactText = "I see you know $namedContact!";
     });
   }
 
   String _pickFirstNamedContact(Map<String, dynamic> data) {
     final List<dynamic> connections = data['connections'];
-    final Map<String, dynamic> contact = connections?.firstWhere(
+    final Map<String, dynamic> contact = connections.firstWhere(
       (dynamic contact) => contact['names'] != null,
       orElse: () => null,
     );
-    if (contact != null) {
-      final Map<String, dynamic> name = contact['names'].firstWhere(
-        (dynamic name) => name['displayName'] != null,
-        orElse: () => null,
-      );
-      if (name != null) {
-        return name['displayName'];
-      }
+    final Map<String, dynamic> name = contact['names'].firstWhere(
+      (dynamic name) => name['displayName'] != null,
+      orElse: () => null,
+    );
+    if (name != null) {
+      return name['displayName'];
     }
     return null;
   }

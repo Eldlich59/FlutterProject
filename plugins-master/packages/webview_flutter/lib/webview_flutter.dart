@@ -24,7 +24,7 @@ class JavascriptMessage {
   /// Constructs a JavaScript message object.
   ///
   /// The `message` parameter must not be null.
-  const JavascriptMessage(this.message) : assert(message != null);
+  const JavascriptMessage(this.message);
 
   /// The contents of the message that was sent by the JavaScript code.
   final String message;
@@ -79,8 +79,7 @@ class JavascriptChannel {
   JavascriptChannel({
     @required this.name,
     @required this.onMessageReceived,
-  })  : assert(name != null),
-        assert(onMessageReceived != null),
+  })  : assert(onMessageReceived != null),
         assert(_validChannelNames.hasMatch(name));
 
   /// The channel's name.
@@ -117,8 +116,7 @@ class WebView extends StatefulWidget {
     this.navigationDelegate,
     this.gestureRecognizers,
     this.onPageFinished,
-  })  : assert(javascriptMode != null),
-        super(key: key);
+  }) : super(key: key);
 
   /// If not null invoked once the web view is created.
   final WebViewCreatedCallback onWebViewCreated;
@@ -395,13 +393,11 @@ class WebViewController {
         // _navigationDelegate can be null if the widget was rebuilt with no
         // navigation delegate after a navigation happened and just before we
         // got the navigationRequest message.
-        final bool allowNavigation = _widget.navigationDelegate == null ||
+        final bool allowNavigation =
             _widget.navigationDelegate(request) == NavigationDecision.navigate;
         return allowNavigation;
       case 'onPageFinished':
-        if (_widget.onPageFinished != null) {
-          _widget.onPageFinished(call.arguments['url']);
-        }
+        _widget.onPageFinished(call.arguments['url']);
 
         return null;
     }
@@ -415,7 +411,6 @@ class WebViewController {
   ///
   /// Throws an ArgumentError if `url` is not a valid URL string.
   Future<void> loadUrl(String url) async {
-    assert(url != null);
     _validateUrlString(url);
     // TODO(amirh): remove this on when the invokeMethod update makes it to stable Flutter.
     // https://github.com/flutter/flutter/issues/26431
@@ -516,7 +511,7 @@ class WebViewController {
 
   Future<void> _updateSettings(_WebSettings setting) async {
     final Map<String, dynamic> updateMap = _settings.updatesMap(setting);
-    if (updateMap == null || updateMap.isEmpty) {
+    if (updateMap.isEmpty) {
       return null;
     }
     _settings = setting;
@@ -552,9 +547,6 @@ class WebViewController {
 
   void _updateJavascriptChannelsFromSet(Set<JavascriptChannel> channels) {
     _javascriptChannels.clear();
-    if (channels == null) {
-      return;
-    }
     for (JavascriptChannel channel in channels) {
       _javascriptChannels[channel.name] = channel;
     }
@@ -580,9 +572,6 @@ class WebViewController {
     if (_settings.javascriptMode == JavascriptMode.disabled) {
       throw FlutterError(
           'JavaScript mode must be enabled/unrestricted when calling evaluateJavascript.');
-    }
-    if (javascriptString == null) {
-      throw ArgumentError('The argument javascriptString must not be null. ');
     }
     // TODO(amirh): remove this on when the invokeMethod update makes it to stable Flutter.
     // https://github.com/flutter/flutter/issues/26431

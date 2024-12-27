@@ -4,9 +4,9 @@
 
 import 'dart:async';
 
+import 'package:connectivity/connectivity.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:connectivity/connectivity.dart';
 
 void main() {
   runApp(MyApp());

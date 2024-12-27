@@ -48,12 +48,12 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     final List<String> accelerometer =
-        _accelerometerValues?.map((double v) => v.toStringAsFixed(1))?.toList();
+        _accelerometerValues.map((double v) => v.toStringAsFixed(1)).toList();
     final List<String> gyroscope =
-        _gyroscopeValues?.map((double v) => v.toStringAsFixed(1))?.toList();
+        _gyroscopeValues.map((double v) => v.toStringAsFixed(1)).toList();
     final List<String> userAccelerometer = _userAccelerometerValues
-        ?.map((double v) => v.toStringAsFixed(1))
-        ?.toList();
+        .map((double v) => v.toStringAsFixed(1))
+        .toList();
 
     return Scaffold(
       appBar: AppBar(

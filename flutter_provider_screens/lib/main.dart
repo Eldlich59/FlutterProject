@@ -5,7 +5,7 @@ void main() {
   runApp(
     ChangeNotifierProvider(
       create: (_) => CounterProvider(),
-      child: MaterialApp(
+      child: const MaterialApp(
         home: HomeScreen(),
       ),
     ),
@@ -25,7 +25,7 @@ class CounterProvider extends ChangeNotifier {
 }
 
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+  const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -40,14 +40,14 @@ class HomeScreen extends StatelessWidget {
           children: <Widget>[
             Text(
               context.watch<CounterProvider>().counter.toString(),
-              style: TextStyle(fontSize: 30),
+              style: const TextStyle(fontSize: 30),
             ),
             ElevatedButton(
                 onPressed: () {
                   Navigator.push(context,
-                      MaterialPageRoute(builder: (_) => SecondScreen()));
+                      MaterialPageRoute(builder: (_) => const SecondScreen()));
                 },
-                child: Text('Go to second screen'))
+                child: const Text('Go to second screen'))
           ],
         ),
       ),
@@ -63,7 +63,7 @@ class HomeScreen extends StatelessWidget {
 }
 
 class SecondScreen extends StatelessWidget {
-  const SecondScreen({Key? key}) : super(key: key);
+  const SecondScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -78,13 +78,13 @@ class SecondScreen extends StatelessWidget {
           children: <Widget>[
             Text(
               context.watch<CounterProvider>().counter.toString(),
-              style: TextStyle(fontSize: 30),
+              style: const TextStyle(fontSize: 30),
             ),
             ElevatedButton(
                 onPressed: () {
                   Navigator.pop(context);
                 },
-                child: Text('Go back to home screen'))
+                child: const Text('Go back to home screen'))
           ],
         ),
       ),

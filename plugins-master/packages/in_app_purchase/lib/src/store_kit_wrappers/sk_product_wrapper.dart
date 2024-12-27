@@ -26,7 +26,6 @@ class SkProductResponseWrapper {
   /// This method should only be used with `map` values returned by [SKRequestMaker.startProductRequest].
   /// The `map` parameter must not be null.
   factory SkProductResponseWrapper.fromJson(Map map) {
-    assert(map != null, 'Map must not be null.');
     return _$SkProductResponseWrapperFromJson(map);
   }
 
@@ -88,7 +87,6 @@ class SKProductSubscriptionPeriodWrapper {
   /// This method should only be used with `map` values returned by [SKProductDiscountWrapper.fromJson] or [SKProductWrapper.fromJson].
   /// The `map` parameter must not be null.
   factory SKProductSubscriptionPeriodWrapper.fromJson(Map map) {
-    assert(map != null, 'Map must not be null.');
     return _$SKProductSubscriptionPeriodWrapperFromJson(map);
   }
 
@@ -149,7 +147,6 @@ class SKProductDiscountWrapper {
   /// This method should only be used with `map` values returned by [SKProductWrapper.fromJson].
   /// The `map` parameter must not be null.
   factory SKProductDiscountWrapper.fromJson(Map map) {
-    assert(map != null, 'Map must not be null.');
     return _$SKProductDiscountWrapperFromJson(map);
   }
 
@@ -215,7 +212,6 @@ class SKProductWrapper {
   /// This method should only be used with `map` values returned by [SkProductResponseWrapper.fromJson].
   /// The `map` parameter must not be null.
   factory SKProductWrapper.fromJson(Map map) {
-    assert(map != null, 'Map must not be null.');
     return _$SKProductWrapperFromJson(map);
   }
 
@@ -324,7 +320,6 @@ class SKPriceLocaleWrapper {
   /// This method should only be used with `map` values returned by [SKProductWrapper.fromJson] and [SKProductDiscountWrapper.fromJson].
   /// The `map` parameter must not be null.
   factory SKPriceLocaleWrapper.fromJson(Map map) {
-    assert(map != null, 'Map must not be null.');
     return _$SKPriceLocaleWrapperFromJson(map);
   }
 

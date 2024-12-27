@@ -150,36 +150,36 @@ class SampleMenu extends StatelessWidget {
             }
           },
           itemBuilder: (BuildContext context) => <PopupMenuItem<MenuOptions>>[
-                PopupMenuItem<MenuOptions>(
-                  value: MenuOptions.showUserAgent,
-                  child: const Text('Show user agent'),
-                  enabled: controller.hasData,
-                ),
-                const PopupMenuItem<MenuOptions>(
-                  value: MenuOptions.listCookies,
-                  child: Text('List cookies'),
-                ),
-                const PopupMenuItem<MenuOptions>(
-                  value: MenuOptions.clearCookies,
-                  child: Text('Clear cookies'),
-                ),
-                const PopupMenuItem<MenuOptions>(
-                  value: MenuOptions.addToCache,
-                  child: Text('Add to cache'),
-                ),
-                const PopupMenuItem<MenuOptions>(
-                  value: MenuOptions.listCache,
-                  child: Text('List cache'),
-                ),
-                const PopupMenuItem<MenuOptions>(
-                  value: MenuOptions.clearCache,
-                  child: Text('Clear cache'),
-                ),
-                const PopupMenuItem<MenuOptions>(
-                  value: MenuOptions.navigationDelegate,
-                  child: Text('Navigation Delegate example'),
-                ),
-              ],
+            PopupMenuItem<MenuOptions>(
+              value: MenuOptions.showUserAgent,
+              child: const Text('Show user agent'),
+              enabled: controller.hasData,
+            ),
+            const PopupMenuItem<MenuOptions>(
+              value: MenuOptions.listCookies,
+              child: Text('List cookies'),
+            ),
+            const PopupMenuItem<MenuOptions>(
+              value: MenuOptions.clearCookies,
+              child: Text('Clear cookies'),
+            ),
+            const PopupMenuItem<MenuOptions>(
+              value: MenuOptions.addToCache,
+              child: Text('Add to cache'),
+            ),
+            const PopupMenuItem<MenuOptions>(
+              value: MenuOptions.listCache,
+              child: Text('List cache'),
+            ),
+            const PopupMenuItem<MenuOptions>(
+              value: MenuOptions.clearCache,
+              child: Text('Clear cache'),
+            ),
+            const PopupMenuItem<MenuOptions>(
+              value: MenuOptions.navigationDelegate,
+              child: Text('Navigation Delegate example'),
+            ),
+          ],
         );
       },
     );
@@ -249,7 +249,7 @@ class SampleMenu extends StatelessWidget {
   }
 
   Widget _getCookieList(String cookies) {
-    if (cookies == null || cookies == '""') {
+    if (cookies == '""') {
       return Container();
     }
     final List<String> cookieList = cookies.split(';');
@@ -264,8 +264,7 @@ class SampleMenu extends StatelessWidget {
 }
 
 class NavigationControls extends StatelessWidget {
-  const NavigationControls(this._webViewControllerFuture)
-      : assert(_webViewControllerFuture != null);
+  const NavigationControls(this._webViewControllerFuture);
 
   final Future<WebViewController> _webViewControllerFuture;
 

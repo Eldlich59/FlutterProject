@@ -25,9 +25,6 @@ Future<Directory> getTemporaryDirectory() async {
   // https://github.com/flutter/flutter/issues/26431
   // ignore: strong_mode_implicit_dynamic_method
   final String path = await _channel.invokeMethod('getTemporaryDirectory');
-  if (path == null) {
-    return null;
-  }
   return Directory(path);
 }
 
@@ -44,9 +41,6 @@ Future<Directory> getApplicationDocumentsDirectory() async {
       // https://github.com/flutter/flutter/issues/26431
       // ignore: strong_mode_implicit_dynamic_method
       await _channel.invokeMethod('getApplicationDocumentsDirectory');
-  if (path == null) {
-    return null;
-  }
   return Directory(path);
 }
 
@@ -65,8 +59,5 @@ Future<Directory> getExternalStorageDirectory() async {
   // https://github.com/flutter/flutter/issues/26431
   // ignore: strong_mode_implicit_dynamic_method
   final String path = await _channel.invokeMethod('getStorageDirectory');
-  if (path == null) {
-    return null;
-  }
   return Directory(path);
 }

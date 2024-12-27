@@ -22,9 +22,6 @@ class Connectivity {
   // EventChannel because it is overridden. Forcing the class to be a singleton class can prevent
   // misusage of creating a second instance from a programmer.
   factory Connectivity() {
-    if (_singleton == null) {
-      _singleton = Connectivity._();
-    }
     return _singleton;
   }
 
@@ -46,11 +43,6 @@ class Connectivity {
 
   /// Fires whenever the connectivity state changes.
   Stream<ConnectivityResult> get onConnectivityChanged {
-    if (_onConnectivityChanged == null) {
-      _onConnectivityChanged = eventChannel
-          .receiveBroadcastStream()
-          .map((dynamic event) => _parseConnectivityResult(event));
-    }
     return _onConnectivityChanged;
   }
 

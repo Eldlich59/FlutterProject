@@ -48,7 +48,6 @@ typedef void PurchasesUpdatedListener(PurchasesResultWrapper purchasesResult);
 /// converted to futures where appropriate.
 class BillingClient {
   BillingClient(PurchasesUpdatedListener onPurchasesUpdated) {
-    assert(onPurchasesUpdated != null);
     channel.setMethodCallHandler(_callHandler);
     _callbacks[_kOnPurchasesUpdated] = [onPurchasesUpdated];
   }
@@ -81,7 +80,7 @@ class BillingClient {
   /// one doesn't already exist.
   Future<BillingResponse> startConnection(
       {@required
-          OnBillingServiceDisconnected onBillingServiceDisconnected}) async {
+      OnBillingServiceDisconnected onBillingServiceDisconnected}) async {
     List<Function> disconnectCallbacks =
         _callbacks[_kOnBillingServiceDisconnected] ??= [];
     disconnectCallbacks.add(onBillingServiceDisconnected);
@@ -147,7 +146,6 @@ class BillingClient {
   /// accountId](https://developer.android.com/reference/com/android/billingclient/api/BillingFlowParams.Builder.html#setAccountId(java.lang.String)).
   Future<BillingResponse> launchBillingFlow(
       {@required SkuDetailsWrapper skuDetails, String accountId}) async {
-    assert(skuDetails != null);
     final Map<String, dynamic> arguments = <String, dynamic>{
       'sku': skuDetails.sku,
       'accountId': accountId,
@@ -169,7 +167,6 @@ class BillingClient {
   /// This wraps [`BillingClient#queryPurchases(String
   /// skutype)`](https://developer.android.com/reference/com/android/billingclient/api/BillingClient#querypurchases).
   Future<PurchasesResultWrapper> queryPurchases(SkuType skuType) async {
-    assert(skuType != null);
     return PurchasesResultWrapper.fromJson(await channel.invokeMapMethod(
         'BillingClient#queryPurchases(String)',
         <String, dynamic>{'skuType': SkuTypeConverter().toJson(skuType)}));
@@ -188,7 +185,6 @@ class BillingClient {
   /// PurchaseHistoryResponseListener
   /// listener)`](https://developer.android.com/reference/com/android/billingclient/api/BillingClient#querypurchasehistoryasync).
   Future<PurchasesResultWrapper> queryPurchaseHistory(SkuType skuType) async {
-    assert(skuType != null);
     return PurchasesResultWrapper.fromJson(await channel.invokeMapMethod(
         'BillingClient#queryPurchaseHistoryAsync(String, PurchaseHistoryResponseListener)',
         <String, dynamic>{'skuType': SkuTypeConverter().toJson(skuType)}));

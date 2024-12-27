@@ -46,7 +46,7 @@ class _MyHomePageState extends State<MyHomePage> {
       }
       if (isVideo) {
         ImagePicker.pickVideo(source: source).then((File file) {
-          if (file != null && mounted) {
+          if (mounted) {
             setState(() {
               _controller = VideoPlayerController.file(file)
                 ..addListener(listener)

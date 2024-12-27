@@ -95,9 +95,6 @@ class SKPaymentTransactionWrapper {
   /// types of all of the members on this class.
   /// The `map` parameter must not be null.
   factory SKPaymentTransactionWrapper.fromJson(Map map) {
-    if (map == null) {
-      return null;
-    }
     return _$SKPaymentTransactionWrapperFromJson(map);
   }
 

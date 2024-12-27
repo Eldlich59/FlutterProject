@@ -12,13 +12,6 @@ enum BatteryState { full, charging, discharging }
 
 class Battery {
   factory Battery() {
-    if (_instance == null) {
-      final MethodChannel methodChannel =
-          const MethodChannel('plugins.flutter.io/battery');
-      final EventChannel eventChannel =
-          const EventChannel('plugins.flutter.io/charging');
-      _instance = Battery.private(methodChannel, eventChannel);
-    }
     return _instance;
   }
 
@@ -38,11 +31,6 @@ class Battery {
 
   /// Fires whenever the battery state changes.
   Stream<BatteryState> get onBatteryStateChanged {
-    if (_onBatteryStateChanged == null) {
-      _onBatteryStateChanged = _eventChannel
-          .receiveBroadcastStream()
-          .map((dynamic event) => _parseBatteryState(event));
-    }
     return _onBatteryStateChanged;
   }
 }

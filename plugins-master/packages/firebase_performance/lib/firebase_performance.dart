@@ -7,8 +7,8 @@ library firebase_performance;
 import 'dart:async';
 import 'dart:collection';
 
-import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 
 part 'src/firebase_performance.dart';
 part 'src/http_metric.dart';

@@ -67,13 +67,6 @@ class FirebaseAnalytics {
   ///
   /// This setting is persisted across app sessions. By default it is enabled.
   Future<void> setAnalyticsCollectionEnabled(bool enabled) async {
-    if (enabled == null) {
-      throw ArgumentError.notNull('enabled');
-    }
-
-    // TODO(amirh): remove this on when the invokeMethod update makes it to stable Flutter.
-    // https://github.com/flutter/flutter/issues/26431
-    // ignore: strong_mode_implicit_dynamic_method
     await _channel.invokeMethod('setAnalyticsCollectionEnabled', enabled);
   }
 
@@ -109,13 +102,6 @@ class FirebaseAnalytics {
   Future<void> setCurrentScreen(
       {@required String screenName,
       String screenClassOverride = 'Flutter'}) async {
-    if (screenName == null) {
-      throw ArgumentError.notNull('screenName');
-    }
-
-    // TODO(amirh): remove this on when the invokeMethod update makes it to stable Flutter.
-    // https://github.com/flutter/flutter/issues/26431
-    // ignore: strong_mode_implicit_dynamic_method
     await _channel.invokeMethod('setCurrentScreen', <String, String>{
       'screenName': screenName,
       'screenClassOverride': screenClassOverride,
@@ -136,10 +122,6 @@ class FirebaseAnalytics {
   /// user property names.
   Future<void> setUserProperty(
       {@required String name, @required String value}) async {
-    if (name == null) {
-      throw ArgumentError.notNull('name');
-    }
-
     if (name.isEmpty ||
         name.length > 24 ||
         name.indexOf(_alpha) != 0 ||
@@ -823,13 +805,6 @@ class FirebaseAnalyticsAndroid {
   /// Deprecated: Use [FirebaseAnalytics.setAnalyticsCollectionEnabled] instead.
   @deprecated
   Future<void> setAnalyticsCollectionEnabled(bool enabled) async {
-    if (enabled == null) {
-      throw ArgumentError.notNull('enabled');
-    }
-
-    // TODO(amirh): remove this on when the invokeMethod update makes it to stable Flutter.
-    // https://github.com/flutter/flutter/issues/26431
-    // ignore: strong_mode_implicit_dynamic_method
     await _channel.invokeMethod('setAnalyticsCollectionEnabled', enabled);
   }
 
@@ -837,13 +812,6 @@ class FirebaseAnalyticsAndroid {
   ///
   /// The default value is 10000 (10 seconds).
   Future<void> setMinimumSessionDuration(int milliseconds) async {
-    if (milliseconds == null) {
-      throw ArgumentError.notNull('milliseconds');
-    }
-
-    // TODO(amirh): remove this on when the invokeMethod update makes it to stable Flutter.
-    // https://github.com/flutter/flutter/issues/26431
-    // ignore: strong_mode_implicit_dynamic_method
     await _channel.invokeMethod('setMinimumSessionDuration', milliseconds);
   }
 
@@ -851,13 +819,6 @@ class FirebaseAnalyticsAndroid {
   ///
   /// The default value is 1800000 (30 minutes).
   Future<void> setSessionTimeoutDuration(int milliseconds) async {
-    if (milliseconds == null) {
-      throw ArgumentError.notNull('milliseconds');
-    }
-
-    // TODO(amirh): remove this on when the invokeMethod update makes it to stable Flutter.
-    // https://github.com/flutter/flutter/issues/26431
-    // ignore: strong_mode_implicit_dynamic_method
     await _channel.invokeMethod('setSessionTimeoutDuration', milliseconds);
   }
 }
@@ -880,7 +841,7 @@ const String valueAndCurrencyMustBeTogetherError = 'If you supply the "value" '
     'parameter, you must also supply the "currency" parameter.';
 
 void _requireValueAndCurrencyTogether(double value, String currency) {
-  if (value != null && currency == null) {
+  if (currency == null) {
     throw ArgumentError(valueAndCurrencyMustBeTogetherError);
   }
 }

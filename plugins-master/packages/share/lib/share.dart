@@ -28,7 +28,6 @@ class Share {
   /// May throw [PlatformException] or [FormatException]
   /// from [MethodChannel].
   static Future<void> share(String text, {Rect sharePositionOrigin}) {
-    assert(text != null);
     assert(text.isNotEmpty);
     final Map<String, dynamic> params = <String, dynamic>{
       'text': text,

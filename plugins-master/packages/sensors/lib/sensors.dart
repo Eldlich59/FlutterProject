@@ -76,32 +76,15 @@ Stream<UserAccelerometerEvent> _userAccelerometerEvents;
 
 /// A broadcast stream of events from the device accelerometer.
 Stream<AccelerometerEvent> get accelerometerEvents {
-  if (_accelerometerEvents == null) {
-    _accelerometerEvents = _accelerometerEventChannel
-        .receiveBroadcastStream()
-        .map(
-            (dynamic event) => _listToAccelerometerEvent(event.cast<double>()));
-  }
   return _accelerometerEvents;
 }
 
 /// A broadcast stream of events from the device gyroscope.
 Stream<GyroscopeEvent> get gyroscopeEvents {
-  if (_gyroscopeEvents == null) {
-    _gyroscopeEvents = _gyroscopeEventChannel
-        .receiveBroadcastStream()
-        .map((dynamic event) => _listToGyroscopeEvent(event.cast<double>()));
-  }
   return _gyroscopeEvents;
 }
 
 /// Events from the device accelerometer with gravity removed.
 Stream<UserAccelerometerEvent> get userAccelerometerEvents {
-  if (_userAccelerometerEvents == null) {
-    _userAccelerometerEvents = _userAccelerometerEventChannel
-        .receiveBroadcastStream()
-        .map((dynamic event) =>
-            _listToUserAccelerometerEvent(event.cast<double>()));
-  }
   return _userAccelerometerEvents;
 }

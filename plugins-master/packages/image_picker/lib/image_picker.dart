@@ -34,13 +34,11 @@ class ImagePicker {
     double maxWidth,
     double maxHeight,
   }) async {
-    assert(source != null);
-
-    if (maxWidth != null && maxWidth < 0) {
+    if (maxWidth < 0) {
       throw ArgumentError.value(maxWidth, 'maxWidth cannot be negative');
     }
 
-    if (maxHeight != null && maxHeight < 0) {
+    if (maxHeight < 0) {
       throw ArgumentError.value(maxHeight, 'maxHeight cannot be negative');
     }
 
@@ -62,8 +60,6 @@ class ImagePicker {
   static Future<File> pickVideo({
     @required ImageSource source,
   }) async {
-    assert(source != null);
-
     // TODO(amirh): remove this on when the invokeMethod update makes it to stable Flutter.
     // https://github.com/flutter/flutter/issues/26431
     // ignore: strong_mode_implicit_dynamic_method

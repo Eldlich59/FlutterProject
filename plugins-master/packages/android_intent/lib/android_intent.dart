@@ -26,8 +26,7 @@ class AndroidIntent {
     this.arguments,
     this.package,
     Platform platform,
-  })  : assert(action != null),
-        _channel = const MethodChannel(kChannelName),
+  })  : _channel = const MethodChannel(kChannelName),
         _platform = platform ?? const LocalPlatform();
 
   final String action;
@@ -45,18 +44,10 @@ class AndroidIntent {
   Future<void> launch() async {
     assert(_platform.isAndroid);
     final Map<String, dynamic> args = <String, dynamic>{'action': action};
-    if (category != null) {
-      args['category'] = category;
-    }
-    if (data != null) {
-      args['data'] = data;
-    }
-    if (arguments != null) {
-      args['arguments'] = arguments;
-    }
-    if (package != null) {
-      args['package'] = package;
-    }
+    args['category'] = category;
+    args['data'] = data;
+    args['arguments'] = arguments;
+    args['package'] = package;
     await _channel.invokeMethod<void>('launch', args);
   }
 }

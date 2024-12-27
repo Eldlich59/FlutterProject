@@ -243,7 +243,7 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
           break;
         case 'completed':
           value = value.copyWith(isPlaying: false);
-          _timer?.cancel();
+          _timer.cancel();
           break;
         case 'bufferingUpdate':
           final List<dynamic> values = map['values'];
@@ -263,7 +263,7 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
     void errorListener(Object obj) {
       final PlatformException e = obj;
       value = VideoPlayerValue.erroneous(e.message);
-      _timer?.cancel();
+      _timer.cancel();
     }
 
     _eventSubscription = _eventChannelFor(_textureId)
@@ -278,22 +278,20 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
 
   @override
   Future<void> dispose() async {
-    if (_creatingCompleter != null) {
-      await _creatingCompleter.future;
-      if (!_isDisposed) {
-        _isDisposed = true;
-        _timer?.cancel();
-        await _eventSubscription?.cancel();
-        // TODO(amirh): remove this on when the invokeMethod update makes it to stable Flutter.
-        // https://github.com/flutter/flutter/issues/26431
-        // ignore: strong_mode_implicit_dynamic_method
-        await _channel.invokeMethod(
-          'dispose',
-          <String, dynamic>{'textureId': _textureId},
-        );
-      }
-      _lifeCycleObserver.dispose();
+    await _creatingCompleter.future;
+    if (!_isDisposed) {
+      _isDisposed = true;
+      _timer?.cancel();
+      await _eventSubscription?.cancel();
+      // TODO(amirh): remove this on when the invokeMethod update makes it to stable Flutter.
+      // https://github.com/flutter/flutter/issues/26431
+      // ignore: strong_mode_implicit_dynamic_method
+      await _channel.invokeMethod(
+        'dispose',
+        <String, dynamic>{'textureId': _textureId},
+      );
     }
+    _lifeCycleObserver.dispose();
     _isDisposed = true;
     super.dispose();
   }
@@ -352,7 +350,7 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
         },
       );
     } else {
-      _timer?.cancel();
+      _timer.cancel();
       // TODO(amirh): remove this on when the invokeMethod update makes it to stable Flutter.
       // https://github.com/flutter/flutter/issues/26431
       // ignore: strong_mode_implicit_dynamic_method

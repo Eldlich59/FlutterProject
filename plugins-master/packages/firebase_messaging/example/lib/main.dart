@@ -35,9 +35,9 @@ class Item {
     return routes.putIfAbsent(
       routeName,
       () => MaterialPageRoute<void>(
-            settings: RouteSettings(name: routeName),
-            builder: (BuildContext context) => DetailPage(itemId),
-          ),
+        settings: RouteSettings(name: routeName),
+        builder: (BuildContext context) => DetailPage(itemId),
+      ),
     );
   }
 }
@@ -158,7 +158,6 @@ class _PushMessagingExampleState extends State<PushMessagingExample> {
       print("Settings registered: $settings");
     });
     _firebaseMessaging.getToken().then((String token) {
-      assert(token != null);
       setState(() {
         _homeScreenText = "Push Messaging token: $token";
       });
@@ -175,9 +174,9 @@ class _PushMessagingExampleState extends State<PushMessagingExample> {
         // For testing -- simulate a message being received
         floatingActionButton: FloatingActionButton(
           onPressed: () => _showItemDialog(<String, dynamic>{
-                "id": "2",
-                "status": "out of stock",
-              }),
+            "id": "2",
+            "status": "out of stock",
+          }),
           tooltip: 'Simulate Message',
           child: const Icon(Icons.message),
         ),

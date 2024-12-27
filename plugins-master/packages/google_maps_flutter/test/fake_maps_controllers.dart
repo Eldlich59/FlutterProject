@@ -74,9 +74,6 @@ class FakePlatformGoogleMap {
   }
 
   void updateMarkers(Map<dynamic, dynamic> markerUpdates) {
-    if (markerUpdates == null) {
-      return;
-    }
     markersToAdd = _deserializeMarkers(markerUpdates['markersToAdd']);
     markerIdsToRemove =
         _deserializeMarkerIds(markerUpdates['markerIdsToRemove']);
@@ -84,12 +81,6 @@ class FakePlatformGoogleMap {
   }
 
   Set<MarkerId> _deserializeMarkerIds(List<dynamic> markerIds) {
-    if (markerIds == null) {
-      // TODO(iskakaushik): Remove this when collection literals makes it to stable.
-      // https://github.com/flutter/flutter/issues/28312
-      // ignore: prefer_collection_literals
-      return Set<MarkerId>();
-    }
     return markerIds.map((dynamic markerId) => MarkerId(markerId)).toSet();
   }
 
@@ -132,9 +123,6 @@ class FakePlatformGoogleMap {
   }
 
   void updatePolylines(Map<dynamic, dynamic> polylineUpdates) {
-    if (polylineUpdates == null) {
-      return;
-    }
     polylinesToAdd = _deserializePolylines(polylineUpdates['polylinesToAdd']);
     polylineIdsToRemove =
         _deserializePolylineIds(polylineUpdates['polylineIdsToRemove']);
@@ -143,12 +131,6 @@ class FakePlatformGoogleMap {
   }
 
   Set<PolylineId> _deserializePolylineIds(List<dynamic> polylineIds) {
-    if (polylineIds == null) {
-      // TODO: Remove this when collection literals makes it to stable.
-      // https://github.com/flutter/flutter/issues/28312
-      // ignore: prefer_collection_literals
-      return Set<PolylineId>();
-    }
     return polylineIds
         .map((dynamic polylineId) => PolylineId(polylineId))
         .toSet();

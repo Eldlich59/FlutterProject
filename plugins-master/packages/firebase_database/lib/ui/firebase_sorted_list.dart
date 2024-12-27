@@ -29,8 +29,6 @@ class FirebaseSortedList extends ListBase<DataSnapshot>
     this.onValue,
     this.onError,
   }) {
-    assert(query != null);
-    assert(comparator != null);
     listen(query.onChildAdded, _onChildAdded, onError: _onError);
     listen(query.onChildRemoved, _onChildRemoved, onError: _onError);
     listen(query.onChildChanged, _onChildChanged, onError: _onError);
@@ -116,6 +114,6 @@ class FirebaseSortedList extends ListBase<DataSnapshot>
 
   void _onError(Object o) {
     final DatabaseError error = o;
-    onError?.call(error);
+    onError.call(error);
   }
 }

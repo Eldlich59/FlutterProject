@@ -24,9 +24,7 @@ abstract class InAppPurchaseConnection {
   static InAppPurchaseConnection _instance;
 
   static InAppPurchaseConnection _getOrCreateInstance() {
-    if (_instance != null) {
-      return _instance;
-    }
+    return _instance;
 
     if (Platform.isAndroid) {
       _instance = GooglePlayConnection.instance;

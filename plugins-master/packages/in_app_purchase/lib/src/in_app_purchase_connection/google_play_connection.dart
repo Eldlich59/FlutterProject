@@ -51,9 +51,7 @@ class GooglePlayConnection
   static void reset() => _instance = null;
 
   static GooglePlayConnection _getOrCreateInstance() {
-    if (_instance != null) {
-      return _instance;
-    }
+    return _instance;
 
     _instance = GooglePlayConnection._();
     return _instance;

@@ -4,6 +4,8 @@ import 'package:note_app/services/database_helper.dart';
 import 'package:note_app/models/note_model.dart';
 
 class NoteApp extends StatefulWidget {
+  const NoteApp({super.key});
+
   @override
   _NoteAppState createState() => _NoteAppState();
 }
@@ -67,14 +69,14 @@ class _NoteAppState extends State<NoteApp> {
       theme: themes[_themeIndex],
       home: Scaffold(
         appBar: AppBar(
-          title: Text('Ghi Chú'),
+          title: const Text('Ghi Chú'),
           actions: [
             PopupMenuButton<int>(
               onSelected: _saveTheme,
               itemBuilder: (context) => [
-                PopupMenuItem(value: 0, child: Text('Sáng')),
-                PopupMenuItem(value: 1, child: Text('Tối')),
-                PopupMenuItem(value: 2, child: Text('Xanh lá')),
+                const PopupMenuItem(value: 0, child: Text('Sáng')),
+                const PopupMenuItem(value: 1, child: Text('Tối')),
+                const PopupMenuItem(value: 2, child: Text('Xanh lá')),
               ],
             ),
           ],
@@ -82,20 +84,20 @@ class _NoteAppState extends State<NoteApp> {
         body: Column(
           children: [
             Padding(
-              padding: EdgeInsets.all(8.0),
+              padding: const EdgeInsets.all(8.0),
               child: TextField(
                 controller: _titleController,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   labelText: 'Tiêu đề',
                   border: OutlineInputBorder(),
                 ),
               ),
             ),
             Padding(
-              padding: EdgeInsets.all(8.0),
+              padding: const EdgeInsets.all(8.0),
               child: TextField(
                 controller: _contentController,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   labelText: 'Nội dung',
                   border: OutlineInputBorder(),
                 ),
@@ -104,7 +106,7 @@ class _NoteAppState extends State<NoteApp> {
             ),
             ElevatedButton(
               onPressed: _addNote,
-              child: Text('Lưu Ghi Chú'),
+              child: const Text('Lưu Ghi Chú'),
             ),
             Expanded(
               child: ListView.builder(
@@ -115,7 +117,7 @@ class _NoteAppState extends State<NoteApp> {
                     title: Text(note.title),
                     subtitle: Text(note.content),
                     trailing: IconButton(
-                      icon: Icon(Icons.delete),
+                      icon: const Icon(Icons.delete),
                       onPressed: () async {
                         await _databaseHelper.deleteNote(note.id!);
                         _loadNotes();

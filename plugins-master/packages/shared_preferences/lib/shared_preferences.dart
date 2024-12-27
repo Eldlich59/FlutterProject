@@ -20,21 +20,6 @@ class SharedPreferences {
   static const String _prefix = 'flutter.';
   static SharedPreferences _instance;
   static Future<SharedPreferences> getInstance() async {
-    if (_instance == null) {
-      final Map<Object, Object> fromSystem =
-          // TODO(amirh): remove this on when the invokeMethod update makes it to stable Flutter.
-          // https://github.com/flutter/flutter/issues/26431
-          // ignore: strong_mode_implicit_dynamic_method
-          await _kChannel.invokeMethod('getAll');
-      assert(fromSystem != null);
-      // Strip the flutter. prefix from the returned preferences.
-      final Map<String, Object> preferencesMap = <String, Object>{};
-      for (String key in fromSystem.keys) {
-        assert(key.startsWith(_prefix));
-        preferencesMap[key.substring(_prefix.length)] = fromSystem[key];
-      }
-      _instance = SharedPreferences._(preferencesMap);
-    }
     return _instance;
   }
 
@@ -74,7 +59,7 @@ class SharedPreferences {
   /// exception if it's not a string set.
   List<String> getStringList(String key) {
     List<Object> list = _preferenceCache[key];
-    if (list != null && list is! List<String>) {
+    if (list is! List<String>) {
       list = list.cast<String>().toList();
       _preferenceCache[key] = list;
     }
@@ -118,24 +103,14 @@ class SharedPreferences {
     final Map<String, dynamic> params = <String, dynamic>{
       'key': '$_prefix$key',
     };
-    if (value == null) {
-      _preferenceCache.remove(key);
-      return _kChannel
-          // TODO(amirh): remove this on when the invokeMethod update makes it to stable Flutter.
-          // https://github.com/flutter/flutter/issues/26431
-          // ignore: strong_mode_implicit_dynamic_method
-          .invokeMethod('remove', params)
-          .then<bool>((dynamic result) => result);
-    } else {
-      _preferenceCache[key] = value;
-      params['value'] = value;
-      return _kChannel
-          // TODO(amirh): remove this on when the invokeMethod update makes it to stable Flutter.
-          // https://github.com/flutter/flutter/issues/26431
-          // ignore: strong_mode_implicit_dynamic_method
-          .invokeMethod('set$valueType', params)
-          .then<bool>((dynamic result) => result);
-    }
+    _preferenceCache[key] = value;
+    params['value'] = value;
+    return _kChannel
+        // TODO(amirh): remove this on when the invokeMethod update makes it to stable Flutter.
+        // https://github.com/flutter/flutter/issues/26431
+        // ignore: strong_mode_implicit_dynamic_method
+        .invokeMethod('set$valueType', params)
+        .then<bool>((dynamic result) => result);
   }
 
   /// Always returns true.

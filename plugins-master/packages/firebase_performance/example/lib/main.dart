@@ -4,10 +4,9 @@
 
 import 'dart:async';
 
-import 'package:http/http.dart';
-import 'package:flutter/material.dart';
-
 import 'package:firebase_performance/firebase_performance.dart';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart';
 
 void main() => runApp(MyApp());
 

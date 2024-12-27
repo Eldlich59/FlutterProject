@@ -92,8 +92,7 @@ class SkuDetailsWrapper {
     }
 
     final SkuDetailsWrapper typedOther = other;
-    return typedOther is SkuDetailsWrapper &&
-        typedOther.description == description &&
+    return typedOther.description == description &&
         typedOther.freeTrialPeriod == freeTrialPeriod &&
         typedOther.introductoryPrice == introductoryPrice &&
         typedOther.introductoryPriceMicros == introductoryPriceMicros &&
@@ -166,8 +165,7 @@ class SkuDetailsResponseWrapper {
     }
 
     final SkuDetailsResponseWrapper typedOther = other;
-    return typedOther is SkuDetailsResponseWrapper &&
-        typedOther.responseCode == responseCode &&
+    return typedOther.responseCode == responseCode &&
         typedOther.skuDetailsList == skuDetailsList;
   }
 

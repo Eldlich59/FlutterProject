@@ -1,6 +1,5 @@
-import 'package:flutter/material.dart';
-
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:flutter/material.dart';
 
 void main() {
   // Set `enableInDevMode` to true to see reports while in debug mode

@@ -29,25 +29,6 @@ class PackageInfo {
   /// Retrieves package information from the platform.
   /// The result is cached.
   static Future<PackageInfo> fromPlatform() async {
-    if (_fromPlatform == null) {
-      final Completer<PackageInfo> completer = Completer<PackageInfo>();
-
-      // TODO(amirh): remove this on when the invokeMethod update makes it to stable Flutter.
-      // https://github.com/flutter/flutter/issues/26431
-      // ignore: strong_mode_implicit_dynamic_method
-      _kChannel.invokeMethod('getAll').then((dynamic result) {
-        final Map<dynamic, dynamic> map = result;
-
-        completer.complete(PackageInfo(
-          appName: map["appName"],
-          packageName: map["packageName"],
-          version: map["version"],
-          buildNumber: map["buildNumber"],
-        ));
-      }, onError: completer.completeError);
-
-      _fromPlatform = completer.future;
-    }
     return _fromPlatform;
   }
 

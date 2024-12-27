@@ -45,7 +45,7 @@ class _OngBaState extends State<OngBa> {
                 child: Text('OngBa build lan thu $counterOngBa')),
           ),
           BoMe(foo: foo),
-          CoChu(),
+          const CoChu(),
         ],
       ),
     );
@@ -78,7 +78,7 @@ class _BoMeState extends State<BoMe> {
         },
         child: Text('BoMe build lan thu $counterBoMe'),
       ),
-      ConCai(),
+      const ConCai(),
     ]);
   }
 }

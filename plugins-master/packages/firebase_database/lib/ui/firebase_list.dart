@@ -28,7 +28,6 @@ class FirebaseList extends ListBase<DataSnapshot>
     this.onValue,
     this.onError,
   }) {
-    assert(query != null);
     listen(query.onChildAdded, _onChildAdded, onError: _onError);
     listen(query.onChildRemoved, _onChildRemoved, onError: _onError);
     listen(query.onChildChanged, _onChildChanged, onError: _onError);
@@ -84,7 +83,6 @@ class FirebaseList extends ListBase<DataSnapshot>
   }
 
   int _indexForKey(String key) {
-    assert(key != null);
     for (int index = 0; index < _snapshots.length; index++) {
       if (key == _snapshots[index].key) {
         return index;
@@ -95,9 +93,7 @@ class FirebaseList extends ListBase<DataSnapshot>
 
   void _onChildAdded(Event event) {
     int index = 0;
-    if (event.previousSiblingKey != null) {
-      index = _indexForKey(event.previousSiblingKey) + 1;
-    }
+    index = _indexForKey(event.previousSiblingKey) + 1;
     _snapshots.insert(index, event.snapshot);
     onChildAdded(index, event.snapshot);
   }
@@ -119,11 +115,9 @@ class FirebaseList extends ListBase<DataSnapshot>
     _snapshots.removeAt(fromIndex);
 
     int toIndex = 0;
-    if (event.previousSiblingKey != null) {
-      final int prevIndex = _indexForKey(event.previousSiblingKey);
-      if (prevIndex != null) {
-        toIndex = prevIndex + 1;
-      }
+    final int prevIndex = _indexForKey(event.previousSiblingKey);
+    if (prevIndex != null) {
+      toIndex = prevIndex + 1;
     }
     _snapshots.insert(toIndex, event.snapshot);
     onChildMoved(fromIndex, toIndex, event.snapshot);
@@ -135,6 +129,6 @@ class FirebaseList extends ListBase<DataSnapshot>
 
   void _onError(Object o) {
     final DatabaseError error = o;
-    onError?.call(error);
+    onError.call(error);
   }
 }

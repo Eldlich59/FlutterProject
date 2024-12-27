@@ -57,9 +57,7 @@ class _MainScreenState extends State<_MainScreen> with WidgetsBindingObserver {
         await FirebaseDynamicLinks.instance.retrieveDynamicLink();
     final Uri deepLink = data?.link;
 
-    if (deepLink != null) {
-      Navigator.pushNamed(context, deepLink.path);
-    }
+    Navigator.pushNamed(context, deepLink.path);
   }
 
   Future<void> _createDynamicLink(bool short) async {
@@ -132,9 +130,7 @@ class _MainScreenState extends State<_MainScreen> with WidgetsBindingObserver {
                     style: const TextStyle(color: Colors.blue),
                   ),
                   onTap: () async {
-                    if (_linkMessage != null) {
-                      await launch(_linkMessage);
-                    }
+                    await launch(_linkMessage);
                   },
                   onLongPress: () {
                     Clipboard.setData(ClipboardData(text: _linkMessage));

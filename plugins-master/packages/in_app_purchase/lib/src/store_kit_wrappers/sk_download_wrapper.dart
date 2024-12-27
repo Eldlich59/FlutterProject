@@ -35,7 +35,6 @@ class SKDownloadWrapper {
   /// types of all of the members on this class.
   /// The `map` parameter must not be null.
   factory SKDownloadWrapper.fromJson(Map map) {
-    assert(map != null);
     return _$SKDownloadWrapperFromJson(map);
   }
 

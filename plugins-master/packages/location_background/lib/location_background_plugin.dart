@@ -86,11 +86,6 @@ void _backgroundCallbackDispatcher() {
       // PluginUtilities.getCallbackFromHandle performs a lookup based on the
       // handle we retrieved earlier.
       final Function closure = PluginUtilities.getCallbackFromHandle(handle);
-
-      if (closure == null) {
-        print('Fatal Error: Callback lookup failed!');
-        exit(-1);
-      }
       return closure;
     }
 
@@ -143,9 +138,6 @@ class LocationBackgroundPlugin {
   /// access to the state held by the main isolate (or any other isolate).
   Future<bool> monitorSignificantLocationChanges(
       void Function(Location location) callback) {
-    if (callback == null) {
-      throw ArgumentError.notNull('callback');
-    }
     final CallbackHandle handle = PluginUtilities.getCallbackHandle(callback);
     // TODO(amirh): remove this on when the invokeMethod update makes it to stable Flutter.
     // https://github.com/flutter/flutter/issues/26431

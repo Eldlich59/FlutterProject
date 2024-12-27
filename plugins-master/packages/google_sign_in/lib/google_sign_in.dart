@@ -36,9 +36,7 @@ class GoogleSignInAccount implements GoogleIdentity {
         email = data['email'],
         id = data['id'],
         photoUrl = data['photoUrl'],
-        _idToken = data['idToken'] {
-    assert(id != null);
-  }
+        _idToken = data['idToken'] {}
 
   // These error codes must match with ones declared on Android and iOS sides.
 
@@ -224,9 +222,8 @@ class GoogleSignIn {
     // https://github.com/flutter/flutter/issues/26431
     // ignore: strong_mode_implicit_dynamic_method
     final Map<dynamic, dynamic> response = await channel.invokeMethod(method);
-    return _setCurrentUser(response != null && response.isNotEmpty
-        ? GoogleSignInAccount._(this, response)
-        : null);
+    return _setCurrentUser(
+        response.isNotEmpty ? GoogleSignInAccount._(this, response) : null);
   }
 
   GoogleSignInAccount _setCurrentUser(GoogleSignInAccount currentUser) {
@@ -238,20 +235,6 @@ class GoogleSignIn {
   }
 
   Future<void> _ensureInitialized() {
-    if (_initialization == null) {
-      // TODO(amirh): remove this on when the invokeMethod update makes it to stable Flutter.
-      // https://github.com/flutter/flutter/issues/26431
-      // ignore: strong_mode_implicit_dynamic_method
-      _initialization = channel.invokeMethod('init', <String, dynamic>{
-        'signInOption': (signInOption ?? SignInOption.standard).toString(),
-        'scopes': scopes ?? <String>[],
-        'hostedDomain': hostedDomain,
-      })
-        ..catchError((dynamic _) {
-          // Invalidate initialization if it errored out.
-          _initialization = null;
-        });
-    }
     return _initialization;
   }
 
@@ -263,19 +246,13 @@ class GoogleSignIn {
   /// At most one in flight call is allowed to prevent concurrent (out of order)
   /// updates to [currentUser] and [onCurrentUserChanged].
   Future<GoogleSignInAccount> _addMethodCall(String method) {
-    if (_lastMethodCompleter == null) {
-      _lastMethodCompleter = _MethodCompleter(method)
-        ..complete(_callMethod(method));
-      return _lastMethodCompleter.future;
-    }
-
     final _MethodCompleter completer = _MethodCompleter(method);
     _lastMethodCompleter.future.whenComplete(() {
       // If after the last completed call currentUser is not null and requested
       // method is a sign in method, re-use the same authenticated user
       // instead of making extra call to the native side.
       const List<String> kSignInMethods = <String>['signIn', 'signInSilently'];
-      if (kSignInMethods.contains(method) && _currentUser != null) {
+      if (kSignInMethods.contains(method)) {
         completer.complete(_currentUser);
       } else {
         completer.complete(_callMethod(method));

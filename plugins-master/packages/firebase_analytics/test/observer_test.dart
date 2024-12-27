@@ -4,14 +4,12 @@
 
 import 'dart:async';
 
-import 'package:flutter/services.dart';
-import 'package:mockito/mockito.dart';
-import 'package:test/test.dart';
-
-import 'package:flutter/widgets.dart';
-
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_analytics/observer.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
+import 'package:mockito/mockito.dart';
+import 'package:test/test.dart';
 
 void main() {
   group('FirebaseAnalyticsObserver', () {

@@ -3,9 +3,10 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
+
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter_driver/driver_extension.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:cloud_functions/cloud_functions.dart';
 
 void main() {
   final Completer<String> completer = Completer<String>();

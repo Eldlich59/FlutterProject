@@ -20,7 +20,6 @@ part of firebase_performance;
 /// console. Results should appear within 12 hours.
 class Trace extends PerformanceAttributes {
   Trace._(this._handle, this._name) {
-    assert(_name != null);
     assert(!_name.startsWith(RegExp(r'[_\s]')));
     assert(!_name.contains(RegExp(r'[_\s]$')));
     assert(_name.length <= maxTraceNameLength);
@@ -94,7 +93,6 @@ class Trace extends PerformanceAttributes {
   /// 32 characters.
   void incrementCounter(String name, [int incrementBy = 1]) {
     assert(!_hasStopped);
-    assert(name != null);
     assert(!name.startsWith(RegExp(r'[_\s]')));
     assert(!name.contains(RegExp(r'[_\s]$')));
     assert(name.length <= 32);

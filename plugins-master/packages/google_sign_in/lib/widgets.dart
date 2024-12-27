@@ -26,7 +26,7 @@ class GoogleUserCircleAvatar extends StatelessWidget {
     this.placeholderPhotoUrl,
     this.foregroundColor,
     this.backgroundColor,
-  }) : assert(identity != null);
+  });
 
   /// A regular expression that matches against the "size directive" path
   /// segment of Google profile image URLs.
@@ -72,11 +72,6 @@ class GoogleUserCircleAvatar extends StatelessWidget {
   ///
   /// Falls back to the default profile photo if [photoUrl] is [null].
   static String _sizedProfileImageUrl(String photoUrl, double size) {
-    if (photoUrl == null) {
-      // If the user has no profile photo and no display name, fall back to
-      // the default profile photo as a last resort.
-      return 'https://lh3.googleusercontent.com/a/default-user=s${size.round()}-c';
-    }
     final Uri profileUri = Uri.parse(photoUrl);
     final List<String> pathSegments =
         List<String>.from(profileUri.pathSegments);
@@ -102,7 +97,7 @@ class GoogleUserCircleAvatar extends StatelessWidget {
       '-',
     ];
     final String placeholderChar = placeholderCharSources
-        .firstWhere((String str) => str != null && str.trimLeft().isNotEmpty)
+        .firstWhere((String str) => str.trimLeft().isNotEmpty)
         .trimLeft()[0]
         .toUpperCase();
     final Widget placeholder = Center(
@@ -110,9 +105,6 @@ class GoogleUserCircleAvatar extends StatelessWidget {
     );
 
     final String photoUrl = identity.photoUrl ?? placeholderPhotoUrl;
-    if (photoUrl == null) {
-      return placeholder;
-    }
 
     // Add a sizing directive to the profile photo URL.
     final double size =

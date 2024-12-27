@@ -55,7 +55,6 @@ class LocalAuthentication {
     AndroidAuthMessages androidAuthStrings = const AndroidAuthMessages(),
     IOSAuthMessages iOSAuthStrings = const IOSAuthMessages(),
   }) async {
-    assert(localizedReason != null);
     final Map<String, Object> args = <String, Object>{
       'localizedReason': localizedReason,
       'useErrorDialogs': useErrorDialogs,

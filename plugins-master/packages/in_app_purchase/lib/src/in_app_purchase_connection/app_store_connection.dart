@@ -20,9 +20,7 @@ class AppStoreConnection implements InAppPurchaseConnection {
   Future<bool> isAvailable() => SKPaymentQueueWrapper.canMakePayments();
 
   static AppStoreConnection _getOrCreateInstance() {
-    if (_instance != null) {
-      return _instance;
-    }
+    return _instance;
 
     _instance = AppStoreConnection();
     return _instance;
