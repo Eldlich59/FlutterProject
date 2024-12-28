@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:logger/logger.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'database/database_service.dart';
 
 import 'repositories/patient_repository.dart';
@@ -23,11 +24,13 @@ void main() async {
   final logger = Logger();
 
   try {
-    // Platform-specific database configuration
     if (!kIsWeb) {
-      // Native platform initialization
+      // Initialize FFI for desktop platforms
+      sqfliteFfiInit();
+      databaseFactory = databaseFactoryFfi;
+
       final dbService = DatabaseService.instance;
-      await dbService.database;
+      await dbService.database; // Ensure the database is initialized
 
       runApp(
         MultiProvider(
@@ -74,43 +77,71 @@ void main() async {
               ),
             ),
           ],
-          child: const MaterialApp(
-            debugShowCheckedModeBanner: false,
-            home: ClinicApp(),
-          ),
+          child: MyApp(),
         ),
       );
     } else {
-      // Web platform - defer initialization to web_entrypoint.dart
-      runApp(const MaterialApp(
-        debugShowCheckedModeBanner: false,
-        home: ClinicApp(),
+      // Web platform initialization
+      runApp(MultiProvider(
+        providers: [
+          Provider<PatientRepository>(
+            create: (_) => PatientRepository(null), // null since we're on web
+          ),
+          Provider<MedicineRepository>(
+            create: (_) => MedicineRepository(),
+          ),
+          Provider<InvoiceRepository>(
+            create: (_) => InvoiceRepository(null),
+          ),
+          ChangeNotifierProvider<PatientProvider>(
+            create: (context) => PatientProvider(
+              repository: context.read<PatientRepository>(),
+            ),
+          ),
+          ChangeNotifierProvider<MedicineProvider>(
+            create: (context) => MedicineProvider(
+              repository: context.read<MedicineRepository>(),
+            ),
+          ),
+          ChangeNotifierProvider<InvoiceProvider>(
+            create: (context) => InvoiceProvider(
+              repository: context.read<InvoiceRepository>(),
+            ),
+          ),
+          Provider<MedicalRecordRepository>(
+            create: (_) => MedicalRecordRepository(null),
+          ),
+          ChangeNotifierProvider<MedicalRecordProvider>(
+            create: (context) => MedicalRecordProvider(
+              repository: context.read<MedicalRecordRepository>(),
+            ),
+          ),
+        ],
+        child: MaterialApp(
+          debugShowCheckedModeBanner: false,
+          title: 'Clinic Management',
+          theme: ThemeData(
+            primarySwatch: Colors.blue,
+            useMaterial3: true,
+          ),
+          home: const HomeScreen(),
+        ),
       ));
     }
   } catch (e) {
-    logger.e('Failed to initialize app', error: e);
-    runApp(MaterialApp(
-      home: Scaffold(
-        body: Center(
-          child: Text('Error: ${e.toString()}'),
-        ),
-      ),
-    ));
+    logger.e('Error initializing app: $e');
   }
 }
 
-class ClinicApp extends StatelessWidget {
-  const ClinicApp({super.key});
-
+class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Clinic Management',
       theme: ThemeData(
         primarySwatch: Colors.blue,
-        useMaterial3: true,
       ),
-      home: const HomeScreen(),
+      home: HomeScreen(),
     );
   }
 }

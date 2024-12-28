@@ -21,6 +21,14 @@ class DatabaseService {
       path,
       version: 1,
       onCreate: _createDB,
+      onOpen: (db) async {
+        // Kiểm tra xem database có dữ liệu chưa
+        final count = Sqflite.firstIntValue(
+            await db.rawQuery('SELECT COUNT(*) FROM BENHNHAN'));
+        if (count == 0) {
+          await initializeData(db);
+        }
+      },
     );
   }
 
@@ -100,26 +108,9 @@ class DatabaseService {
     ''');
   }
 
-  // Add these new methods
-  Future<void> createPatient(Map<String, dynamic> patient) async {
-    final db = await database;
-    await db.insert(
-      'BENHNHAN',
-      patient,
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
-  }
-
-  Future<List<Map<String, dynamic>>> getAllPatients() async {
-    final db = await database;
-    return await db.query('BENHNHAN');
-  }
-
-  Future<void> insertDemoData() async {
-    final db = await database;
-
+  Future<void> initializeData(Database db) async {
     await db.transaction((txn) async {
-      // Insert demo patients
+      // Thêm bệnh nhân mẫu
       await txn.rawInsert('''
         INSERT INTO BENHNHAN (MaBN, TenBN, NgaySinh, GioiTinh, DiaChi, SDT)
         VALUES 
@@ -128,16 +119,7 @@ class DatabaseService {
           ('BN003', 'Le Van C', '1995-08-10', 'Nam', 'Da Nang', '0923456789')
       ''');
 
-      // Insert demo medical examinations
-      await txn.rawInsert('''
-        INSERT INTO PHIEUKHAM (MaPK, NgayKham, TrieuChung, ChuanDoan, TienKham, MaBN)
-        VALUES 
-          ('PK001', '2023-11-01', 'Sot, dau dau', 'Cam cum', 100000, 'BN001'),
-          ('PK002', '2023-11-02', 'Dau bung', 'Roi loan tieu hoa', 150000, 'BN002'),
-          ('PK003', '2023-11-03', 'Ho khan', 'Viem hong', 120000, 'BN003')
-      ''');
-
-      // Insert demo medicines
+      // Thêm thuốc mẫu
       await txn.rawInsert('''
         INSERT INTO THUOC (MaThuoc, TenThuoc, DonVi, DonGia, Ngaysx, Hansudung)
         VALUES 
@@ -146,7 +128,16 @@ class DatabaseService {
           ('T003', 'Amoxicillin', 'Vien', 5000, '2023-03-01', '2025-03-01')
       ''');
 
-      // Insert demo prescriptions
+      // Thêm phiếu khám mẫu
+      await txn.rawInsert('''
+        INSERT INTO PHIEUKHAM (MaPK, NgayKham, TrieuChung, ChuanDoan, TienKham, MaBN)
+        VALUES 
+          ('PK001', '2023-11-01', 'Sot, dau dau', 'Cam cum', 100000, 'BN001'),
+          ('PK002', '2023-11-02', 'Dau bung', 'Roi loan tieu hoa', 150000, 'BN002'),
+          ('PK003', '2023-11-03', 'Ho khan', 'Viem hong', 120000, 'BN003')
+      ''');
+
+      // Thêm toa thuốc mẫu
       await txn.rawInsert('''
         INSERT INTO TOATHUOC (MaToa, Bsketoa, Ngayketoa, MaBN, MaPK)
         VALUES 
@@ -155,7 +146,7 @@ class DatabaseService {
           ('TT003', 'Dr. Le', '2023-11-03', 'BN003', 'PK003')
       ''');
 
-      // Insert demo prescription details
+      // Thêm chi tiết toa thuốc mẫu
       await txn.rawInsert('''
         INSERT INTO CHITIETTOATHUOC (MaToa, MaThuoc, Sluong, Cdung)
         VALUES 
@@ -164,7 +155,7 @@ class DatabaseService {
           ('TT002', 'T003', 15, 'Uong 1 vien/lan x 3 lan/ngay')
       ''');
 
-      // Insert demo medicine bills
+      // Thêm hóa đơn thuốc mẫu
       await txn.rawInsert('''
         INSERT INTO HOADONTHUOC (MaHD, Ngayban, TienThuoc, MaToa)
         VALUES 

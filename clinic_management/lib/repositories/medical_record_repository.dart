@@ -4,12 +4,16 @@ import 'package:sqflite/sqflite.dart';
 import 'package:logger/logger.dart';
 
 class MedicalRecordRepository {
-  final DatabaseService _databaseService;
+  final DatabaseService? _databaseService;
   final Logger _logger = Logger();
 
-  MedicalRecordRepository(this._databaseService);
+  MedicalRecordRepository([this._databaseService]);
 
   Future<List<MedicalRecord>> getAllRecords() async {
+    if (_databaseService == null) {
+      // Return empty list for web platform
+      return [];
+    }
     try {
       final db = await _databaseService.database;
       final result = await db.query('PHIEUKHAM');
@@ -22,6 +26,7 @@ class MedicalRecordRepository {
   }
 
   Future<List<MedicalRecord>> getPatientMedicalRecords(String patientId) async {
+    if (_databaseService == null) return [];
     if (patientId.isEmpty) {
       throw ArgumentError('Patient ID cannot be empty');
     }
@@ -41,6 +46,7 @@ class MedicalRecordRepository {
   }
 
   Future<void> insertMedicalRecord(MedicalRecord record) async {
+    if (_databaseService == null) return;
     try {
       final db = await _databaseService.database;
       await db.transaction((txn) async {
@@ -57,6 +63,7 @@ class MedicalRecordRepository {
   }
 
   Future<void> updateMedicalRecord(MedicalRecord record) async {
+    if (_databaseService == null) return;
     if (record.id.isEmpty) {
       throw ArgumentError('Invalid medical record');
     }
@@ -79,6 +86,7 @@ class MedicalRecordRepository {
   }
 
   Future<void> deleteMedicalRecord(String id) async {
+    if (_databaseService == null) return;
     if (id.isEmpty) {
       throw ArgumentError('ID cannot be empty');
     }

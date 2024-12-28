@@ -3,11 +3,15 @@ import '../models/patient.dart';
 import 'package:sqflite/sqflite.dart';
 
 class PatientRepository {
-  final DatabaseService _databaseService;
+  final DatabaseService? _databaseService;
 
-  PatientRepository(this._databaseService);
+  PatientRepository([this._databaseService]);
 
   Future<List<Patient>> getAllPatients() async {
+    if (_databaseService == null) {
+      // Return empty list or mock data for web
+      return [];
+    }
     try {
       final db = await _databaseService.database;
       final result = await db.query('BENHNHAN');
@@ -18,6 +22,10 @@ class PatientRepository {
   }
 
   Future<Patient?> getPatient(String maBN) async {
+    if (_databaseService == null) {
+      // Return null or mock data for web
+      return null;
+    }
     try {
       final db = await _databaseService.database;
       final List<Map<String, dynamic>> maps = await db.query(
@@ -34,6 +42,10 @@ class PatientRepository {
   }
 
   Future<void> createPatient(Patient patient) async {
+    if (_databaseService == null) {
+      // Handle null database service for web
+      return;
+    }
     try {
       final db = await _databaseService.database;
       await db.insert(
@@ -47,6 +59,10 @@ class PatientRepository {
   }
 
   Future<void> updatePatient(Patient patient) async {
+    if (_databaseService == null) {
+      // Handle null database service for web
+      return;
+    }
     try {
       final db = await _databaseService.database;
       await db.update(
@@ -61,6 +77,10 @@ class PatientRepository {
   }
 
   Future<void> deletePatient(String maBN) async {
+    if (_databaseService == null) {
+      // Handle null database service for web
+      return;
+    }
     try {
       final db = await _databaseService.database;
       await db.delete(

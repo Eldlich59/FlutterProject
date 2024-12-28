@@ -3,18 +3,24 @@ import '../database/database_service.dart';
 import 'package:sqflite/sqflite.dart';
 
 class MedicineRepository {
-  final DatabaseService _databaseService;
+  final DatabaseService? _databaseService;
 
-  MedicineRepository([DatabaseService? databaseService])
-      : _databaseService = databaseService ?? DatabaseService.instance;
+  MedicineRepository([this._databaseService]);
 
   Future<List<Medicine>> getAllMedicines() async {
+    if (_databaseService == null) {
+      // Return empty list for web platform
+      return [];
+    }
     final db = await _databaseService.database;
     final List<Map<String, dynamic>> maps = await db.query('THUOC');
     return List.generate(maps.length, (i) => Medicine.fromJson(maps[i]));
   }
 
   Future<Medicine> getMedicine(String id) async {
+    if (_databaseService == null) {
+      throw Exception('Database service not available');
+    }
     final db = await _databaseService.database;
     final List<Map<String, dynamic>> maps = await db.query(
       'THUOC',
@@ -25,6 +31,7 @@ class MedicineRepository {
   }
 
   Future<void> insertMedicine(Medicine medicine) async {
+    if (_databaseService == null) return;
     final db = await _databaseService.database;
     await db.insert(
       'THUOC',
@@ -34,6 +41,7 @@ class MedicineRepository {
   }
 
   Future<void> updateMedicine(Medicine medicine) async {
+    if (_databaseService == null) return;
     final db = await _databaseService.database;
     await db.update(
       'THUOC',
@@ -44,6 +52,7 @@ class MedicineRepository {
   }
 
   Future<void> deleteMedicine(String id) async {
+    if (_databaseService == null) return;
     final db = await _databaseService.database;
     await db.delete(
       'THUOC',
@@ -53,6 +62,9 @@ class MedicineRepository {
   }
 
   Future<List<Medicine>> searchMedicines(String query) async {
+    if (_databaseService == null) {
+      return [];
+    }
     final db = await _databaseService.database;
     final List<Map<String, dynamic>> maps = await db.query(
       'THUOC',

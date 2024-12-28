@@ -5,17 +5,22 @@ import 'package:sqflite/sqflite.dart';
 const conflictAlgorithm = ConflictAlgorithm.replace;
 
 class InvoiceRepository {
-  final DatabaseService _databaseService;
+  final DatabaseService? _databaseService;
 
-  InvoiceRepository(this._databaseService);
+  InvoiceRepository([this._databaseService]);
 
   Future<List<Invoice>> getAllInvoices() async {
+    if (_databaseService == null) {
+      // Return empty list for web platform
+      return [];
+    }
     final db = await _databaseService.database;
     final result = await db.query('HOADONTHUOC');
     return result.map((map) => Invoice.fromJson(map)).toList();
   }
 
   Future<void> insertInvoice(Invoice invoice) async {
+    if (_databaseService == null) return;
     final db = await _databaseService.database;
     await db.insert(
       'HOADONTHUOC',
@@ -25,6 +30,7 @@ class InvoiceRepository {
   }
 
   Future<double> getDailyRevenue(DateTime date) async {
+    if (_databaseService == null) return 0.0;
     final db = await _databaseService.database;
     final result = await db.rawQuery('''
       SELECT SUM(TienThuoc) as total
@@ -35,6 +41,7 @@ class InvoiceRepository {
   }
 
   Future<Invoice?> getInvoice(String id) async {
+    if (_databaseService == null) return null;
     final db = await _databaseService.database;
     final List<Map<String, dynamic>> maps = await db.query(
       'HOADONTHUOC',
@@ -45,6 +52,7 @@ class InvoiceRepository {
   }
 
   Future<void> updateInvoice(Invoice invoice) async {
+    if (_databaseService == null) return;
     final db = await _databaseService.database;
     await db.update(
       'HOADONTHUOC',
