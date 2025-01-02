@@ -25,16 +25,40 @@ class _PatientListScreenState extends State<PatientListScreen> {
   Future<void> _loadPatients() async {
     try {
       setState(() => _isLoading = true);
+
+      print('Starting to load patients...'); // Debug log
       final patients = await _supabaseService.getPatients();
-      setState(() {
-        _patients = patients;
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Lỗi: ${e.toString()}')),
-      );
+      print('Successfully loaded ${patients.length} patients'); // Debug log
+
+      if (mounted) {
+        setState(() {
+          _patients = patients;
+          _isLoading = false;
+        });
+      }
+    } catch (e, stackTrace) {
+      print('Error in _loadPatients: $e'); // Debug log
+      print('Stack trace: $stackTrace'); // Debug log
+
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _patients = []; // Clear patients on error
+        });
+
+        // Show more detailed error message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+            action: SnackBarAction(
+              label: 'Thử lại',
+              onPressed: _loadPatients,
+            ),
+          ),
+        );
+      }
     }
   }
 
@@ -97,7 +121,7 @@ class _PatientListScreenState extends State<PatientListScreen> {
       itemBuilder: (context, index) {
         final patient = _filteredPatients[index];
         return Card(
-          margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          elevation: 2,
           child: ListTile(
             title: Text(patient.name),
             subtitle: Text(
@@ -158,7 +182,7 @@ class _PatientListScreenState extends State<PatientListScreen> {
 
     if (confirmed == true) {
       try {
-        await _supabaseService.deletePatient(patient.id);
+        await _supabaseService.deletePatient(patient.id ?? '');
         _loadPatients();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Đã xóa bệnh nhân')),

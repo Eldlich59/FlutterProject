@@ -159,7 +159,7 @@ class _ExaminationFormScreenState extends State<ExaminationFormScreen> {
     try {
       final examination = Examination(
         id: widget.examination?.id ?? '',
-        patientId: _selectedPatient!.id,
+        patientId: _selectedPatient!.id ?? '',
         patientName: _selectedPatient!.name,
         examinationDate: DateTime.now(),
         symptoms: _symptomsController.text,

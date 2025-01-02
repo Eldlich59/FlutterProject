@@ -1,15 +1,25 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:clinic_management/models/patient.dart';
 import 'package:clinic_management/models/examination.dart';
+import 'package:clinic_management/models/medicine.dart';
 
 class SupabaseService {
   final supabase = Supabase.instance.client;
 
   // Patient operations
   Future<List<Patient>> getPatients() async {
-    final response = await supabase.from('BENHNHAN').select();
+    final response = await supabase
+        .from('BENHNHAN')
+        .select('MaBN, TenBN, NgaySinh, GioiTinh, DiaChi, SDT')
+        .order('MaBN');
 
-    return (response as List).map((json) => Patient.fromJson(json)).toList();
+    if (response.isEmpty) {
+      return [];
+    }
+
+    return (response as List<dynamic>)
+        .map((json) => Patient.fromJson(json))
+        .toList();
   }
 
   Future<void> addPatient(Patient patient) async {
@@ -20,7 +30,7 @@ class SupabaseService {
     await supabase
         .from('BENHNHAN')
         .update(patient.toJson())
-        .eq('MaBN', patient.id);
+        .eq('MaBN', patient.id!);
   }
 
   Future<void> deletePatient(String id) async {
@@ -53,5 +63,29 @@ class SupabaseService {
 
   Future<void> deleteExamination(String id) async {
     await supabase.from('PHIEUKHAM').delete().eq('id', id);
+  }
+
+  // Medicine operations
+  Future<List<Medicine>> getMedicines() async {
+    final response = await supabase.from('THUOC').select();
+    return (response as List).map((json) => Medicine.fromJson(json)).toList();
+  }
+
+  Future<void> addMedicine(Medicine medicine) async {
+    final medicineJson = medicine.toJson();
+    // Xóa MaThuoc khỏi JSON khi thêm mới để Supabase tự tạo ID
+    medicineJson.remove('MaThuoc');
+    await supabase.from('THUOC').insert(medicineJson);
+  }
+
+  Future<void> deleteMedicine(int id) async {
+    await supabase.from('THUOC').delete().eq('MaThuoc', id);
+  }
+
+  Future<void> updateMedicine(Medicine medicine) async {
+    await supabase
+        .from('THUOC')
+        .update(medicine.toJson())
+        .eq('MaThuoc', medicine.id);
   }
 }

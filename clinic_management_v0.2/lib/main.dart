@@ -5,15 +5,25 @@ import 'screens/auth/login_screen.dart';
 import 'screens/home_screen.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  try {
+    WidgetsFlutterBinding.ensureInitialized();
 
-  await Supabase.initialize(
-    url: 'https://xrgjjueyvafbfizvshly.supabase.co',
-    anonKey:
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhyZ2pqdWV5dmFmYmZpenZzaGx5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzU2MTAzNzIsImV4cCI6MjA1MTE4NjM3Mn0.p1TrpL5TCqQTUHD6oiIALwsNx5iZ8ynCKeET9qXhtks',
-  );
+    print('Initializing Supabase...'); // Debug log
 
-  runApp(const MyApp());
+    await Supabase.initialize(
+      url: 'https://xrgjjueyvafbfizvshly.supabase.co',
+      anonKey:
+          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhyZ2pqdWV5dmFmYmZpenZzaGx5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzU2MTAzNzIsImV4cCI6MjA1MTE4NjM3Mn0.p1TrpL5TCqQTUHD6oiIALwsNx5iZ8ynCKeET9qXhtks',
+    );
+
+    print('Supabase initialized successfully'); // Debug log
+
+    runApp(const MyApp());
+  } catch (e, stackTrace) {
+    print('Error initializing app: $e'); // Debug log
+    print('Stack trace: $stackTrace'); // Debug log
+    rethrow;
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -26,6 +36,10 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
         useMaterial3: true,
+        cardTheme: const CardTheme(
+          elevation: 2,
+          margin: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        ),
       ),
       home: const AuthWrapper(),
     );

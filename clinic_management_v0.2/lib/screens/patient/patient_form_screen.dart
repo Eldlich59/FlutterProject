@@ -165,7 +165,7 @@ class _PatientFormScreenState extends State<PatientFormScreen> {
 
     try {
       final patient = Patient(
-        id: widget.patient?.id ?? '', // Empty for new patients
+        id: widget.patient?.id, // Pass null for new patients
         name: _nameController.text.trim(),
         dateOfBirth: _selectedDate!,
         gender: _selectedGender,

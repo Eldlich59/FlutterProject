@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'patient/patient_list_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'examination/examination_list_screen.dart';
+import 'medicine/medicine_list_screen.dart';
 import 'auth/login_screen.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -49,9 +50,11 @@ class HomeScreen extends StatelessWidget {
             context,
             'Thuốc',
             Icons.medication,
-            () {
-              // TODO: Navigate to medicine management screen
-            },
+            () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => const MedicineListScreen()),
+            ),
           ),
           _buildMenuCard(
             context,
