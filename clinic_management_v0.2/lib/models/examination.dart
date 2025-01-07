@@ -19,13 +19,14 @@ class Examination {
 
   factory Examination.fromJson(Map<String, dynamic> json) {
     return Examination(
-      id: json['MaPK'] ?? '',
-      patientId: json['MaBN'] ?? '',
-      examinationDate: DateTime.parse(json['NgayKham']),
+      id: json['MaPK']?.toString() ?? '',
+      patientId: json['MaBN']?.toString() ?? '',
+      examinationDate:
+          DateTime.parse(json['NgayKham'] ?? DateTime.now().toIso8601String()),
       symptoms: json['TrieuChung'] ?? '',
       diagnosis: json['ChanDoan'] ?? '',
       examinationFee: double.tryParse(json['TienKham'].toString()) ?? 0.0,
-      patientName: json['TenBN'],
+      patientName: json['TenBN']?.toString(),
     );
   }
 

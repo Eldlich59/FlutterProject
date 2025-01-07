@@ -3,6 +3,7 @@ import 'patient/patient_list_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'examination/examination_list_screen.dart';
 import 'medicine/medicine_list_screen.dart';
+import 'prescription/prescription_list_screen.dart';
 import 'auth/login_screen.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -54,6 +55,16 @@ class HomeScreen extends StatelessWidget {
               context,
               MaterialPageRoute(
                   builder: (context) => const MedicineListScreen()),
+            ),
+          ),
+          _buildMenuCard(
+            context,
+            'Toa thuốc',
+            Icons.medical_information,
+            () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => const PrescriptionListScreen()),
             ),
           ),
           _buildMenuCard(
