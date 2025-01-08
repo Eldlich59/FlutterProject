@@ -172,6 +172,7 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
               price: price,
               manufacturingDate: _selectedMfgDate!,
               expiryDate: _selectedExpDate!,
+              stock: widget.medicine!.stock,
             )
           : Medicine.create(
               name: _nameController.text.trim(),

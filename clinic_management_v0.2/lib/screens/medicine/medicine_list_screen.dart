@@ -27,16 +27,26 @@ class _MedicineListScreenState extends State<MedicineListScreen> {
   Future<void> _loadMedicines() async {
     try {
       setState(() => _isLoading = true);
+      print('Loading medicines...'); // Debug log
+
       final medicines = await _supabaseService.getMedicines();
+      print('Loaded ${medicines.length} medicines'); // Debug log
+
       setState(() {
         _medicines = medicines;
         _isLoading = false;
       });
-    } catch (e) {
+    } catch (e, stackTrace) {
+      print('Error loading medicines: $e'); // Debug log
+      print('Stack trace: $stackTrace'); // Debug log
+
       setState(() => _isLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi: ${e.toString()}')),
+          SnackBar(
+            content: Text('Lỗi: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
@@ -191,7 +201,7 @@ class _MedicineListScreenState extends State<MedicineListScreen> {
 
     if (confirmed == true) {
       try {
-        await _supabaseService.deleteMedicine(medicine.id);
+        await _supabaseService.deleteMedicine(medicine.id); // Remove int.parse
         _loadMedicines();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

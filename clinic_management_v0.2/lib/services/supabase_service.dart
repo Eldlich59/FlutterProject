@@ -5,11 +5,11 @@ import 'package:clinic_management/models/medicine.dart' as med;
 import 'package:clinic_management/models/prescription.dart';
 
 class SupabaseService {
-  final supabase = Supabase.instance.client;
+  final _supabase = Supabase.instance.client;
 
   // Patient operations
   Future<List<Patient>> getPatients() async {
-    final response = await supabase
+    final response = await _supabase
         .from('BENHNHAN')
         .select('MaBN, TenBN, NgaySinh, GioiTinh, DiaChi, SDT')
         .order('MaBN');
@@ -24,23 +24,23 @@ class SupabaseService {
   }
 
   Future<void> addPatient(Patient patient) async {
-    await supabase.from('BENHNHAN').insert(patient.toJson());
+    await _supabase.from('BENHNHAN').insert(patient.toJson());
   }
 
   Future<void> updatePatient(Patient patient) async {
-    await supabase
+    await _supabase
         .from('BENHNHAN')
         .update(patient.toJson())
         .eq('MaBN', patient.id!);
   }
 
   Future<void> deletePatient(String id) async {
-    await supabase.from('BENHNHAN').delete().eq('MaBN', id);
+    await _supabase.from('BENHNHAN').delete().eq('MaBN', id);
   }
 
   // Examination operations
   Future<List<Examination>> getExaminations({String? patientId}) async {
-    var query = supabase
+    var query = _supabase
         .from('PHIEUKHAM')
         .select('*, BENHNHAN!inner(TenBN)'); // Join with BENHNHAN table
 
@@ -60,18 +60,18 @@ class SupabaseService {
   }
 
   Future<void> addExamination(Examination examination) async {
-    await supabase.from('PHIEUKHAM').insert(examination.toJson());
+    await _supabase.from('PHIEUKHAM').insert(examination.toJson());
   }
 
   Future<void> updateExamination(Examination examination) async {
-    await supabase
+    await _supabase
         .from('PHIEUKHAM')
         .update(examination.toJson())
         .eq('MaPK', examination.id); // Changed from 'id' to 'MaPK'
   }
 
   Future<void> deleteExamination(String id) async {
-    await supabase
+    await _supabase
         .from('PHIEUKHAM')
         .delete()
         .eq('MaPK', id); // Changed from 'id' to 'MaPK'
@@ -79,25 +79,37 @@ class SupabaseService {
 
   // Medicine operations
   Future<List<med.Medicine>> getMedicines() async {
-    final response = await supabase.from('THUOC').select();
-    return (response as List)
-        .map((json) => med.Medicine.fromJson(json))
-        .toList();
+    try {
+      final response = await _supabase
+          .from('THUOC') // Changed from 'medicines' to 'THUOC'
+          .select()
+          .order('TenThuoc', ascending: true);
+
+      print('Fetched medicines response: $response'); // Debug log
+
+      return (response as List<dynamic>)
+          .map((json) => med.Medicine.fromJson(json))
+          .toList();
+    } catch (e) {
+      print('Error fetching medicines: $e'); // Debug log
+      rethrow;
+    }
   }
 
   Future<void> addMedicine(med.Medicine medicine) async {
     final medicineJson = medicine.toJson();
     // Xóa MaThuoc khỏi JSON khi thêm mới để Supabase tự tạo ID
     medicineJson.remove('MaThuoc');
-    await supabase.from('THUOC').insert(medicineJson);
+    await _supabase.from('THUOC').insert(medicineJson);
   }
 
-  Future<void> deleteMedicine(int id) async {
-    await supabase.from('THUOC').delete().eq('MaThuoc', id);
+  Future<void> deleteMedicine(String id) async {
+    // Change parameter type to String
+    await _supabase.from('THUOC').delete().eq('MaThuoc', id);
   }
 
   Future<void> updateMedicine(med.Medicine medicine) async {
-    await supabase
+    await _supabase
         .from('THUOC')
         .update(medicine.toJson())
         .eq('MaThuoc', medicine.id);
@@ -108,7 +120,7 @@ class SupabaseService {
     try {
       print('Fetching prescriptions from database...'); // Debug print
 
-      final response = await supabase
+      final response = await _supabase
           .from('TOATHUOC')
           .select()
           .order('Ngayketoa', ascending: false);
@@ -142,14 +154,14 @@ class SupabaseService {
       print(
           'Fetching details for prescription: $prescriptionId'); // Debug print
 
-      final response = await supabase.from('CHITIETTOATHUOC').select('''
+      final response = await _supabase.from('CHITIETTOATHUOC').select('''
             *,
             thuoc:THUOC (
               MaThuoc,
               TenThuoc,
-              DVT,
+              DonVi,
               DonGia,
-              SLTon
+              SoLuongTon
             )
           ''').eq('MaToa', prescriptionId);
 
@@ -193,7 +205,7 @@ class SupabaseService {
 
       print('Prescription data: $prescription'); // Debug print
 
-      final prescriptionResponse = await supabase
+      final prescriptionResponse = await _supabase
           .from('TOATHUOC')
           .insert(prescription)
           .select()
@@ -213,7 +225,7 @@ class SupabaseService {
         };
 
         print('Inserting detail: $detailData'); // Debug print
-        await supabase.from('CHITIETTOATHUOC').insert(detailData);
+        await _supabase.from('CHITIETTOATHUOC').insert(detailData);
       }
     } catch (e, stackTrace) {
       print('Error creating prescription: $e'); // Debug print
@@ -231,13 +243,16 @@ class SupabaseService {
       'Bsketoa': doctorName,
     };
 
-    await supabase
+    await _supabase
         .from('TOATHUOC')
         .update(prescription)
         .eq('MaToa', prescriptionId);
 
     // Delete existing details
-    await supabase.from('CHITIETTOATHUOC').delete().eq('MaToa', prescriptionId);
+    await _supabase
+        .from('CHITIETTOATHUOC')
+        .delete()
+        .eq('MaToa', prescriptionId);
 
     // Insert new details
     for (final detail in details) {
@@ -248,7 +263,23 @@ class SupabaseService {
         'Cdung': detail.usage,
       };
 
-      await supabase.from('CHITIETTOATHUOC').insert(detailData);
+      await _supabase.from('CHITIETTOATHUOC').insert(detailData);
+    }
+  }
+
+  Future<void> deletePrescription(String prescriptionId) async {
+    try {
+      // First delete all prescription details
+      await _supabase
+          .from('CHITIETTOATHUOC')
+          .delete()
+          .eq('MaToa', prescriptionId);
+
+      // Then delete the prescription
+      await _supabase.from('TOATHUOC').delete().eq('MaToa', prescriptionId);
+    } catch (e) {
+      print('Error deleting prescription: $e');
+      rethrow;
     }
   }
 }

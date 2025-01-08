@@ -87,6 +87,15 @@ class _PrescriptionFormScreenState extends State<PrescriptionFormScreen> {
         title: Text(widget.prescription == null
             ? 'Thêm toa thuốc mới'
             : 'Cập nhật toa thuốc'),
+        actions: [
+          if (widget.prescription !=
+              null) // Only show delete button when editing
+            IconButton(
+              icon: const Icon(Icons.delete),
+              onPressed: () => _showDeleteConfirmation(context),
+              color: Colors.red,
+            ),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -270,5 +279,49 @@ class _PrescriptionFormScreenState extends State<PrescriptionFormScreen> {
         SnackBar(content: Text('Lỗi khi lưu toa thuốc: $e')),
       );
     }
+  }
+
+  void _showDeleteConfirmation(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Text('Xác nhận xóa'),
+          content: const Text('Bạn có chắc chắn muốn xóa toa thuốc này?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Hủy'),
+            ),
+            TextButton(
+              onPressed: () async {
+                try {
+                  Navigator.pop(dialogContext); // Close dialog
+                  await _supabaseService
+                      .deletePrescription(widget.prescription!.id);
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                          content: Text('Đã xóa toa thuốc thành công')),
+                    );
+                    Navigator.pop(context); // Return to prescription list
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Lỗi khi xóa toa thuốc: $e')),
+                    );
+                  }
+                }
+              },
+              child: const Text(
+                'Xóa',
+                style: TextStyle(color: Colors.red),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 }

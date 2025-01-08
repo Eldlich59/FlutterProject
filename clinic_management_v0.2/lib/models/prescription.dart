@@ -54,13 +54,14 @@ class PrescriptionDetail {
   });
 
   factory PrescriptionDetail.fromJson(Map<String, dynamic> json) {
+    final medicineId = json['MaThuoc'];
     return PrescriptionDetail(
-      prescriptionId: json['MaToa']?.toString() ?? '',
-      medicineId: (json['MaThuoc'] ?? '').toString(), // Convert to string
+      prescriptionId: (json['MaToa']?.toString() ?? '').trim(),
+      medicineId: medicineId != null ? medicineId.toString().trim() : '',
       quantity: json['Sluong'] is String
           ? int.tryParse(json['Sluong']) ?? 0
           : json['Sluong'] ?? 0,
-      usage: json['Cdung']?.toString() ?? '',
+      usage: (json['Cdung']?.toString() ?? '').trim(),
       medicine: json['thuoc'] != null ? Medicine.fromJson(json['thuoc']) : null,
     );
   }

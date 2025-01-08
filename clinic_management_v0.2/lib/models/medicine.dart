@@ -1,10 +1,11 @@
 class Medicine {
-  final int id; // Thay đổi từ String sang int
+  final String id; // Change back to String type
   final String name;
   final String unit;
   final double price;
   final DateTime manufacturingDate;
   final DateTime expiryDate;
+  final int stock; // Add new field
 
   Medicine({
     required this.id,
@@ -13,16 +14,21 @@ class Medicine {
     required this.price,
     required this.manufacturingDate,
     required this.expiryDate,
+    required this.stock, // Add new field
   });
 
   factory Medicine.fromJson(Map<String, dynamic> json) {
     return Medicine(
-      id: json['MaThuoc'] ?? 0, // Đổi giá trị mặc định từ '' sang 0
-      name: json['TenThuoc'] ?? '',
-      unit: json['DonVi'] ?? '',
-      price: (json['DonGia'] as num).toDouble(),
-      manufacturingDate: DateTime.parse(json['NgaySX']),
-      expiryDate: DateTime.parse(json['HanSD']),
+      id: (json['MaThuoc']?.toString() ?? '')
+          .trim(), // Handle null and empty strings
+      name: (json['TenThuoc'] ?? '').trim(),
+      unit: (json['DonVi'] ?? '').trim(),
+      price: (json['DonGia'] as num?)?.toDouble() ?? 0.0,
+      manufacturingDate:
+          DateTime.parse(json['NgaySX'] ?? DateTime.now().toIso8601String()),
+      expiryDate:
+          DateTime.parse(json['HanSD'] ?? DateTime.now().toIso8601String()),
+      stock: json['SoLuongTon'] ?? 0,
     );
   }
 
@@ -35,12 +41,13 @@ class Medicine {
     required DateTime expiryDate,
   }) {
     return Medicine(
-      id: 0, // Đổi giá trị mặc định từ '' sang 0
+      id: '', // Empty string for new medicines
       name: name,
       unit: unit,
       price: price,
       manufacturingDate: manufacturingDate,
       expiryDate: expiryDate,
+      stock: 0, // Default stock for new medicines
     );
   }
 
@@ -52,6 +59,7 @@ class Medicine {
       'DonGia': price,
       'NgaySX': manufacturingDate.toIso8601String(),
       'HanSD': expiryDate.toIso8601String(),
+      'SoLuongTon': stock, // Update to match database column name
     };
   }
 
