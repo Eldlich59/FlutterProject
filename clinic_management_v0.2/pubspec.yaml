@@ -32,11 +32,10 @@ dependencies:
     sdk: flutter
   supabase_flutter: ^2.8.2
   intl: ^0.20.1
-  path_provider_android: ^2.2.15
-  # The following adds the Cupertino Icons font to your application.
-  # Use with the CupertinoIcons class for iOS style icons.
+  path_provider: 2.1.1
+  path_provider_android: 2.2.0
   cupertino_icons: ^1.0.8
-  uuid: ^4.0.0  # Add this line
+  uuid: ^4.0.0
 
 dev_dependencies:
   flutter_test:
