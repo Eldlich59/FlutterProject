@@ -76,10 +76,19 @@ class _PrescriptionListScreenState extends State<PrescriptionListScreen> {
                         subtitle: Text(
                           'Ngày kê: ${DateFormat('dd/MM/yyyy').format(prescription.prescriptionDate)}',
                         ),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.arrow_forward),
-                          onPressed: () =>
-                              _navigateToPrescriptionDetails(prescription),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.delete, color: Colors.red),
+                              onPressed: () => _confirmDelete(prescription),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.arrow_forward),
+                              onPressed: () =>
+                                  _navigateToPrescriptionDetails(prescription),
+                            ),
+                          ],
                         ),
                       ),
                     );
@@ -110,5 +119,45 @@ class _PrescriptionListScreenState extends State<PrescriptionListScreen> {
             PrescriptionDetailScreen(prescription: prescription),
       ),
     );
+  }
+
+  Future<void> _confirmDelete(Prescription prescription) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Xác nhận xóa'),
+        content: const Text('Bạn có chắc chắn muốn xóa toa thuốc này không?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Hủy'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Xóa'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        setState(() => _isLoading = true);
+        await _supabaseService.deletePrescription(prescription.id);
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Đã xóa toa thuốc thành công')),
+        );
+        await _loadPrescriptions();
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi khi xóa toa thuốc: $e')),
+        );
+      } finally {
+        if (mounted) setState(() => _isLoading = false);
+      }
+    }
   }
 }
