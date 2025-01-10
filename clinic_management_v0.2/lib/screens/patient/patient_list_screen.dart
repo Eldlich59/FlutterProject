@@ -125,18 +125,53 @@ class _PatientListScreenState extends State<PatientListScreen> {
           child: ListTile(
             title: Text(patient.name),
             subtitle: Text(
-              'SĐT: ${patient.phone}\nĐịa chỉ: ${patient.address}',
+              'SĐT: ${patient.phone}',
             ),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.edit),
-                  onPressed: () => _navigateToPatientForm(context, patient),
+            trailing: PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert),
+              onSelected: (value) {
+                switch (value) {
+                  case 'edit':
+                    _navigateToPatientForm(context, patient);
+                    break;
+                  case 'delete':
+                    _confirmDelete(patient);
+                    break;
+                  case 'details':
+                    _showPatientDetails(patient);
+                    break;
+                }
+              },
+              itemBuilder: (context) => [
+                const PopupMenuItem(
+                  value: 'details',
+                  child: Row(
+                    children: [
+                      Icon(Icons.info_outline),
+                      SizedBox(width: 8),
+                      Text('Chi tiết'),
+                    ],
+                  ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.delete),
-                  onPressed: () => _confirmDelete(patient),
+                const PopupMenuItem(
+                  value: 'edit',
+                  child: Row(
+                    children: [
+                      Icon(Icons.edit),
+                      SizedBox(width: 8),
+                      Text('Sửa'),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem(
+                  value: 'delete',
+                  child: Row(
+                    children: [
+                      Icon(Icons.delete),
+                      SizedBox(width: 8),
+                      Text('Xóa'),
+                    ],
+                  ),
                 ),
               ],
             ),

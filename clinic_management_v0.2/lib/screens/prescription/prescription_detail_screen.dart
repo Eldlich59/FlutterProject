@@ -18,13 +18,26 @@ class PrescriptionDetailScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Chi tiết toa thuốc'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.edit),
-            onPressed: () => _navigateToEdit(context),
-          ),
-          IconButton(
-            icon: const Icon(Icons.print),
-            onPressed: () => _printPrescription(context),
+          PopupMenuButton(
+            icon: const Icon(Icons.more_vert),
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                child: const ListTile(
+                  leading: Icon(Icons.edit),
+                  title: Text('Chỉnh sửa'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+                onTap: () => _navigateToEdit(context),
+              ),
+              PopupMenuItem(
+                child: const ListTile(
+                  leading: Icon(Icons.print),
+                  title: Text('In toa thuốc'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+                onTap: () => _printPrescription(context),
+              ),
+            ],
           ),
         ],
       ),

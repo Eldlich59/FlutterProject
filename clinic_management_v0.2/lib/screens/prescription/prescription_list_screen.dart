@@ -76,17 +76,26 @@ class _PrescriptionListScreenState extends State<PrescriptionListScreen> {
                         subtitle: Text(
                           'Ngày kê: ${DateFormat('dd/MM/yyyy').format(prescription.prescriptionDate)}',
                         ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.delete, color: Colors.red),
-                              onPressed: () => _confirmDelete(prescription),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.arrow_forward),
-                              onPressed: () =>
+                        trailing: PopupMenuButton(
+                          icon: const Icon(Icons.more_vert),
+                          itemBuilder: (context) => [
+                            PopupMenuItem(
+                              child: const ListTile(
+                                leading: Icon(Icons.visibility),
+                                title: Text('Chi tiết'),
+                                contentPadding: EdgeInsets.zero,
+                              ),
+                              onTap: () =>
                                   _navigateToPrescriptionDetails(prescription),
+                            ),
+                            PopupMenuItem(
+                              child: const ListTile(
+                                leading: Icon(Icons.delete, color: Colors.red),
+                                title: Text('Xóa'),
+                                contentPadding: EdgeInsets.zero,
+                              ),
+                              onTap: () =>
+                                  Future(() => _confirmDelete(prescription)),
                             ),
                           ],
                         ),

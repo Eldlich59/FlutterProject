@@ -3,6 +3,7 @@ import 'package:clinic_management/models/patient.dart';
 import 'package:clinic_management/models/examination.dart';
 import 'package:clinic_management/models/medicine.dart' as med;
 import 'package:clinic_management/models/prescription.dart';
+import 'package:clinic_management/models/bill.dart';
 
 class SupabaseService {
   final _supabase = Supabase.instance.client;
@@ -281,5 +282,81 @@ class SupabaseService {
       print('Error deleting prescription: $e');
       rethrow;
     }
+  }
+
+  // Bill operations
+  Future<List<Bill>> getBills() async {
+    final response = await _supabase
+        .from('HOADONTHUOC')
+        .select()
+        .order('Ngayban', ascending: false);
+
+    if (response.isEmpty) {
+      return [];
+    }
+
+    return (response as List).map((json) => Bill.fromJson(json)).toList();
+  }
+
+  Future<void> createBill({
+    required String prescriptionId,
+    required DateTime saleDate,
+    required double medicineCost,
+  }) async {
+    await _supabase.from('HOADONTHUOC').insert({
+      'MaToa': prescriptionId,
+      'Ngayban': saleDate.toIso8601String(),
+      'TienThuoc': medicineCost,
+    });
+  }
+
+  Future<void> updateBill({
+    required String id,
+    required String prescriptionId,
+    required DateTime saleDate,
+    required double medicineCost,
+  }) async {
+    await _supabase.from('HOADONTHUOC').update({
+      'MaToa': prescriptionId,
+      'Ngayban': saleDate.toIso8601String(),
+      'TienThuoc': medicineCost,
+    }).eq('MaHD', id);
+  }
+
+  Future<void> deleteBill(String id) async {
+    await _supabase.from('HOADONTHUOC').delete().eq('MaHD', id);
+  }
+
+  Future<List<Map<String, dynamic>>> getPrescriptionMedicines(
+      String prescriptionId) async {
+    final response = await _supabase.from('CHITIETTOATHUOC').select('''
+      *,
+      THUOC (
+        TenThuoc,
+        DonVi,
+        DonGia
+      )
+    ''').eq('MaToa', prescriptionId);
+
+    if (response.isEmpty) {
+      return [];
+    }
+
+    return List<Map<String, dynamic>>.from(response);
+  }
+
+  Future<List<Map<String, dynamic>>> getAvailablePrescriptions() async {
+    final response = await _supabase
+        .from('TOATHUOC')
+        .select('''
+          *,
+          BENHNHAN (TenBN),
+          HOADONTHUOC!left (MaHD)
+        ''')
+        .filter('HOADONTHUOC.MaHD', 'is',
+            null) // Only get prescriptions without bills
+        .order('Ngayketoa', ascending: false);
+
+    return List<Map<String, dynamic>>.from(response);
   }
 }

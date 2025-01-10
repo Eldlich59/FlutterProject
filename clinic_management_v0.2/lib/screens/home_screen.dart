@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'examination/examination_list_screen.dart';
 import 'medicine/medicine_list_screen.dart';
 import 'prescription/prescription_list_screen.dart';
+import 'bill/bill_list_screen.dart';
 import 'auth/login_screen.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -71,9 +72,10 @@ class HomeScreen extends StatelessWidget {
             context,
             'Hóa đơn',
             Icons.receipt_long,
-            () {
-              // TODO: Navigate to billing screen
-            },
+            () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const BillListScreen()),
+            ),
           ),
         ],
       ),

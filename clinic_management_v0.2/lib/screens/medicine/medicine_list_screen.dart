@@ -146,16 +146,45 @@ class _MedicineListScreenState extends State<MedicineListScreen> {
                 ),
               ],
             ),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.edit),
-                  onPressed: () => _navigateToMedicineForm(context, medicine),
+            trailing: PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert),
+              onSelected: (value) {
+                switch (value) {
+                  case 'edit':
+                    _navigateToMedicineForm(context, medicine);
+                    break;
+                  case 'delete':
+                    _confirmDelete(medicine);
+                    break;
+                  case 'details':
+                    _showMedicineDetails(medicine);
+                    break;
+                }
+              },
+              itemBuilder: (context) => [
+                const PopupMenuItem(
+                  value: 'details',
+                  child: ListTile(
+                    leading: Icon(Icons.info),
+                    title: Text('Chi tiết'),
+                    dense: true,
+                  ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.delete),
-                  onPressed: () => _confirmDelete(medicine),
+                const PopupMenuItem(
+                  value: 'edit',
+                  child: ListTile(
+                    leading: Icon(Icons.edit),
+                    title: Text('Sửa'),
+                    dense: true,
+                  ),
+                ),
+                const PopupMenuItem(
+                  value: 'delete',
+                  child: ListTile(
+                    leading: Icon(Icons.delete),
+                    title: Text('Xóa'),
+                    dense: true,
+                  ),
                 ),
               ],
             ),

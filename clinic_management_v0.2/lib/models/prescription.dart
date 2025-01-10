@@ -69,8 +69,7 @@ class PrescriptionDetail {
   Map<String, dynamic> toJson() {
     return {
       'MaToa': prescriptionId,
-      'MaThuoc': int.tryParse(medicineId) ??
-          medicineId, // Convert back to int if possible
+      'MaThuoc': int.tryParse(medicineId) ?? medicineId,
       'Sluong': quantity,
       'Cdung': usage,
     };
