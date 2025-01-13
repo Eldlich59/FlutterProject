@@ -15,24 +15,30 @@ class DoctorListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      title: Text(doctor.name),
-      subtitle: Text(doctor.specialty),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          IconButton(
-            icon: const Icon(Icons.edit),
-            onPressed: onEdit,
-          ),
-          IconButton(
-            icon: const Icon(Icons.delete),
-            onPressed: onDelete,
-          ),
-        ],
-      ),
-      leading: CircleAvatar(
-        child: Text(doctor.name[0]),
+    return Card(
+      child: ListTile(
+        title: Text(doctor.name),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Khoa: ${doctor.specialty}'),
+            if (doctor.phone != null && doctor.phone!.isNotEmpty)
+              Text('SĐT: ${doctor.phone}'),
+          ],
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.edit),
+              onPressed: onEdit,
+            ),
+            IconButton(
+              icon: const Icon(Icons.delete),
+              onPressed: onDelete,
+            ),
+          ],
+        ),
       ),
     );
   }

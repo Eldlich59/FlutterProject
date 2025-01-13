@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:uuid/uuid.dart'; // Add this import
 import 'package:clinic_management/models/doctor.dart';
 
 class DoctorService {
@@ -17,7 +18,11 @@ class DoctorService {
   }
 
   Future<void> addDoctor(Doctor doctor) async {
-    await _supabase.from('BACSI').insert(doctor.toJson());
+    final uuid = const Uuid().v4(); // Generate new UUID
+    final doctorData = doctor.toJson();
+    doctorData['MaBS'] = uuid; // Set the UUID
+
+    await _supabase.from('BACSI').insert(doctorData);
   }
 
   Future<void> updateDoctor(Doctor doctor) async {

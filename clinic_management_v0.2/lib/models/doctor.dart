@@ -4,7 +4,8 @@ class Doctor {
   final String specialty;
   final String? phone;
   final String? email;
-  final DateTime startDate;
+  final DateTime dateOfBirth;
+  final DateTime? startDate;
   final bool isActive;
 
   Doctor({
@@ -13,30 +14,37 @@ class Doctor {
     required this.specialty,
     this.phone,
     this.email,
-    required this.startDate,
+    required this.dateOfBirth,
+    this.startDate,
     required this.isActive,
   });
 
   factory Doctor.fromJson(Map<String, dynamic> json) {
     return Doctor(
-      id: json['MaBS'],
-      name: json['TenBS'],
-      specialty: json['ChuyenKhoa'],
+      id: json['MaBS']?.toString() ?? '', // Convert UUID to string
+      name: json['TenBS'] ?? '',
+      specialty: json['ChuyenKhoa'] ?? '',
       phone: json['SDT'],
       email: json['Email'],
-      startDate: DateTime.parse(json['NgayVaoLam']),
-      isActive: json['TrangThai'],
+      dateOfBirth: json['NgaySinh'] != null
+          ? DateTime.parse(json['NgaySinh'])
+          : DateTime.now(),
+      startDate: json['NgayVaoLam'] != null
+          ? DateTime.parse(json['NgayVaoLam'])
+          : null,
+      isActive: json['TrangThai'] ?? true,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'MaBS': id,
+      if (id.isNotEmpty) 'MaBS': id, // Only include ID if not empty
       'TenBS': name,
       'ChuyenKhoa': specialty,
       'SDT': phone,
       'Email': email,
-      'NgayVaoLam': startDate.toIso8601String(),
+      'NgaySinh': dateOfBirth.toIso8601String(),
+      'NgayVaoLam': startDate?.toIso8601String(),
       'TrangThai': isActive,
     };
   }

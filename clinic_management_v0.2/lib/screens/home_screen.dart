@@ -1,3 +1,4 @@
+import 'package:clinic_management/screens/doctor/doctor_list_screen.dart';
 import 'package:flutter/material.dart';
 import 'patient/patient_list_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -56,6 +57,15 @@ class HomeScreen extends StatelessWidget {
               context,
               MaterialPageRoute(
                   builder: (context) => const MedicineListScreen()),
+            ),
+          ),
+          _buildMenuCard(
+            context,
+            'Bác sĩ',
+            Icons.local_hospital,
+            () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const DoctorListScreen()),
             ),
           ),
           _buildMenuCard(

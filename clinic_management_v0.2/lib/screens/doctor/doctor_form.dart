@@ -13,21 +13,43 @@ class DoctorForm extends StatefulWidget {
 
 class _DoctorFormState extends State<DoctorForm> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  final _specialtyController = TextEditingController();
-  final _phoneController = TextEditingController();
-  final _emailController = TextEditingController();
+  late TextEditingController _nameController;
+  late TextEditingController _specialtyController;
+  late TextEditingController _phoneController;
+  late TextEditingController _emailController;
+  late DateTime _dateOfBirth;
+  DateTime? _startDate;
   bool _isActive = true;
 
   @override
   void initState() {
     super.initState();
-    if (widget.doctor != null) {
-      _nameController.text = widget.doctor!.name;
-      _specialtyController.text = widget.doctor!.specialty;
-      _phoneController.text = widget.doctor!.phone ?? '';
-      _emailController.text = widget.doctor!.email ?? '';
-      _isActive = widget.doctor!.isActive;
+    final doctor = widget.doctor;
+    _nameController = TextEditingController(text: doctor?.name ?? '');
+    _specialtyController = TextEditingController(text: doctor?.specialty ?? '');
+    _phoneController = TextEditingController(text: doctor?.phone ?? '');
+    _emailController = TextEditingController(text: doctor?.email ?? '');
+    _dateOfBirth = doctor?.dateOfBirth ?? DateTime.now();
+    _startDate = doctor?.startDate;
+    _isActive = doctor?.isActive ?? true;
+  }
+
+  Future<void> _selectDate(BuildContext context, bool isBirthDate) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: isBirthDate ? _dateOfBirth : (_startDate ?? DateTime.now()),
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+    );
+
+    if (picked != null) {
+      setState(() {
+        if (isBirthDate) {
+          _dateOfBirth = picked;
+        } else {
+          _startDate = picked;
+        }
+      });
     }
   }
 
@@ -91,6 +113,17 @@ class _DoctorFormState extends State<DoctorForm> {
               keyboardType: TextInputType.emailAddress,
             ),
             const SizedBox(height: 16),
+            ListTile(
+              leading: const Icon(Icons.calendar_today),
+              title: Text('Ngày sinh: ${_formatDate(_dateOfBirth)}'),
+              onTap: () => _selectDate(context, true),
+            ),
+            ListTile(
+              leading: const Icon(Icons.date_range),
+              title: Text('Ngày bắt đầu: ${_formatDate(_startDate)}'),
+              onTap: () => _selectDate(context, false),
+            ),
+            const SizedBox(height: 16),
             SwitchListTile(
               title: const Text('Trạng thái hoạt động'),
               value: _isActive,
@@ -107,6 +140,11 @@ class _DoctorFormState extends State<DoctorForm> {
     );
   }
 
+  String _formatDate(DateTime? date) {
+    if (date == null) return 'Chưa chọn';
+    return '${date.day}/${date.month}/${date.year}';
+  }
+
   Future<void> _submitForm() async {
     if (_formKey.currentState!.validate()) {
       final doctor = Doctor(
@@ -115,7 +153,8 @@ class _DoctorFormState extends State<DoctorForm> {
         specialty: _specialtyController.text,
         phone: _phoneController.text,
         email: _emailController.text,
-        startDate: widget.doctor?.startDate ?? DateTime.now(),
+        dateOfBirth: _dateOfBirth,
+        startDate: _startDate,
         isActive: _isActive,
       );
 

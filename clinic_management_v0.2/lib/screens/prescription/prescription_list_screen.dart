@@ -103,10 +103,9 @@ class _PrescriptionListScreenState extends State<PrescriptionListScreen> {
                     );
                   },
                 ),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: FloatingActionButton(
         onPressed: _navigateToAddPrescription,
-        icon: const Icon(Icons.add),
-        label: const Text('Tạo toa thuốc'),
+        child: const Icon(Icons.add),
       ),
     );
   }
