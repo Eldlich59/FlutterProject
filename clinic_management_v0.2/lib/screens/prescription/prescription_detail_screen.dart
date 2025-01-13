@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:clinic_management/models/prescription.dart';
+import 'package:clinic_management/models/doctor.dart';
 import 'package:clinic_management/services/supabase_service.dart';
 import 'package:clinic_management/screens/prescription/prescription_form_screen.dart';
 
@@ -74,24 +75,41 @@ class PrescriptionDetailScreen extends StatelessWidget {
   }
 
   Widget _buildInfoSection() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Bác sĩ kê toa: ${prescription.doctorName}',
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+    return FutureBuilder<Doctor>(
+      future:
+          SupabaseService().doctorService.getDoctorById(prescription.doctorId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Card(
+            child: Padding(
+              padding: EdgeInsets.all(16.0),
+              child: Center(child: CircularProgressIndicator()),
             ),
-            const SizedBox(height: 8),
-            Text(
-              'Ngày kê toa: ${DateFormat('dd/MM/yyyy HH:mm').format(prescription.prescriptionDate)}',
-              style: const TextStyle(fontSize: 16),
+          );
+        }
+
+        final doctor = snapshot.data;
+        return Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Bác sĩ kê toa: ${doctor?.name ?? 'Không xác định'}',
+                  style: const TextStyle(
+                      fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Ngày kê toa: ${DateFormat('dd/MM/yyyy HH:mm').format(prescription.prescriptionDate)}',
+                  style: const TextStyle(fontSize: 16),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 

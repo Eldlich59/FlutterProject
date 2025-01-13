@@ -72,7 +72,7 @@ class _PrescriptionListScreenState extends State<PrescriptionListScreen> {
                     return Card(
                       margin: const EdgeInsets.all(8.0),
                       child: ListTile(
-                        title: Text('Bác sĩ: ${prescription.doctorName}'),
+                        title: Text('Bác sĩ: ${prescription.doctorId}'),
                         subtitle: Text(
                           'Ngày kê: ${DateFormat('dd/MM/yyyy').format(prescription.prescriptionDate)}',
                         ),

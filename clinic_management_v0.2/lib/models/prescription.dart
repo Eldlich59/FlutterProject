@@ -2,7 +2,7 @@ import 'package:clinic_management/models/medicine.dart';
 
 class Prescription {
   final String id;
-  final String doctorName;
+  final String doctorId;
   final DateTime prescriptionDate;
   final String? patientId; // Make nullable
   final String? examId; // Make nullable
@@ -10,7 +10,7 @@ class Prescription {
 
   Prescription({
     required this.id,
-    required this.doctorName,
+    required this.doctorId,
     required this.prescriptionDate,
     this.patientId, // Update constructor
     this.examId, // Update constructor
@@ -20,7 +20,7 @@ class Prescription {
   factory Prescription.fromJson(Map<String, dynamic> json) {
     return Prescription(
       id: json['MaToa'].toString(), // Convert to String if needed
-      doctorName: json['Bsketoa'] ?? '', // Provide default value
+      doctorId: json['MaBS'] ?? '', // Provide default value
       prescriptionDate: DateTime.parse(json['Ngayketoa']),
       patientId: json['MaBN']?.toString(), // Make nullable and convert
       examId: json['MaPK']?.toString(), // Make nullable and convert
@@ -30,7 +30,7 @@ class Prescription {
   Map<String, dynamic> toJson() {
     return {
       'MaToa': id,
-      'Bsketoa': doctorName,
+      'Bsketoa': doctorId,
       'Ngayketoa': prescriptionDate.toIso8601String(),
       'MaBN': patientId,
       'MaPK': examId,

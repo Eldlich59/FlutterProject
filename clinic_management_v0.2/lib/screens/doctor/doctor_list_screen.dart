@@ -24,7 +24,7 @@ class _DoctorListScreenState extends State<DoctorListScreen> {
   Future<void> _loadDoctors() async {
     try {
       setState(() => isLoading = true);
-      doctors = await _supabaseService.getDoctors();
+      doctors = await _supabaseService.getDoctor();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error loading doctors: $e')),

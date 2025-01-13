@@ -5,6 +5,7 @@ import 'package:clinic_management/services/supabase_service.dart';
 import 'package:clinic_management/widgets/add_medicine_dialog.dart';
 import 'package:clinic_management/models/patient.dart';
 import 'package:clinic_management/models/examination.dart';
+import 'package:clinic_management/models/doctor.dart';
 
 class PrescriptionFormScreen extends StatefulWidget {
   final Prescription? prescription;
@@ -17,18 +18,20 @@ class PrescriptionFormScreen extends StatefulWidget {
 
 class _PrescriptionFormScreenState extends State<PrescriptionFormScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _doctorNameController = TextEditingController();
   final List<PrescriptionDetail> _details = [];
   final _supabaseService1 = SupabaseService().prescriptionService;
   final _supabaseService2 = SupabaseService().medicineService;
   final _supabaseService3 = SupabaseService().patientService;
   final _supabaseService4 = SupabaseService().examinationService;
+  final _supabaseService5 = SupabaseService().doctorService;
 
   List<Medicine> _medicines = [];
   List<Patient> _patients = [];
   List<Examination> _examinations = [];
+  List<Doctor> _doctors = [];
   Patient? _selectedPatient;
   Examination? _selectedExamination;
+  Doctor? _selectedDoctor;
   bool _isLoading = true;
 
   @override
@@ -36,7 +39,6 @@ class _PrescriptionFormScreenState extends State<PrescriptionFormScreen> {
     super.initState();
     _loadData();
     if (widget.prescription != null) {
-      _doctorNameController.text = widget.prescription!.doctorName;
       _loadPrescriptionDetails();
     }
   }
@@ -45,10 +47,18 @@ class _PrescriptionFormScreenState extends State<PrescriptionFormScreen> {
     try {
       final medicines = await _supabaseService2.getMedicines();
       final patients = await _supabaseService3.getPatients();
+      final doctors = await _supabaseService5.getDoctor();
 
       setState(() {
         _medicines = medicines;
         _patients = patients;
+        _doctors = doctors;
+        if (widget.prescription != null) {
+          _selectedDoctor = doctors.firstWhere(
+            (d) => d.id == widget.prescription!.doctorId,
+            orElse: () => doctors.first,
+          );
+        }
         _isLoading = false;
       });
     } catch (e) {
@@ -165,15 +175,25 @@ class _PrescriptionFormScreenState extends State<PrescriptionFormScreen> {
                         ),
                       const SizedBox(height: 16),
                     ],
-                    TextFormField(
-                      controller: _doctorNameController,
+                    DropdownButtonFormField<Doctor>(
+                      value: _selectedDoctor,
                       decoration: const InputDecoration(
-                        labelText: 'Tên bác sĩ',
+                        labelText: 'Chọn bác sĩ',
                         border: OutlineInputBorder(),
                       ),
+                      items: _doctors.map((doctor) {
+                        return DropdownMenuItem(
+                          value: doctor,
+                          child: Text(doctor
+                              .name), // Changed from '${doctor.id} - ${doctor.name}' to just doctor.name
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setState(() => _selectedDoctor = value);
+                      },
                       validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Vui lòng nhập tên bác sĩ';
+                        if (value == null) {
+                          return 'Vui lòng chọn bác sĩ';
                         }
                         return null;
                       },
@@ -265,7 +285,7 @@ class _PrescriptionFormScreenState extends State<PrescriptionFormScreen> {
     try {
       if (widget.prescription == null) {
         await _supabaseService1.createPrescription(
-          _doctorNameController.text,
+          _selectedDoctor!.id,
           _details,
           patientId: _selectedPatient!.id!,
           examId: _selectedExamination!.id,
@@ -273,7 +293,7 @@ class _PrescriptionFormScreenState extends State<PrescriptionFormScreen> {
       } else {
         await _supabaseService1.updatePrescription(
           widget.prescription!.id,
-          _doctorNameController.text,
+          _selectedDoctor!.id,
           _details,
         );
       }

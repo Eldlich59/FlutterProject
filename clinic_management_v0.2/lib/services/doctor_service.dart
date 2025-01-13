@@ -7,7 +7,7 @@ class DoctorService {
 
   DoctorService(this._supabase);
 
-  Future<List<Doctor>> getDoctors() async {
+  Future<List<Doctor>> getDoctor() async {
     final response = await _supabase.from('BACSI').select();
 
     if (response.isEmpty) {
@@ -15,6 +15,13 @@ class DoctorService {
     }
 
     return (response as List).map((json) => Doctor.fromJson(json)).toList();
+  }
+
+  Future<Doctor> getDoctorById(String id) async {
+    final response =
+        await _supabase.from('doctors').select().eq('id', id).single();
+
+    return Doctor.fromJson(response);
   }
 
   Future<void> addDoctor(Doctor doctor) async {
