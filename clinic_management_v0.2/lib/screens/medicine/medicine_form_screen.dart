@@ -16,7 +16,7 @@ class MedicineFormScreen extends StatefulWidget {
 
 class _MedicineFormScreenState extends State<MedicineFormScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _supabaseService = SupabaseService();
+  final _supabaseService = SupabaseService().medicineService;
   final _currencyFormat = NumberFormat.currency(locale: 'vi_VN', symbol: '');
 
   late final TextEditingController _nameController;

@@ -15,7 +15,7 @@ class ExaminationListScreen extends StatefulWidget {
 }
 
 class _ExaminationListScreenState extends State<ExaminationListScreen> {
-  final SupabaseService _supabaseService = SupabaseService();
+  final _supabaseService = SupabaseService().examinationService;
   List<Examination> _examinations = [];
   bool _isLoading = true;
   final _dateFormat = DateFormat('dd/MM/yyyy HH:mm');

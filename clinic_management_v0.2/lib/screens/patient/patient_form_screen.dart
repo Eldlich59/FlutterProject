@@ -14,7 +14,7 @@ class PatientFormScreen extends StatefulWidget {
 
 class _PatientFormScreenState extends State<PatientFormScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _supabaseService = SupabaseService();
+  final _supabaseService = SupabaseService().patientService;
 
   final _nameController = TextEditingController();
   final _dobController = TextEditingController();

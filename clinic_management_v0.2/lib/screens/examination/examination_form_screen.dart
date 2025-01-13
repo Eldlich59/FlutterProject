@@ -14,7 +14,8 @@ class ExaminationFormScreen extends StatefulWidget {
 
 class _ExaminationFormScreenState extends State<ExaminationFormScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _supabaseService = SupabaseService();
+  final _supabaseService1 = SupabaseService().patientService;
+  final _supabaseService2 = SupabaseService().examinationService;
 
   late TextEditingController _symptomsController;
   late TextEditingController _diagnosisController;
@@ -39,7 +40,7 @@ class _ExaminationFormScreenState extends State<ExaminationFormScreen> {
 
   Future<void> _loadPatients() async {
     try {
-      final patients = await _supabaseService.getPatients();
+      final patients = await _supabaseService1.getPatients();
       setState(() => _patients = patients);
       if (widget.examination != null) {
         _selectedPatient = _patients.firstWhere(
@@ -168,9 +169,9 @@ class _ExaminationFormScreenState extends State<ExaminationFormScreen> {
       );
 
       if (widget.examination == null) {
-        await _supabaseService.addExamination(examination);
+        await _supabaseService2.addExamination(examination);
       } else {
-        await _supabaseService.updateExamination(examination);
+        await _supabaseService2.updateExamination(examination);
       }
 
       if (mounted) {

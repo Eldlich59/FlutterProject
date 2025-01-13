@@ -29,7 +29,7 @@ class _BillDetailsSheetState extends State<BillDetailsSheet> {
 
   Future<void> _loadPrescriptionDetails() async {
     try {
-      final supabaseService = SupabaseService();
+      final supabaseService = SupabaseService().prescriptionService;
 
       // Load prescription details
       final prescription = await supabaseService

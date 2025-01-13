@@ -14,7 +14,8 @@ class BillFormScreen extends StatefulWidget {
 
 class _BillFormScreenState extends State<BillFormScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _supabaseService = SupabaseService();
+  final _supabaseService1 = SupabaseService().billService;
+  final _supabaseService2 = SupabaseService().prescriptionService;
   List<Map<String, dynamic>> _availablePrescriptions = [];
   Map<String, dynamic>? _selectedPrescription;
   late DateTime _selectedDate;
@@ -32,7 +33,7 @@ class _BillFormScreenState extends State<BillFormScreen> {
   Future<void> _loadPrescriptions() async {
     setState(() => _isLoading = true);
     try {
-      final prescriptions = await _supabaseService.getAvailablePrescriptions();
+      final prescriptions = await _supabaseService2.getAvailablePrescriptions();
       setState(() {
         _availablePrescriptions = prescriptions;
         _isLoading = false;
@@ -48,7 +49,7 @@ class _BillFormScreenState extends State<BillFormScreen> {
   Future<void> _calculateMedicineCost(String prescriptionId) async {
     try {
       final medicines =
-          await _supabaseService.getPrescriptionMedicines(prescriptionId);
+          await _supabaseService2.getPrescriptionMedicines(prescriptionId);
 
       double total = 0;
       for (var medicine in medicines) {
@@ -182,7 +183,7 @@ class _BillFormScreenState extends State<BillFormScreen> {
 
     setState(() => _isLoading = true);
     try {
-      await _supabaseService.createBill(
+      await _supabaseService1.createBill(
         prescriptionId: _selectedPrescription!['MaToa'],
         saleDate: _selectedDate,
         medicineCost: _medicineCost,

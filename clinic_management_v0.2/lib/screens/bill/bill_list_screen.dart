@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:clinic_management/models/bill.dart';
 import 'package:clinic_management/services/supabase_service.dart';
+import 'package:clinic_management/services/bill_service.dart';
 import 'package:clinic_management/screens/bill/bill_form_screen.dart';
 import 'package:clinic_management/screens/bill/bill_details_sheet.dart';
 
@@ -13,7 +14,7 @@ class BillListScreen extends StatefulWidget {
 }
 
 class _BillListScreenState extends State<BillListScreen> {
-  final SupabaseService _supabaseService = SupabaseService();
+  final BillService _supabaseService = SupabaseService().billService;
   List<Bill> _bills = [];
   bool _isLoading = true;
 
@@ -119,8 +120,8 @@ class _BillListScreenState extends State<BillListScreen> {
             ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _navigateToCreateBill(context),
-        child: const Icon(Icons.add),
         tooltip: 'Tạo hóa đơn mới',
+        child: const Icon(Icons.add),
       ),
     );
   }

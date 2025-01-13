@@ -19,7 +19,11 @@ class _PrescriptionFormScreenState extends State<PrescriptionFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final _doctorNameController = TextEditingController();
   final List<PrescriptionDetail> _details = [];
-  final SupabaseService _supabaseService = SupabaseService();
+  final _supabaseService1 = SupabaseService().prescriptionService;
+  final _supabaseService2 = SupabaseService().medicineService;
+  final _supabaseService3 = SupabaseService().patientService;
+  final _supabaseService4 = SupabaseService().examinationService;
+
   List<Medicine> _medicines = [];
   List<Patient> _patients = [];
   List<Examination> _examinations = [];
@@ -39,8 +43,8 @@ class _PrescriptionFormScreenState extends State<PrescriptionFormScreen> {
 
   Future<void> _loadData() async {
     try {
-      final medicines = await _supabaseService.getMedicines();
-      final patients = await _supabaseService.getPatients();
+      final medicines = await _supabaseService2.getMedicines();
+      final patients = await _supabaseService3.getPatients();
 
       setState(() {
         _medicines = medicines;
@@ -58,7 +62,7 @@ class _PrescriptionFormScreenState extends State<PrescriptionFormScreen> {
   Future<void> _loadExaminations(String patientId) async {
     try {
       final examinations =
-          await _supabaseService.getExaminations(patientId: patientId);
+          await _supabaseService4.getExaminations(patientId: patientId);
       setState(() => _examinations = examinations);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -69,7 +73,7 @@ class _PrescriptionFormScreenState extends State<PrescriptionFormScreen> {
 
   Future<void> _loadPrescriptionDetails() async {
     try {
-      final details = await _supabaseService.getPrescriptionDetails(
+      final details = await _supabaseService1.getPrescriptionDetails(
         widget.prescription!.id,
       );
       setState(() => _details.addAll(details));
@@ -260,14 +264,14 @@ class _PrescriptionFormScreenState extends State<PrescriptionFormScreen> {
 
     try {
       if (widget.prescription == null) {
-        await _supabaseService.createPrescription(
+        await _supabaseService1.createPrescription(
           _doctorNameController.text,
           _details,
           patientId: _selectedPatient!.id!,
           examId: _selectedExamination!.id,
         );
       } else {
-        await _supabaseService.updatePrescription(
+        await _supabaseService1.updatePrescription(
           widget.prescription!.id,
           _doctorNameController.text,
           _details,
@@ -297,7 +301,7 @@ class _PrescriptionFormScreenState extends State<PrescriptionFormScreen> {
               onPressed: () async {
                 try {
                   Navigator.pop(dialogContext); // Close dialog
-                  await _supabaseService
+                  await _supabaseService1
                       .deletePrescription(widget.prescription!.id);
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(

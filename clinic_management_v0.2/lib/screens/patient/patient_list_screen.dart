@@ -11,7 +11,7 @@ class PatientListScreen extends StatefulWidget {
 }
 
 class _PatientListScreenState extends State<PatientListScreen> {
-  final SupabaseService _supabaseService = SupabaseService();
+  final patientService = SupabaseService().patientService;
   List<Patient> _patients = [];
   bool _isLoading = true;
   String _searchQuery = '';
@@ -27,7 +27,7 @@ class _PatientListScreenState extends State<PatientListScreen> {
       setState(() => _isLoading = true);
 
       print('Starting to load patients...'); // Debug log
-      final patients = await _supabaseService.getPatients();
+      final patients = await patientService.getPatients();
       print('Successfully loaded ${patients.length} patients'); // Debug log
 
       if (mounted) {
@@ -217,7 +217,7 @@ class _PatientListScreenState extends State<PatientListScreen> {
 
     if (confirmed == true) {
       try {
-        await _supabaseService.deletePatient(patient.id ?? '');
+        await patientService.deletePatient(patient.id ?? '');
         _loadPatients();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Đã xóa bệnh nhân')),

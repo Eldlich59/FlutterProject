@@ -13,7 +13,7 @@ class PrescriptionListScreen extends StatefulWidget {
 }
 
 class _PrescriptionListScreenState extends State<PrescriptionListScreen> {
-  final SupabaseService _supabaseService = SupabaseService();
+  final _supabaseService = SupabaseService().prescriptionService;
   List<Prescription> _prescriptions = [];
   bool _isLoading = true;
 

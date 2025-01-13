@@ -12,7 +12,7 @@ class MedicineListScreen extends StatefulWidget {
 }
 
 class _MedicineListScreenState extends State<MedicineListScreen> {
-  final SupabaseService _supabaseService = SupabaseService();
+  final _supabaseService = SupabaseService().medicineService;
   final _currencyFormat = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ');
   List<Medicine> _medicines = [];
   bool _isLoading = true;
