@@ -79,7 +79,7 @@ class PrescriptionService {
   }
 
   Future<void> createPrescription(
-    String doctorName,
+    String doctorId,
     List<PrescriptionDetail> details, {
     required String patientId,
     required String examId,
@@ -87,7 +87,7 @@ class PrescriptionService {
     try {
       print('Creating prescription...'); // Debug print
       final prescription = {
-        'Bsketoa': doctorName,
+        'MaBS': doctorId,
         'Ngayketoa': DateTime.now().toIso8601String(),
         'MaBN': patientId,
         'MaPK': examId,

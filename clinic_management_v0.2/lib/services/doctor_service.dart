@@ -19,7 +19,7 @@ class DoctorService {
 
   Future<Doctor> getDoctorById(String id) async {
     final response =
-        await _supabase.from('doctors').select().eq('id', id).single();
+        await _supabase.from('BACSI').select().eq('MaBS', id).single();
 
     return Doctor.fromJson(response);
   }
