@@ -79,12 +79,13 @@ class PrescriptionService {
     List<PrescriptionDetail> details, {
     required String patientId,
     required String examId,
+    required DateTime prescriptionDate,
   }) async {
     try {
       print('Creating prescription...'); // Debug print
       final prescription = {
         'MaBS': doctorId,
-        'Ngayketoa': DateTime.now().toIso8601String(),
+        'Ngayketoa': prescriptionDate.toIso8601String(), // Format date properly
         'MaBN': patientId,
         'MaPK': examId,
       };
@@ -123,11 +124,14 @@ class PrescriptionService {
   Future<void> updatePrescription(
     String prescriptionId,
     String doctorId,
-    List<PrescriptionDetail> details,
-  ) async {
+    List<PrescriptionDetail> details, {
+    DateTime? prescriptionDate,
+  }) async {
     try {
       final prescription = {
         'MaBS': doctorId,
+        if (prescriptionDate != null)
+          'Ngayketoa': prescriptionDate.toIso8601String(), // Add date update
       };
 
       await _supabase

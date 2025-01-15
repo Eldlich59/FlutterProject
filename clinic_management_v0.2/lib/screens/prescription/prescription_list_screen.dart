@@ -15,12 +15,141 @@ class PrescriptionListScreen extends StatefulWidget {
 class _PrescriptionListScreenState extends State<PrescriptionListScreen> {
   final _supabaseService = SupabaseService().prescriptionService;
   List<Prescription> _prescriptions = [];
+  List<Prescription> _filteredPrescriptions = [];
   bool _isLoading = true;
+
+  // Add search controllers
+  final TextEditingController _patientSearchController =
+      TextEditingController();
+  final TextEditingController _doctorSearchController = TextEditingController();
+  DateTime? _selectedDate;
 
   @override
   void initState() {
     super.initState();
     _loadPrescriptions();
+  }
+
+  @override
+  void dispose() {
+    _patientSearchController.dispose();
+    _doctorSearchController.dispose();
+    super.dispose();
+  }
+
+  Widget _buildSearchBar() {
+    return Card(
+      margin: const EdgeInsets.all(8.0),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: _patientSearchController,
+              textAlign: TextAlign.center, // Center align the text
+              decoration: InputDecoration(
+                hintText: 'Tìm theo tên bệnh nhân/bác sĩ',
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 15.0),
+                hintStyle: TextStyle(
+                    color: Colors.grey.withOpacity(0.6),
+                    fontSize: 20 // More faded hint text
+                    ),
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: _patientSearchController.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          _patientSearchController.clear();
+                          _doctorSearchController.clear();
+                          _filterPrescriptions();
+                        },
+                      )
+                    : null,
+                border: InputBorder.none,
+              ),
+              onChanged: (value) {
+                _doctorSearchController.text = value;
+                _filterPrescriptions();
+              },
+            ),
+          ),
+          Container(
+            height: 56,
+            width: 1,
+            color: Colors.grey.withOpacity(0.3),
+          ),
+          InkWell(
+            onTap: () => _selectDate(context),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.calendar_today,
+                    size: 20,
+                    color: _selectedDate != null
+                        ? Theme.of(context).primaryColor
+                        : Colors.grey,
+                  ),
+                  if (_selectedDate != null) ...[
+                    const SizedBox(width: 8),
+                    Text(
+                      DateFormat('dd/MM').format(_selectedDate!),
+                      style: TextStyle(
+                        color: Theme.of(context).primaryColor,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.clear, size: 18),
+                      onPressed: () {
+                        setState(() {
+                          _selectedDate = null;
+                          _filterPrescriptions();
+                        });
+                      },
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _filterPrescriptions() {
+    setState(() {
+      _filteredPrescriptions = _prescriptions.where((prescription) {
+        final searchText = _patientSearchController.text.toLowerCase();
+        final patientMatch =
+            prescription.patientName?.toLowerCase().contains(searchText) ??
+                false;
+        final doctorMatch =
+            prescription.doctorName?.toLowerCase().contains(searchText) ??
+                false;
+        final dateMatch = _selectedDate == null ||
+            DateFormat('yyyy-MM-dd').format(prescription.prescriptionDate) ==
+                DateFormat('yyyy-MM-dd').format(_selectedDate!);
+
+        return (patientMatch || doctorMatch) && dateMatch;
+      }).toList();
+    });
+  }
+
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate ?? DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+    if (picked != null && picked != _selectedDate) {
+      setState(() {
+        _selectedDate = picked;
+        _filterPrescriptions();
+      });
+    }
   }
 
   Future<void> _loadPrescriptions() async {
@@ -37,6 +166,7 @@ class _PrescriptionListScreenState extends State<PrescriptionListScreen> {
 
       setState(() {
         _prescriptions = prescriptions;
+        _filteredPrescriptions = prescriptions;
         _isLoading = false;
       });
     } catch (e, stackTrace) {
@@ -61,63 +191,73 @@ class _PrescriptionListScreenState extends State<PrescriptionListScreen> {
       appBar: AppBar(
         title: const Text('Danh sách toa thuốc'),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _prescriptions.isEmpty
-              ? const Center(child: Text('Chưa có toa thuốc nào'))
-              : ListView.builder(
-                  itemCount: _prescriptions.length,
-                  itemBuilder: (context, index) {
-                    final prescription = _prescriptions[index];
-                    return Card(
-                      margin: const EdgeInsets.all(8.0),
-                      child: ListTile(
-                        title: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Bệnh nhân: ${prescription.patientName}'),
-                            Text('Bác sĩ: ${prescription.doctorName}'),
-                          ],
-                        ),
-                        subtitle: Text(
-                          'Ngày kê: ${DateFormat('dd/MM/yyyy').format(prescription.prescriptionDate)}',
-                        ),
-                        trailing: PopupMenuButton(
-                          icon: const Icon(Icons.more_vert),
-                          itemBuilder: (context) => [
-                            PopupMenuItem(
-                              child: const ListTile(
-                                leading: Icon(Icons.visibility),
-                                title: Text('Chi tiết'),
-                                contentPadding: EdgeInsets.zero,
+      body: Column(
+        children: [
+          _buildSearchBar(),
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _filteredPrescriptions.isEmpty
+                    ? const Center(child: Text('Không tìm thấy toa thuốc nào'))
+                    : ListView.builder(
+                        itemCount: _filteredPrescriptions.length,
+                        itemBuilder: (context, index) {
+                          final prescription = _filteredPrescriptions[index];
+                          return Card(
+                            margin: const EdgeInsets.all(8.0),
+                            child: ListTile(
+                              title: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                      'Bệnh nhân: ${prescription.patientName}'),
+                                  Text('Bác sĩ: ${prescription.doctorName}'),
+                                ],
                               ),
-                              onTap: () =>
-                                  _navigateToPrescriptionDetails(prescription),
-                            ),
-                            PopupMenuItem(
-                              child: const ListTile(
-                                leading: Icon(Icons.edit),
-                                title: Text('Sửa'),
-                                contentPadding: EdgeInsets.zero,
+                              subtitle: Text(
+                                'Ngày kê: ${DateFormat('dd/MM/yyyy').format(prescription.prescriptionDate)}',
                               ),
-                              onTap: () => Future(() =>
-                                  _navigateToEditPrescription(prescription)),
-                            ),
-                            PopupMenuItem(
-                              child: const ListTile(
-                                leading: Icon(Icons.delete, color: Colors.red),
-                                title: Text('Xóa'),
-                                contentPadding: EdgeInsets.zero,
+                              trailing: PopupMenuButton(
+                                icon: const Icon(Icons.more_vert),
+                                itemBuilder: (context) => [
+                                  PopupMenuItem(
+                                    child: const ListTile(
+                                      leading: Icon(Icons.visibility),
+                                      title: Text('Chi tiết'),
+                                      contentPadding: EdgeInsets.zero,
+                                    ),
+                                    onTap: () => _navigateToPrescriptionDetails(
+                                        prescription),
+                                  ),
+                                  PopupMenuItem(
+                                    child: const ListTile(
+                                      leading: Icon(Icons.edit),
+                                      title: Text('Sửa'),
+                                      contentPadding: EdgeInsets.zero,
+                                    ),
+                                    onTap: () => Future(() =>
+                                        _navigateToEditPrescription(
+                                            prescription)),
+                                  ),
+                                  PopupMenuItem(
+                                    child: const ListTile(
+                                      leading:
+                                          Icon(Icons.delete, color: Colors.red),
+                                      title: Text('Xóa'),
+                                      contentPadding: EdgeInsets.zero,
+                                    ),
+                                    onTap: () => Future(
+                                        () => _confirmDelete(prescription)),
+                                  ),
+                                ],
                               ),
-                              onTap: () =>
-                                  Future(() => _confirmDelete(prescription)),
                             ),
-                          ],
-                        ),
+                          );
+                        },
                       ),
-                    );
-                  },
-                ),
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: _navigateToAddPrescription,
         child: const Icon(Icons.add),

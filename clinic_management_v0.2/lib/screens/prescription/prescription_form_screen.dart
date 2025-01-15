@@ -38,10 +38,14 @@ class _PrescriptionFormScreenState extends State<PrescriptionFormScreen> {
   Examination? _selectedExamination;
   Doctor? _selectedDoctor;
   bool _isLoading = true;
+  DateTime _selectedDate = DateTime.now();
 
   @override
   void initState() {
     super.initState();
+    if (widget.prescription != null) {
+      _selectedDate = widget.prescription!.prescriptionDate;
+    }
     _loadData();
     if (widget.isEditing && widget.prescription != null) {
       // Load existing prescription details
@@ -117,6 +121,20 @@ class _PrescriptionFormScreenState extends State<PrescriptionFormScreen> {
       );
     } finally {
       setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+    if (picked != null && picked != _selectedDate) {
+      setState(() {
+        _selectedDate = picked;
+      });
     }
   }
 
@@ -253,6 +271,19 @@ class _PrescriptionFormScreenState extends State<PrescriptionFormScreen> {
                       },
                     ),
                     const SizedBox(height: 16),
+                    InkWell(
+                      onTap: () => _selectDate(context),
+                      child: InputDecorator(
+                        decoration: const InputDecoration(
+                          labelText: 'Ngày kê toa',
+                          border: OutlineInputBorder(),
+                        ),
+                        child: Text(
+                          '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
                     ElevatedButton(
                       onPressed: _showAddMedicineDialog,
                       child: const Text('Thêm thuốc'),
@@ -342,6 +373,7 @@ class _PrescriptionFormScreenState extends State<PrescriptionFormScreen> {
           widget.prescription!.id,
           _selectedDoctor!.id,
           _details,
+          prescriptionDate: _selectedDate, // Add this parameter
         );
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -353,10 +385,13 @@ class _PrescriptionFormScreenState extends State<PrescriptionFormScreen> {
           _details,
           patientId: _selectedPatient!.id!,
           examId: _selectedExamination!.id,
+          prescriptionDate: _selectedDate, // Ensure this parameter is passed
         );
       }
+      if (!mounted) return; // Add mounted check here
       Navigator.pop(context);
     } catch (e) {
+      if (!mounted) return; // Add mounted check here
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Lỗi khi lưu toa thuốc: $e')),
       );
