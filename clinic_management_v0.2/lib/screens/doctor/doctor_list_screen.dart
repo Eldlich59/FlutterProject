@@ -12,7 +12,9 @@ class DoctorListScreen extends StatefulWidget {
 
 class _DoctorListScreenState extends State<DoctorListScreen> {
   final _supabaseService = SupabaseService().doctorService;
+  final _searchController = TextEditingController();
   List<Doctor> doctors = [];
+  List<Doctor> filteredDoctors = [];
   bool isLoading = true;
 
   @override
@@ -21,10 +23,26 @@ class _DoctorListScreenState extends State<DoctorListScreen> {
     _loadDoctors();
   }
 
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _filterDoctors(String query) {
+    setState(() {
+      filteredDoctors = doctors
+          .where((doctor) =>
+              doctor.name.toLowerCase().contains(query.toLowerCase()))
+          .toList();
+    });
+  }
+
   Future<void> _loadDoctors() async {
     try {
       setState(() => isLoading = true);
       doctors = await _supabaseService.getDoctor();
+      filteredDoctors = doctors;
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error loading doctors: $e')),
@@ -39,13 +57,32 @@ class _DoctorListScreenState extends State<DoctorListScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Quản lý Bác sĩ'),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(60),
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Tìm kiếm bác sĩ...',
+                prefixIcon: const Icon(Icons.search),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                filled: true,
+                fillColor: Colors.white,
+              ),
+              onChanged: _filterDoctors,
+            ),
+          ),
+        ),
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : ListView.builder(
-              itemCount: doctors.length,
+              itemCount: filteredDoctors.length,
               itemBuilder: (context, index) {
-                final doctor = doctors[index];
+                final doctor = filteredDoctors[index];
                 return Card(
                   child: ListTile(
                     leading: const CircleAvatar(
