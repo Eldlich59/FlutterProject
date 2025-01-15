@@ -107,7 +107,6 @@ class PrescriptionDetailScreen extends StatelessWidget {
                           fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
-                    Text('Mã BN: ${patient?.id ?? 'Không xác định'}'),
                     Text('Họ tên: ${patient?.name ?? 'Không xác định'}'),
                     Text(
                         'Ngày sinh: ${patient?.dateOfBirth != null ? DateFormat('dd/MM/yyyy').format(patient!.dateOfBirth) : 'Không xác định'}'),

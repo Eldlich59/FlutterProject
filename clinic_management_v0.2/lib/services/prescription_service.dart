@@ -220,4 +220,50 @@ class PrescriptionService {
       return null;
     }
   }
+
+  Future<List<Prescription>> searchPrescriptions({
+    String? searchTerm,
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
+    try {
+      var query = _supabase.from('TOATHUOC').select('''
+        *,
+        BACSI:MaBS (
+          TenBS
+        ),
+        BENHNHAN:MaBN (
+          TenBN
+        )
+      ''');
+
+      if (searchTerm != null && searchTerm.isNotEmpty) {
+        query = query.or(
+            'BENHNHAN.TenBN.ilike.%$searchTerm%,BACSI.TenBS.ilike.%$searchTerm%');
+      }
+
+      if (startDate != null) {
+        query = query.gte('Ngayketoa', startDate.toIso8601String());
+      }
+
+      if (endDate != null) {
+        query = query.lte('Ngayketoa', endDate.toIso8601String());
+      }
+
+      final response = await query.order('Ngayketoa', ascending: false);
+
+      return (response as List).map((prescription) {
+        final doctorData = prescription['BACSI'] as Map<String, dynamic>?;
+        final patientData = prescription['BENHNHAN'] as Map<String, dynamic>?;
+        return Prescription.fromJson({
+          ...prescription,
+          'doctor_name': doctorData?['TenBS'],
+          'patient_name': patientData?['TenBN'],
+        });
+      }).toList();
+    } catch (e) {
+      print('Error searching prescriptions: $e');
+      rethrow;
+    }
+  }
 }
