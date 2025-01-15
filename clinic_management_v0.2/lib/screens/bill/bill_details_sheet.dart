@@ -91,6 +91,11 @@ class _BillDetailsSheetState extends State<BillDetailsSheet> {
                         [
                           'Mã hóa đơn: ${widget.bill.id}',
                           'Ngày tạo hóa đơn: ${DateFormat('dd/MM/yyyy HH:mm').format(widget.bill.saleDate)}',
+                          if (widget.bill.examinationId != null)
+                            'Mã phiếu khám: ${widget.bill.examinationId}',
+                          'Tiền thuốc: ${NumberFormat.currency(locale: 'vi_VN', symbol: 'đ').format(widget.bill.medicineCost)}',
+                          if (widget.bill.examinationCost != null)
+                            'Tiền khám: ${NumberFormat.currency(locale: 'vi_VN', symbol: 'đ').format(widget.bill.examinationCost)}',
                           'Tổng tiền: ${NumberFormat.currency(locale: 'vi_VN', symbol: 'đ').format(widget.bill.totalCost)}',
                         ],
                       ),
@@ -154,7 +159,9 @@ class _BillDetailsSheetState extends State<BillDetailsSheet> {
       children: [
         Text(
           title,
-          style: Theme.of(context).textTheme.titleMedium,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
         ),
         const SizedBox(height: 8),
         ...details.map((detail) => Padding(

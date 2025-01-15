@@ -13,6 +13,10 @@ class BillService {
             *,
             BENHNHAN (
               TenBN
+            ),
+            PHIEUKHAM (
+              MaPK,
+              TienKham
             )
           )
         ''').order('Ngaylap', ascending: false);
@@ -23,13 +27,13 @@ class BillService {
   Future<void> createBill({
     required String prescriptionId,
     required DateTime saleDate,
-    required double medicineCost,
+    required double totalCost,
   }) async {
     try {
       await _supabase.from('HOADONTHUOC').insert({
         'MaToa': prescriptionId,
         'Ngaylap': saleDate.toIso8601String(),
-        'TienThuoc': medicineCost,
+        'TongTien': totalCost,
       });
     } catch (e) {
       throw Exception('Không thể tạo hóa đơn: $e');
@@ -40,16 +44,19 @@ class BillService {
     required String id,
     required String prescriptionId,
     required DateTime saleDate,
-    required double medicineCost,
+    required double totalCost,
   }) async {
     await _supabase.from('HOADONTHUOC').update({
       'MaToa': prescriptionId,
       'Ngaylap': saleDate.toIso8601String(),
-      'TienThuoc': medicineCost,
-    }).eq('MaHD', id);
+      'TongTien': totalCost,
+    }).eq('MaHD', int.parse(id));
   }
 
   Future<void> deleteBill(String id) async {
-    await _supabase.from('HOADONTHUOC').delete().eq('MaHD', id);
+    await _supabase
+        .from('HOADONTHUOC')
+        .delete()
+        .eq('MaHD', int.parse(id)); // Convert id to int for comparison
   }
 }

@@ -28,7 +28,7 @@ class _BillFormScreenState extends State<BillFormScreen> {
   void initState() {
     super.initState();
     _selectedDate = DateTime.now();
-    _medicineCost = 0;
+    _medicineCost = 0; // Changed this line
     _examinationFee = 0; // Initialize
     _totalCost = 0; // Initialize
     _loadPrescriptions();
@@ -59,10 +59,18 @@ class _BillFormScreenState extends State<BillFormScreen> {
 
       double medicineTotal = 0;
       for (var medicine in medicines) {
-        medicineTotal += (medicine['Sluong'] * medicine['THUOC']['DonGia']);
+        medicineTotal +=
+            (medicine['Sluong'] ?? 0) * (medicine['THUOC']['DonGia'] ?? 0);
       }
 
-      double examFee = examination['PHIEUKHAM']['TienKham'] ?? 0;
+      // Changed this section to properly get TienKham
+      double examFee = 0;
+      if (examination['PHIEUKHAM'] != null) {
+        examFee =
+            double.tryParse(examination['PHIEUKHAM']['TienKham'].toString()) ??
+                0;
+      }
+
       double total = medicineTotal + examFee;
 
       setState(() {
@@ -176,13 +184,21 @@ class _BillFormScreenState extends State<BillFormScreen> {
 
   Future<void> _saveBill() async {
     if (!_formKey.currentState!.validate()) return;
+    if (_selectedPrescription == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Vui lòng chọn toa thuốc hợp lệ')),
+      );
+      return;
+    }
 
     setState(() => _isLoading = true);
     try {
+      final prescriptionId = _selectedPrescription!['MaToa'].toString();
+
       await _supabaseService1.createBill(
-        prescriptionId: _selectedPrescription!['MaToa'],
+        prescriptionId: prescriptionId,
         saleDate: _selectedDate,
-        medicineCost: _medicineCost,
+        totalCost: _totalCost,
       );
 
       if (mounted) {
