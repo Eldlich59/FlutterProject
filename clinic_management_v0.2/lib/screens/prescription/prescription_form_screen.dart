@@ -9,8 +9,13 @@ import 'package:clinic_management/models/doctor.dart';
 
 class PrescriptionFormScreen extends StatefulWidget {
   final Prescription? prescription;
+  final bool isEditing;
 
-  const PrescriptionFormScreen({super.key, this.prescription});
+  const PrescriptionFormScreen({
+    super.key,
+    this.prescription,
+    this.isEditing = false,
+  });
 
   @override
   State<PrescriptionFormScreen> createState() => _PrescriptionFormScreenState();
@@ -38,7 +43,8 @@ class _PrescriptionFormScreenState extends State<PrescriptionFormScreen> {
   void initState() {
     super.initState();
     _loadData();
-    if (widget.prescription != null) {
+    if (widget.isEditing && widget.prescription != null) {
+      // Load existing prescription details
       _loadPrescriptionDetails();
     }
   }
@@ -82,15 +88,24 @@ class _PrescriptionFormScreenState extends State<PrescriptionFormScreen> {
   }
 
   Future<void> _loadPrescriptionDetails() async {
+    setState(() => _isLoading = true);
     try {
       final details = await _supabaseService1.getPrescriptionDetails(
         widget.prescription!.id,
       );
-      setState(() => _details.addAll(details));
+      setState(() {
+        _details.addAll(details);
+        _selectedDoctor = _doctors.firstWhere(
+          (d) => d.id == widget.prescription!.doctorId,
+          orElse: () => _doctors.first,
+        );
+      });
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Lỗi khi tải chi tiết toa thuốc: $e')),
       );
+    } finally {
+      setState(() => _isLoading = false);
     }
   }
 
@@ -98,9 +113,7 @@ class _PrescriptionFormScreenState extends State<PrescriptionFormScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.prescription == null
-            ? 'Thêm toa thuốc mới'
-            : 'Cập nhật toa thuốc'),
+        title: Text(widget.isEditing ? 'Sửa toa thuốc' : 'Thêm toa thuốc mới'),
         actions: [
           if (widget.prescription !=
               null) // Only show delete button when editing
@@ -283,18 +296,22 @@ class _PrescriptionFormScreenState extends State<PrescriptionFormScreen> {
     }
 
     try {
-      if (widget.prescription == null) {
+      if (widget.isEditing) {
+        await _supabaseService1.updatePrescription(
+          widget.prescription!.id,
+          _selectedDoctor!.id,
+          _details,
+        );
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Cập nhật toa thuốc thành công')),
+        );
+      } else {
         await _supabaseService1.createPrescription(
           _selectedDoctor!.id,
           _details,
           patientId: _selectedPatient!.id!,
           examId: _selectedExamination!.id,
-        );
-      } else {
-        await _supabaseService1.updatePrescription(
-          widget.prescription!.id,
-          _selectedDoctor!.id,
-          _details,
         );
       }
       Navigator.pop(context);

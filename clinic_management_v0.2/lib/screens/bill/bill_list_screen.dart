@@ -59,7 +59,7 @@ class _BillListScreenState extends State<BillListScreen> {
                       vertical: 8,
                     ),
                     child: ListTile(
-                      title: Text('Hóa đơn #${bill.id.substring(0, 8)}'),
+                      title: Text('BN: ${bill.patientName}'),
                       subtitle: Text(
                         'Ngày: ${DateFormat('dd/MM/yyyy').format(bill.saleDate)}\n'
                         'Tổng tiền: ${NumberFormat.currency(locale: 'vi_VN', symbol: 'đ').format(bill.medicineCost)}',

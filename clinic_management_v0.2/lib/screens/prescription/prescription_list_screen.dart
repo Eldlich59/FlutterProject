@@ -72,7 +72,8 @@ class _PrescriptionListScreenState extends State<PrescriptionListScreen> {
                     return Card(
                       margin: const EdgeInsets.all(8.0),
                       child: ListTile(
-                        title: Text('Bác sĩ: ${prescription.doctorId}'),
+                        title: Text(
+                            'Bác sĩ: ${prescription.doctorName ?? 'Không xác định'}'),
                         subtitle: Text(
                           'Ngày kê: ${DateFormat('dd/MM/yyyy').format(prescription.prescriptionDate)}',
                         ),
@@ -87,6 +88,15 @@ class _PrescriptionListScreenState extends State<PrescriptionListScreen> {
                               ),
                               onTap: () =>
                                   _navigateToPrescriptionDetails(prescription),
+                            ),
+                            PopupMenuItem(
+                              child: const ListTile(
+                                leading: Icon(Icons.edit),
+                                title: Text('Sửa'),
+                                contentPadding: EdgeInsets.zero,
+                              ),
+                              onTap: () => Future(() =>
+                                  _navigateToEditPrescription(prescription)),
                             ),
                             PopupMenuItem(
                               child: const ListTile(
@@ -127,6 +137,18 @@ class _PrescriptionListScreenState extends State<PrescriptionListScreen> {
             PrescriptionDetailScreen(prescription: prescription),
       ),
     );
+  }
+
+  void _navigateToEditPrescription(Prescription prescription) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PrescriptionFormScreen(
+          prescription: prescription,
+          isEditing: true,
+        ),
+      ),
+    ).then((_) => _loadPrescriptions());
   }
 
   Future<void> _confirmDelete(Prescription prescription) async {

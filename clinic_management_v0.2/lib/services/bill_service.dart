@@ -7,16 +7,17 @@ class BillService {
   BillService(this._supabase);
 
   Future<List<Bill>> getBills() async {
-    final response = await _supabase
-        .from('HOADONTHUOC')
-        .select()
-        .order('Ngayban', ascending: false);
+    final response = await _supabase.from('HOADONTHUOC').select('''
+          *,
+          TOATHUOC (
+            *,
+            BENHNHAN (
+              TenBN
+            )
+          )
+        ''').order('Ngaylap', ascending: false);
 
-    if (response.isEmpty) {
-      return [];
-    }
-
-    return (response as List).map((json) => Bill.fromJson(json)).toList();
+    return (response as List).map((bill) => Bill.fromJson(bill)).toList();
   }
 
   Future<void> createBill({
@@ -24,11 +25,15 @@ class BillService {
     required DateTime saleDate,
     required double medicineCost,
   }) async {
-    await _supabase.from('HOADONTHUOC').insert({
-      'MaToa': prescriptionId,
-      'Ngayban': saleDate.toIso8601String(),
-      'TienThuoc': medicineCost,
-    });
+    try {
+      await _supabase.from('HOADONTHUOC').insert({
+        'MaToa': prescriptionId,
+        'Ngaylap': saleDate.toIso8601String(),
+        'TienThuoc': medicineCost,
+      });
+    } catch (e) {
+      throw Exception('Không thể tạo hóa đơn: $e');
+    }
   }
 
   Future<void> updateBill({
@@ -39,7 +44,7 @@ class BillService {
   }) async {
     await _supabase.from('HOADONTHUOC').update({
       'MaToa': prescriptionId,
-      'Ngayban': saleDate.toIso8601String(),
+      'Ngaylap': saleDate.toIso8601String(),
       'TienThuoc': medicineCost,
     }).eq('MaHD', id);
   }

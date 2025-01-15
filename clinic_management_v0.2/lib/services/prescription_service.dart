@@ -8,28 +8,19 @@ class PrescriptionService {
 
   Future<List<Prescription>> getPrescriptions() async {
     try {
-      print('Fetching prescriptions from database...'); // Debug print
+      final response = await _supabase.from('TOATHUOC').select('''
+            *,
+            BACSI:MaBS (
+              TenBS
+            )
+          ''').order('Ngayketoa', ascending: false);
 
-      final response = await _supabase
-          .from('TOATHUOC')
-          .select()
-          .order('Ngayketoa', ascending: false);
-
-      print('Raw response: $response'); // Debug print
-
-      if (response.isEmpty) {
-        print('Response is empty'); // Debug print
-        return [];
-      }
-
-      return (response as List).map((json) {
-        try {
-          return Prescription.fromJson(json);
-        } catch (e) {
-          print('Error parsing prescription: $e'); // Debug print
-          print('Problematic JSON: $json'); // Debug print
-          rethrow;
-        }
+      return (response as List).map((prescription) {
+        final doctorData = prescription['BACSI'] as Map<String, dynamic>?;
+        return Prescription.fromJson({
+          ...prescription,
+          'doctor_name': doctorData?['TenBS'],
+        });
       }).toList();
     } catch (e, stackTrace) {
       print('Error fetching prescriptions: $e'); // Debug print
@@ -126,34 +117,39 @@ class PrescriptionService {
 
   Future<void> updatePrescription(
     String prescriptionId,
-    String doctorName,
+    String doctorId,
     List<PrescriptionDetail> details,
   ) async {
-    final prescription = {
-      'Bsketoa': doctorName,
-    };
-
-    await _supabase
-        .from('TOATHUOC')
-        .update(prescription)
-        .eq('MaToa', prescriptionId);
-
-    // Delete existing details
-    await _supabase
-        .from('CHITIETTOATHUOC')
-        .delete()
-        .eq('MaToa', prescriptionId);
-
-    // Insert new details
-    for (final detail in details) {
-      final detailData = {
-        'MaToa': prescriptionId,
-        'MaThuoc': detail.medicineId,
-        'Sluong': detail.quantity,
-        'Cdung': detail.usage,
+    try {
+      final prescription = {
+        'MaBS': doctorId,
       };
 
-      await _supabase.from('CHITIETTOATHUOC').insert(detailData);
+      await _supabase
+          .from('TOATHUOC')
+          .update(prescription)
+          .eq('MaToa', prescriptionId);
+
+      // Delete existing details
+      await _supabase
+          .from('CHITIETTOATHUOC')
+          .delete()
+          .eq('MaToa', prescriptionId);
+
+      // Insert new details
+      for (final detail in details) {
+        final detailData = {
+          'MaToa': prescriptionId,
+          'MaThuoc': detail.medicineId,
+          'Sluong': detail.quantity,
+          'Cdung': detail.usage,
+        };
+
+        await _supabase.from('CHITIETTOATHUOC').insert(detailData);
+      }
+    } catch (e) {
+      print('Error updating prescription: $e');
+      rethrow;
     }
   }
 

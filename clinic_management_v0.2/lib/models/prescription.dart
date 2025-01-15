@@ -7,6 +7,7 @@ class Prescription {
   final String? patientId; // Make nullable
   final String? examId; // Make nullable
   final List<PrescriptionDetail> details;
+  final String? doctorName;
 
   Prescription({
     required this.id,
@@ -15,6 +16,7 @@ class Prescription {
     this.patientId, // Update constructor
     this.examId, // Update constructor
     this.details = const [],
+    this.doctorName,
   });
 
   factory Prescription.fromJson(Map<String, dynamic> json) {
@@ -24,6 +26,7 @@ class Prescription {
       prescriptionDate: DateTime.parse(json['Ngayketoa']),
       patientId: json['MaBN']?.toString(), // Make nullable and convert
       examId: json['MaPK']?.toString(), // Make nullable and convert
+      doctorName: json['doctor_name']?.toString() ?? 'Không xác định',
     );
   }
 
