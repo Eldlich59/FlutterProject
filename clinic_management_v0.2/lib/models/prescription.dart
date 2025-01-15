@@ -9,6 +9,7 @@ class Prescription {
   final List<PrescriptionDetail> details;
   final String? doctorName;
   final String? patientName;
+  final double medicineCost;
 
   Prescription({
     required this.id,
@@ -19,6 +20,7 @@ class Prescription {
     this.details = const [],
     this.doctorName,
     this.patientName,
+    required this.medicineCost,
   });
 
   factory Prescription.fromJson(Map<String, dynamic> json) {
@@ -30,6 +32,9 @@ class Prescription {
       examId: json['MaPK']?.toString(), // Make nullable and convert
       doctorName: json['doctor_name']?.toString() ?? 'Không xác định',
       patientName: json['patient_name']?.toString() ?? 'Không xác định',
+      medicineCost: (json['TienThuoc'] is int)
+          ? (json['TienThuoc'] as int).toDouble()
+          : (json['TienThuoc'] as num?)?.toDouble() ?? 0.0,
     );
   }
 
@@ -40,6 +45,7 @@ class Prescription {
       'Ngayketoa': prescriptionDate.toIso8601String(),
       'MaBN': patientId,
       'MaPK': examId,
+      'TienThuoc': medicineCost
     };
   }
 }

@@ -20,6 +20,8 @@ class _BillFormScreenState extends State<BillFormScreen> {
   Map<String, dynamic>? _selectedPrescription;
   late DateTime _selectedDate;
   late double _medicineCost;
+  late double _examinationFee; // Add this
+  late double _totalCost; // Add this
   bool _isLoading = false;
 
   @override
@@ -27,6 +29,8 @@ class _BillFormScreenState extends State<BillFormScreen> {
     super.initState();
     _selectedDate = DateTime.now();
     _medicineCost = 0;
+    _examinationFee = 0; // Initialize
+    _totalCost = 0; // Initialize
     _loadPrescriptions();
   }
 
@@ -50,14 +54,21 @@ class _BillFormScreenState extends State<BillFormScreen> {
     try {
       final medicines =
           await _supabaseService2.getPrescriptionMedicines(prescriptionId);
+      final examination =
+          await _supabaseService2.getPrescriptionExamination(prescriptionId);
 
-      double total = 0;
+      double medicineTotal = 0;
       for (var medicine in medicines) {
-        total += (medicine['Sluong'] * medicine['THUOC']['DonGia']);
+        medicineTotal += (medicine['Sluong'] * medicine['THUOC']['DonGia']);
       }
 
+      double examFee = examination['PHIEUKHAM']['TienKham'] ?? 0;
+      double total = medicineTotal + examFee;
+
       setState(() {
-        _medicineCost = total;
+        _medicineCost = medicineTotal;
+        _examinationFee = examFee;
+        _totalCost = total;
       });
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -89,7 +100,7 @@ class _BillFormScreenState extends State<BillFormScreen> {
                       return DropdownMenuItem(
                         value: prescription,
                         child: Text(
-                          'Toa thuốc #${prescription['MaToa']} - ${prescription['BENHNHAN']['TenBN']}',
+                          '${prescription['BENHNHAN']['TenBN']} - ${DateFormat('dd/MM/yyyy').format(DateTime.parse(prescription['Ngayketoa']))}',
                         ),
                       );
                     }).toList(),
@@ -130,26 +141,11 @@ class _BillFormScreenState extends State<BillFormScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Số tiền cần thanh toán:',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          NumberFormat.currency(
-                            locale: 'vi_VN',
-                            symbol: 'đ',
-                            decimalDigits: 0,
-                          ).format(_medicineCost),
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).primaryColor,
-                          ),
-                        ),
+                        _buildCostRow('Tiền thuốc:', _medicineCost),
+                        const Divider(),
+                        _buildCostRow('Tiền khám:', _examinationFee),
+                        const Divider(),
+                        _buildCostRow('Tổng tiền:', _totalCost, isTotal: true),
                       ],
                     ),
                   ),
@@ -206,5 +202,37 @@ class _BillFormScreenState extends State<BillFormScreen> {
         setState(() => _isLoading = false);
       }
     }
+  }
+
+  Widget _buildCostRow(String label, double amount, {bool isTotal = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: isTotal ? 16 : 14,
+              fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
+              color:
+                  isTotal ? Theme.of(context).primaryColor : Colors.grey[700],
+            ),
+          ),
+          Text(
+            NumberFormat.currency(
+              locale: 'vi_VN',
+              symbol: 'đ',
+              decimalDigits: 0,
+            ).format(amount),
+            style: TextStyle(
+              fontSize: isTotal ? 18 : 16,
+              fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
+              color: isTotal ? Theme.of(context).primaryColor : Colors.black,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

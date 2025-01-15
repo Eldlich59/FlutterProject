@@ -1,14 +1,14 @@
 class Bill {
   final String id;
   final DateTime saleDate;
-  final double medicineCost;
+  final double totalCost;
   final String prescriptionId;
   final String patientName; // Add this field
 
   Bill({
     required this.id,
     required this.saleDate,
-    required this.medicineCost,
+    required this.totalCost,
     required this.prescriptionId,
     required this.patientName,
   });
@@ -17,7 +17,7 @@ class Bill {
     return Bill(
       id: json['MaHD'],
       saleDate: DateTime.parse(json['Ngaylap']),
-      medicineCost: json['TienThuoc'].toDouble(),
+      totalCost: json['TongTien'].toDouble(),
       prescriptionId: json['MaToa'],
       patientName: json['TOATHUOC']?['BENHNHAN']?['TenBN'] ?? 'Unknown',
     );
@@ -27,7 +27,7 @@ class Bill {
     return {
       'MaHD': id,
       'Ngaylap': saleDate.toIso8601String(),
-      'TienThuoc': medicineCost,
+      'TongTien': totalCost,
       'MaToa': prescriptionId,
     };
   }

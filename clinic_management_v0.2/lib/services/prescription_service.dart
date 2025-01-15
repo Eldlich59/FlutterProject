@@ -83,40 +83,49 @@ class PrescriptionService {
   }) async {
     try {
       print('Creating prescription...'); // Debug print
+
+      // Calculate TienThuoc - Fix calculation
+      double totalMedicineCost = 0;
+      for (final detail in details) {
+        if (detail.medicine != null) {
+          totalMedicineCost += (detail.medicine!.price * detail.quantity);
+        }
+      }
+
       final prescription = {
         'MaBS': doctorId,
-        'Ngayketoa': prescriptionDate.toIso8601String(), // Format date properly
+        'Ngayketoa': prescriptionDate.toIso8601String(),
         'MaBN': patientId,
         'MaPK': examId,
+        'TienThuoc':
+            totalMedicineCost.roundToDouble(), // Ensure proper rounding
       };
 
-      print('Prescription data: $prescription'); // Debug print
-
+      // First insert the prescription
       final prescriptionResponse = await _supabase
           .from('TOATHUOC')
           .insert(prescription)
           .select()
           .single();
 
-      print('Created prescription: $prescriptionResponse'); // Debug print
-
       final prescriptionId = prescriptionResponse['MaToa'];
 
+      // Then insert the details
       for (final detail in details) {
         final detailData = {
           'MaToa': prescriptionId,
-          'MaThuoc': int.tryParse(detail.medicineId) ??
-              detail.medicineId, // Handle type conversion
+          'MaThuoc': int.tryParse(detail.medicineId) ?? detail.medicineId,
           'Sluong': detail.quantity,
           'Cdung': detail.usage,
         };
-
-        print('Inserting detail: $detailData'); // Debug print
         await _supabase.from('CHITIETTOATHUOC').insert(detailData);
       }
+
+      // Finally, verify and update TienThuoc if needed
+      await _updateTotalMedicineCost(prescriptionId);
     } catch (e, stackTrace) {
-      print('Error creating prescription: $e'); // Debug print
-      print('Stack trace: $stackTrace'); // Debug print
+      print('Error creating prescription: $e');
+      print('Stack trace: $stackTrace');
       rethrow;
     }
   }
@@ -128,24 +137,34 @@ class PrescriptionService {
     DateTime? prescriptionDate,
   }) async {
     try {
+      // Calculate TienThuoc - Fix calculation
+      double totalMedicineCost = 0;
+      for (final detail in details) {
+        if (detail.medicine != null) {
+          totalMedicineCost += (detail.medicine!.price * detail.quantity);
+        }
+      }
+
       final prescription = {
         'MaBS': doctorId,
         if (prescriptionDate != null)
-          'Ngayketoa': prescriptionDate.toIso8601String(), // Add date update
+          'Ngayketoa': prescriptionDate.toIso8601String(),
+        'TienThuoc':
+            totalMedicineCost.roundToDouble(), // Ensure proper rounding
       };
 
+      // Update prescription first
       await _supabase
           .from('TOATHUOC')
           .update(prescription)
           .eq('MaToa', prescriptionId);
 
-      // Delete existing details
+      // Delete and recreate details
       await _supabase
           .from('CHITIETTOATHUOC')
           .delete()
           .eq('MaToa', prescriptionId);
 
-      // Insert new details
       for (final detail in details) {
         final detailData = {
           'MaToa': prescriptionId,
@@ -153,11 +172,41 @@ class PrescriptionService {
           'Sluong': detail.quantity,
           'Cdung': detail.usage,
         };
-
         await _supabase.from('CHITIETTOATHUOC').insert(detailData);
       }
+
+      // Verify and update final total
+      await _updateTotalMedicineCost(prescriptionId);
     } catch (e) {
       print('Error updating prescription: $e');
+      rethrow;
+    }
+  }
+
+  // Add new helper method to verify and update TienThuoc
+  Future<void> _updateTotalMedicineCost(String prescriptionId) async {
+    try {
+      // Get all details with medicine prices
+      final details = await _supabase.from('CHITIETTOATHUOC').select('''
+        *,
+        thuoc:THUOC (
+          DonGia
+        )
+      ''').eq('MaToa', prescriptionId);
+
+      // Calculate total
+      double total = 0;
+      for (final detail in details) {
+        final price = detail['thuoc']['DonGia'] as num;
+        final quantity = detail['Sluong'] as int;
+        total += price * quantity;
+      }
+
+      // Update prescription with verified total
+      await _supabase.from('TOATHUOC').update(
+          {'TienThuoc': total.roundToDouble()}).eq('MaToa', prescriptionId);
+    } catch (e) {
+      print('Error updating total medicine cost: $e');
       rethrow;
     }
   }
@@ -269,5 +318,17 @@ class PrescriptionService {
       print('Error searching prescriptions: $e');
       rethrow;
     }
+  }
+
+  Future<Map<String, dynamic>> getPrescriptionExamination(
+      String prescriptionId) async {
+    final response = await _supabase.from('TOATHUOC').select('''
+          *,
+          PHIEUKHAM (
+            TienKham
+          )
+        ''').eq('MaToa', prescriptionId).single();
+
+    return response;
   }
 }

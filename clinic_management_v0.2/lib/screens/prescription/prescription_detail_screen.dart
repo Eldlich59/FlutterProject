@@ -161,6 +161,7 @@ class PrescriptionDetailScreen extends StatelessWidget {
   }
 
   Widget _buildMedicinesList(List<PrescriptionDetail> details) {
+    double totalCost = 0;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -169,12 +170,38 @@ class PrescriptionDetailScreen extends StatelessWidget {
           style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
-        ...details.map((detail) => _buildMedicineCard(detail)),
+        ...details.map((detail) {
+          final medicineCost =
+              (detail.quantity * (detail.medicine?.price ?? 0)).toDouble();
+          totalCost += medicineCost;
+          return _buildMedicineCard(detail, medicineCost);
+        }),
+        const SizedBox(height: 16),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Tổng tiền thuốc:',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  NumberFormat.currency(locale: 'vi_VN', symbol: 'đ')
+                      .format(totalCost),
+                  style: const TextStyle(
+                      fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+          ),
+        ),
       ],
     );
   }
 
-  Widget _buildMedicineCard(PrescriptionDetail detail) {
+  Widget _buildMedicineCard(PrescriptionDetail detail, double totalCost) {
     final medicine = detail.medicine;
     if (medicine == null) {
       return Card(
@@ -201,6 +228,8 @@ class PrescriptionDetailScreen extends StatelessWidget {
             Text('Số lượng: ${detail.quantity} ${medicine.unit}'),
             Text(
                 'Đơn giá: ${NumberFormat.currency(locale: 'vi_VN', symbol: 'đ').format(medicine.price)}'),
+            Text(
+                'Thành tiền: ${NumberFormat.currency(locale: 'vi_VN', symbol: 'đ').format(totalCost)}'),
             const SizedBox(height: 8),
             Text(
               'Cách dùng:',
