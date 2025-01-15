@@ -35,4 +35,18 @@ class PatientService {
   Future<void> deletePatient(String id) async {
     await _supabase.from('BENHNHAN').delete().eq('MaBN', id);
   }
+
+  Future<Patient?> getPatientById(String id) async {
+    try {
+      final response = await _supabase
+          .from('BENHNHAN')
+          .select('MaBN, TenBN, NgaySinh, GioiTinh, DiaChi, SDT')
+          .eq('MaBN', id)
+          .single();
+
+      return Patient.fromJson(response);
+    } catch (e) {
+      return null;
+    }
+  }
 }

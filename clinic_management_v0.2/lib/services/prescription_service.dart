@@ -201,4 +201,18 @@ class PrescriptionService {
 
     return List<Map<String, dynamic>>.from(response);
   }
+
+  Future<String?> getPatientNameById(String patientId) async {
+    try {
+      final response = await _supabase
+          .from('BENHNHAN')
+          .select('TenBN')
+          .eq('MaBN', patientId)
+          .single();
+      return response['TenBN'] as String?;
+    } catch (e) {
+      print('Error fetching patient name: $e');
+      return null;
+    }
+  }
 }

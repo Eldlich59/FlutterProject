@@ -55,14 +55,22 @@ class _PrescriptionFormScreenState extends State<PrescriptionFormScreen> {
       final patients = await _supabaseService3.getPatients();
       final doctors = await _supabaseService5.getDoctor();
 
+      if (widget.prescription?.patientId != null) {
+        // Load patient info for existing prescription
+        final patient = await _supabaseService3
+            .getPatientById(widget.prescription!.patientId!);
+        setState(() => _selectedPatient = patient);
+      }
+
       setState(() {
         _medicines = medicines;
         _patients = patients;
         _doctors = doctors;
-        if (widget.prescription != null) {
+        if (widget.prescription != null && doctors.isNotEmpty) {
+          // Find matching doctor if exists
           _selectedDoctor = doctors.firstWhere(
             (d) => d.id == widget.prescription!.doctorId,
-            orElse: () => doctors.first,
+            orElse: () => doctors[0], // Default to first doctor if not found
           );
         }
         _isLoading = false;
@@ -95,18 +103,46 @@ class _PrescriptionFormScreenState extends State<PrescriptionFormScreen> {
       );
       setState(() {
         _details.addAll(details);
-        _selectedDoctor = _doctors.firstWhere(
-          (d) => d.id == widget.prescription!.doctorId,
-          orElse: () => _doctors.first,
-        );
+        if (_doctors.isNotEmpty) {
+          // Find matching doctor if exists
+          _selectedDoctor = _doctors.firstWhere(
+            (d) => d.id == widget.prescription!.doctorId,
+            orElse: () => _doctors[0], // Default to first doctor if not found
+          );
+        }
       });
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Lỗi khi tải chi tiết toa thuốc: $e')),
+        SnackBar(content: Text('Đã xảy ra lỗi: $e')),
       );
     } finally {
       setState(() => _isLoading = false);
     }
+  }
+
+  Widget _buildPatientInfo() {
+    if (_selectedPatient == null) return const SizedBox.shrink();
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16.0),
+      child: ListTile(
+        title: Text(
+          _selectedPatient!.name,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Số điện thoại: ${_selectedPatient!.phone}'),
+            if (!widget.isEditing && _selectedExamination != null)
+              Text('Phiếu khám số: ${_selectedExamination!.id}'),
+          ],
+        ),
+        leading: const CircleAvatar(
+          child: Icon(Icons.person),
+        ),
+      ),
+    );
   }
 
   @override
@@ -134,25 +170,28 @@ class _PrescriptionFormScreenState extends State<PrescriptionFormScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     if (widget.prescription == null) ...[
-                      DropdownButtonFormField<Patient>(
-                        value: _selectedPatient,
+                      DropdownButtonFormField<String>(
+                        value: _selectedPatient?.id,
                         decoration: const InputDecoration(
                           labelText: 'Chọn bệnh nhân',
                           border: OutlineInputBorder(),
                         ),
                         items: _patients.map((patient) {
                           return DropdownMenuItem(
-                            value: patient,
+                            value: patient.id,
                             child: Text('${patient.name} - ${patient.phone}'),
                           );
                         }).toList(),
                         onChanged: (value) {
-                          setState(() {
-                            _selectedPatient = value;
-                            _selectedExamination = null;
-                          });
                           if (value != null) {
-                            _loadExaminations(value.id!);
+                            final selectedPatient = _patients.firstWhere(
+                              (patient) => patient.id == value,
+                            );
+                            setState(() {
+                              _selectedPatient = selectedPatient;
+                              _selectedExamination = null;
+                            });
+                            _loadExaminations(value);
                           }
                         },
                         validator: (value) {
@@ -163,6 +202,7 @@ class _PrescriptionFormScreenState extends State<PrescriptionFormScreen> {
                         },
                       ),
                       const SizedBox(height: 16),
+                      _buildPatientInfo(), // Add patient info card here
                       if (_selectedPatient != null)
                         DropdownButtonFormField<Examination>(
                           value: _selectedExamination,
@@ -187,7 +227,8 @@ class _PrescriptionFormScreenState extends State<PrescriptionFormScreen> {
                           },
                         ),
                       const SizedBox(height: 16),
-                    ],
+                    ] else
+                      _buildPatientInfo(), // Show patient info in edit mode
                     DropdownButtonFormField<Doctor>(
                       value: _selectedDoctor,
                       decoration: const InputDecoration(
