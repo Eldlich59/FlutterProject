@@ -39,12 +39,6 @@ class _DoctorListScreenState extends State<DoctorListScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Quản lý Bác sĩ'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () => _showDoctorForm(context),
-          ),
-        ],
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -128,6 +122,10 @@ class _DoctorListScreenState extends State<DoctorListScreen> {
                 );
               },
             ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _showDoctorForm(context),
+        child: const Icon(Icons.add),
+      ),
     );
   }
 

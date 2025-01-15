@@ -22,7 +22,7 @@ class Examination {
       id: json['MaPK']?.toString() ?? '',
       patientId: json['MaBN']?.toString() ?? '',
       examinationDate:
-          DateTime.parse(json['NgayKham'] ?? DateTime.now().toIso8601String()),
+          DateTime.tryParse(json['NgayKham'] ?? '') ?? DateTime.now(),
       symptoms: json['TrieuChung'] ?? '',
       diagnosis: json['ChanDoan'] ?? '',
       examinationFee: double.tryParse(json['TienKham'].toString()) ?? 0.0,

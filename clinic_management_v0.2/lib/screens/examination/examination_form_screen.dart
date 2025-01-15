@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:clinic_management/models/examination.dart';
 import 'package:clinic_management/services/supabase_service.dart';
 import 'package:clinic_management/models/patient.dart';
+import 'package:intl/intl.dart';
 
 class ExaminationFormScreen extends StatefulWidget {
   final Examination? examination;
@@ -20,6 +21,9 @@ class _ExaminationFormScreenState extends State<ExaminationFormScreen> {
   late TextEditingController _symptomsController;
   late TextEditingController _diagnosisController;
   late TextEditingController _feeController;
+  // Initialize _selectedDate directly instead of using late
+  DateTime _selectedDate = DateTime.now();
+  final _dateFormat = DateFormat('dd/MM/yyyy HH:mm');
 
   Patient? _selectedPatient;
   List<Patient> _patients = [];
@@ -28,6 +32,10 @@ class _ExaminationFormScreenState extends State<ExaminationFormScreen> {
   @override
   void initState() {
     super.initState();
+    // Update _selectedDate if examination exists
+    if (widget.examination != null) {
+      _selectedDate = widget.examination!.examinationDate;
+    }
     _symptomsController =
         TextEditingController(text: widget.examination?.symptoms);
     _diagnosisController =
@@ -51,6 +59,50 @@ class _ExaminationFormScreenState extends State<ExaminationFormScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Lỗi: ${e.toString()}')),
       );
+    }
+  }
+
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? pickedDate = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+
+    if (pickedDate != null) {
+      // Store current time components
+      final currentTime = TimeOfDay.fromDateTime(_selectedDate);
+
+      // Show time picker with current time
+      final TimeOfDay? pickedTime = await showTimePicker(
+        context: context,
+        initialTime: currentTime,
+      );
+
+      if (mounted) {
+        setState(() {
+          if (pickedTime != null) {
+            // Create new DateTime combining picked date with picked time
+            _selectedDate = DateTime(
+              pickedDate.year,
+              pickedDate.month,
+              pickedDate.day,
+              pickedTime.hour,
+              pickedTime.minute,
+            );
+          } else {
+            // If time wasn't picked, keep current time
+            _selectedDate = DateTime(
+              pickedDate.year,
+              pickedDate.month,
+              pickedDate.day,
+              currentTime.hour,
+              currentTime.minute,
+            );
+          }
+        });
+      }
     }
   }
 
@@ -87,6 +139,13 @@ class _ExaminationFormScreenState extends State<ExaminationFormScreen> {
                 }
                 return null;
               },
+            ),
+            const SizedBox(height: 16),
+            ListTile(
+              title: const Text('Ngày khám'),
+              subtitle: Text(_dateFormat.format(_selectedDate)),
+              trailing: const Icon(Icons.calendar_today),
+              onTap: () => _selectDate(context),
             ),
             const SizedBox(height: 16),
             TextFormField(
@@ -162,7 +221,7 @@ class _ExaminationFormScreenState extends State<ExaminationFormScreen> {
         id: widget.examination?.id ?? '',
         patientId: _selectedPatient!.id ?? '',
         patientName: _selectedPatient!.name,
-        examinationDate: DateTime.now(),
+        examinationDate: _selectedDate,
         symptoms: _symptomsController.text,
         diagnosis: _diagnosisController.text,
         examinationFee: double.parse(_feeController.text),
