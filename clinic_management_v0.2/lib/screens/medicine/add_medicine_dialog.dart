@@ -105,6 +105,7 @@ class _AddMedicineDialogState extends State<AddMedicineDialog> {
   void _addMedicine() {
     if (_formKey.currentState!.validate()) {
       final detail = PrescriptionDetail(
+        id: '',
         prescriptionId: '', // Will be set when saving the prescription
         medicineId: _selectedMedicine!.id.toString(),
         quantity: int.parse(_quantityController.text),

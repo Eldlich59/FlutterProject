@@ -4,6 +4,7 @@ import 'package:clinic_management/models/prescription.dart';
 import 'package:clinic_management/models/doctor.dart';
 import 'package:clinic_management/services/supabase_service.dart';
 import 'package:clinic_management/screens/prescription/prescription_form_screen.dart';
+import 'package:clinic_management/models/patient.dart';
 
 class PrescriptionDetailScreen extends StatelessWidget {
   final Prescription prescription;
@@ -75,41 +76,88 @@ class PrescriptionDetailScreen extends StatelessWidget {
   }
 
   Widget _buildInfoSection() {
-    return FutureBuilder<Doctor>(
-      future:
-          SupabaseService().doctorService.getDoctorById(prescription.doctorId),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Card(
-            child: Padding(
-              padding: EdgeInsets.all(16.0),
-              child: Center(child: CircularProgressIndicator()),
-            ),
-          );
-        }
+    return Column(
+      children: [
+        FutureBuilder<Patient?>(
+          future: prescription.patientId != null
+              ? SupabaseService()
+                  .patientService
+                  .getPatientById(prescription.patientId!)
+              : Future.value(null),
+          builder: (context, patientSnapshot) {
+            if (patientSnapshot.connectionState == ConnectionState.waiting) {
+              return const Card(
+                child: Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+              );
+            }
 
-        final doctor = snapshot.data;
-        return Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Bác sĩ kê toa: ${doctor?.name ?? 'Không xác định'}',
-                  style: const TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.bold),
+            final patient = patientSnapshot.data;
+            return Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Thông tin bệnh nhân:',
+                      style: const TextStyle(
+                          fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    Text('Mã BN: ${patient?.id ?? 'Không xác định'}'),
+                    Text('Họ tên: ${patient?.name ?? 'Không xác định'}'),
+                    Text(
+                        'Ngày sinh: ${patient?.dateOfBirth != null ? DateFormat('dd/MM/yyyy').format(patient!.dateOfBirth) : 'Không xác định'}'),
+                    Text('Giới tính: ${patient?.gender ?? 'Không xác định'}'),
+                    Text('Địa chỉ: ${patient?.address ?? 'Không xác định'}'),
+                  ],
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  'Ngày kê toa: ${DateFormat('dd/MM/yyyy HH:mm').format(prescription.prescriptionDate)}',
-                  style: const TextStyle(fontSize: 16),
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: 16),
+        FutureBuilder<Doctor>(
+          future: SupabaseService()
+              .doctorService
+              .getDoctorById(prescription.doctorId),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Card(
+                child: Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: Center(child: CircularProgressIndicator()),
                 ),
-              ],
-            ),
-          ),
-        );
-      },
+              );
+            }
+
+            final doctor = snapshot.data;
+            return Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Bác sĩ kê toa: ${doctor?.name ?? 'Không xác định'}',
+                      style: const TextStyle(
+                          fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Ngày kê toa: ${DateFormat('dd/MM/yyyy HH:mm').format(prescription.prescriptionDate)}',
+                      style: const TextStyle(fontSize: 16),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      ],
     );
   }
 
@@ -128,7 +176,17 @@ class PrescriptionDetailScreen extends StatelessWidget {
   }
 
   Widget _buildMedicineCard(PrescriptionDetail detail) {
-    final medicine = detail.medicine!;
+    final medicine = detail.medicine;
+    if (medicine == null) {
+      return Card(
+        margin: const EdgeInsets.only(bottom: 8.0),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Text('Thuốc không tồn tại (ID: ${detail.medicineId})'),
+        ),
+      );
+    }
+
     return Card(
       margin: const EdgeInsets.only(bottom: 8.0),
       child: Padding(

@@ -90,7 +90,7 @@ class _BillDetailsSheetState extends State<BillDetailsSheet> {
                         'Thông tin hóa đơn',
                         [
                           'Mã hóa đơn: ${widget.bill.id}',
-                          'Ngày bán: ${DateFormat('dd/MM/yyyy HH:mm').format(widget.bill.saleDate)}',
+                          'Ngày tạo hóa đơn: ${DateFormat('dd/MM/yyyy HH:mm').format(widget.bill.saleDate)}',
                           'Tổng tiền: ${NumberFormat.currency(locale: 'vi_VN', symbol: 'đ').format(widget.bill.medicineCost)}',
                         ],
                       ),

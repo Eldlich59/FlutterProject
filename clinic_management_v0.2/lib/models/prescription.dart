@@ -8,6 +8,7 @@ class Prescription {
   final String? examId; // Make nullable
   final List<PrescriptionDetail> details;
   final String? doctorName;
+  final String? patientName;
 
   Prescription({
     required this.id,
@@ -17,6 +18,7 @@ class Prescription {
     this.examId, // Update constructor
     this.details = const [],
     this.doctorName,
+    this.patientName,
   });
 
   factory Prescription.fromJson(Map<String, dynamic> json) {
@@ -27,6 +29,7 @@ class Prescription {
       patientId: json['MaBN']?.toString(), // Make nullable and convert
       examId: json['MaPK']?.toString(), // Make nullable and convert
       doctorName: json['doctor_name']?.toString() ?? 'Không xác định',
+      patientName: json['patient_name']?.toString() ?? 'Không xác định',
     );
   }
 
@@ -42,6 +45,7 @@ class Prescription {
 }
 
 class PrescriptionDetail {
+  final String id;
   final String prescriptionId;
   final String medicineId;
   final int quantity;
@@ -49,6 +53,7 @@ class PrescriptionDetail {
   final Medicine? medicine;
 
   PrescriptionDetail({
+    required this.id,
     required this.prescriptionId,
     required this.medicineId,
     required this.quantity,
@@ -57,20 +62,19 @@ class PrescriptionDetail {
   });
 
   factory PrescriptionDetail.fromJson(Map<String, dynamic> json) {
-    final medicineId = json['MaThuoc'];
     return PrescriptionDetail(
-      prescriptionId: (json['MaToa']?.toString() ?? '').trim(),
-      medicineId: medicineId != null ? medicineId.toString().trim() : '',
-      quantity: json['Sluong'] is String
-          ? int.tryParse(json['Sluong']) ?? 0
-          : json['Sluong'] ?? 0,
-      usage: (json['Cdung']?.toString() ?? '').trim(),
+      id: json['id']?.toString() ?? '',
+      prescriptionId: json['MaToa']?.toString() ?? '',
+      medicineId: json['MaThuoc']?.toString() ?? '',
+      quantity: json['Sluong'] ?? 0,
+      usage: json['Cdung'] ?? '',
       medicine: json['thuoc'] != null ? Medicine.fromJson(json['thuoc']) : null,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
+      'id': id,
       'MaToa': prescriptionId,
       'MaThuoc': int.tryParse(medicineId) ?? medicineId,
       'Sluong': quantity,

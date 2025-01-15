@@ -12,14 +12,19 @@ class PrescriptionService {
             *,
             BACSI:MaBS (
               TenBS
+            ),
+            BENHNHAN:MaBN (
+              TenBN
             )
           ''').order('Ngayketoa', ascending: false);
 
       return (response as List).map((prescription) {
         final doctorData = prescription['BACSI'] as Map<String, dynamic>?;
+        final patientData = prescription['BENHNHAN'] as Map<String, dynamic>?;
         return Prescription.fromJson({
           ...prescription,
           'doctor_name': doctorData?['TenBS'],
+          'patient_name': patientData?['TenBN'],
         });
       }).toList();
     } catch (e, stackTrace) {

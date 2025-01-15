@@ -111,7 +111,7 @@ class _BillFormScreenState extends State<BillFormScreen> {
                     onTap: _selectDate,
                     child: InputDecorator(
                       decoration: const InputDecoration(
-                        labelText: 'Ngày bán',
+                        labelText: 'Ngày lập hóa đơn',
                         border: OutlineInputBorder(),
                       ),
                       child: Text(

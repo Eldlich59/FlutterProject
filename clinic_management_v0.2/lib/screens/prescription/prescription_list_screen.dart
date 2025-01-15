@@ -16,7 +16,6 @@ class _PrescriptionListScreenState extends State<PrescriptionListScreen> {
   final _supabaseService = SupabaseService().prescriptionService;
   List<Prescription> _prescriptions = [];
   bool _isLoading = true;
-  Map<String, String?> _patientNames = {};
 
   @override
   void initState() {
@@ -34,21 +33,10 @@ class _PrescriptionListScreenState extends State<PrescriptionListScreen> {
       final prescriptions = await _supabaseService.getPrescriptions();
       print('Loaded ${prescriptions.length} prescriptions'); // Debug print
 
-      // Fetch patient names for all prescriptions
-      final Map<String, String?> patientNames = {};
-      for (var prescription in prescriptions) {
-        if (prescription.patientId != null) {
-          patientNames[prescription.patientId!] = await SupabaseService()
-              .prescriptionService
-              .getPatientNameById(prescription.patientId!);
-        }
-      }
-
       if (!mounted) return;
 
       setState(() {
         _prescriptions = prescriptions;
-        _patientNames = patientNames;
         _isLoading = false;
       });
     } catch (e, stackTrace) {
@@ -81,22 +69,18 @@ class _PrescriptionListScreenState extends State<PrescriptionListScreen> {
                   itemCount: _prescriptions.length,
                   itemBuilder: (context, index) {
                     final prescription = _prescriptions[index];
-                    final patientName = _patientNames[prescription.patientId] ??
-                        'Không xác định';
-
                     return Card(
                       margin: const EdgeInsets.all(8.0),
                       child: ListTile(
-                        title: Text('Bệnh nhân: $patientName'),
-                        subtitle: Column(
+                        title: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                                'Bác sĩ: ${prescription.doctorName ?? 'Không xác định'}'),
-                            Text(
-                              'Ngày kê: ${DateFormat('dd/MM/yyyy').format(prescription.prescriptionDate)}',
-                            ),
+                            Text('Bệnh nhân: ${prescription.patientName}'),
+                            Text('Bác sĩ: ${prescription.doctorName}'),
                           ],
+                        ),
+                        subtitle: Text(
+                          'Ngày kê: ${DateFormat('dd/MM/yyyy').format(prescription.prescriptionDate)}',
                         ),
                         trailing: PopupMenuButton(
                           icon: const Icon(Icons.more_vert),
