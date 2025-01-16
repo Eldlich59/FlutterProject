@@ -10,11 +10,13 @@ import 'package:clinic_management/models/doctor.dart';
 class PrescriptionFormScreen extends StatefulWidget {
   final Prescription? prescription;
   final bool isEditing;
+  final Examination? examination; // Add this line
 
   const PrescriptionFormScreen({
     super.key,
     this.prescription,
     this.isEditing = false,
+    this.examination, // Add this line
   });
 
   @override
@@ -50,6 +52,11 @@ class _PrescriptionFormScreenState extends State<PrescriptionFormScreen> {
     if (widget.isEditing && widget.prescription != null) {
       // Load existing prescription details
       _loadPrescriptionDetails();
+    }
+
+    // Add this block to handle examination data
+    if (widget.examination != null) {
+      _loadExaminationData();
     }
   }
 
@@ -440,5 +447,33 @@ class _PrescriptionFormScreenState extends State<PrescriptionFormScreen> {
         );
       },
     );
+  }
+
+  Future<void> _loadExaminationData() async {
+    try {
+      final patient =
+          await _supabaseService3.getPatientById(widget.examination!.patientId);
+      setState(() => _selectedPatient = patient);
+
+      // First load all examinations for this patient
+      final examinations = await _supabaseService4.getExaminations(
+          patientId: widget.examination!.patientId);
+
+      // Then update state with all examinations and select the current one
+      setState(() {
+        _examinations = examinations;
+        // Find the matching examination in the loaded list
+        _selectedExamination = examinations.firstWhere(
+          (e) => e.id == widget.examination!.id,
+          orElse: () => widget.examination!,
+        );
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi khi tải thông tin bệnh nhân: $e')),
+        );
+      }
+    }
   }
 }

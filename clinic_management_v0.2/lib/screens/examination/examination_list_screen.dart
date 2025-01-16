@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../../models/examination.dart';
 import '../../services/supabase_service.dart';
 import 'examination_form_screen.dart';
+import '../prescription/prescription_form_screen.dart';
 
 class ExaminationListScreen extends StatefulWidget {
   final String?
@@ -208,7 +209,14 @@ class _ExaminationListScreenState extends State<ExaminationListScreen> {
   }
 
   void _navigateToPrescription(Examination examination) {
-    Navigator.pushNamed(context, '/prescription', arguments: examination);
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PrescriptionFormScreen(
+          examination: examination,
+        ),
+      ),
+    );
   }
 
   Future<void> _confirmDelete(Examination examination) async {
