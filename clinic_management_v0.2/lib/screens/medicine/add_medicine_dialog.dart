@@ -25,80 +25,124 @@ class _AddMedicineDialogState extends State<AddMedicineDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Thêm thuốc'),
-      content: Form(
-        key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            DropdownButtonFormField<Medicine>(
-              value: _selectedMedicine,
-              decoration: const InputDecoration(
-                labelText: 'Chọn thuốc',
-                border: OutlineInputBorder(),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      title: const Row(
+        children: [
+          Icon(Icons.medical_services, color: Colors.blue),
+          SizedBox(width: 8),
+          Text(
+            'Thêm thuốc',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+        ],
+      ),
+      content: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              DropdownButtonFormField<Medicine>(
+                value: _selectedMedicine,
+                decoration: InputDecoration(
+                  labelText: 'Chọn thuốc',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  prefixIcon: const Icon(Icons.medication),
+                  filled: true,
+                  fillColor: Colors.grey[50],
+                ),
+                items: widget.medicines.map((medicine) {
+                  return DropdownMenuItem(
+                    value: medicine,
+                    child: Text(
+                      medicine.name,
+                      style: const TextStyle(fontSize: 15),
+                    ),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() => _selectedMedicine = value);
+                },
+                validator: (value) =>
+                    value == null ? 'Vui lòng chọn thuốc' : null,
               ),
-              items: widget.medicines.map((medicine) {
-                return DropdownMenuItem(
-                  value: medicine,
-                  child: Text(medicine.name),
-                );
-              }).toList(),
-              onChanged: (value) {
-                setState(() => _selectedMedicine = value);
-              },
-              validator: (value) {
-                if (value == null) {
-                  return 'Vui lòng chọn thuốc';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _quantityController,
-              decoration: const InputDecoration(
-                labelText: 'Số lượng',
-                border: OutlineInputBorder(),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _quantityController,
+                decoration: InputDecoration(
+                  labelText: 'Số lượng',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  prefixIcon: const Icon(Icons.numbers),
+                  filled: true,
+                  fillColor: Colors.grey[50],
+                ),
+                keyboardType: TextInputType.number,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Vui lòng nhập số lượng';
+                  }
+                  if (int.tryParse(value) == null || int.parse(value) <= 0) {
+                    return 'Số lượng không hợp lệ';
+                  }
+                  return null;
+                },
               ),
-              keyboardType: TextInputType.number,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Vui lòng nhập số lượng';
-                }
-                if (int.tryParse(value) == null || int.parse(value) <= 0) {
-                  return 'Số lượng không hợp lệ';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _usageController,
-              decoration: const InputDecoration(
-                labelText: 'Cách dùng',
-                border: OutlineInputBorder(),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _usageController,
+                decoration: InputDecoration(
+                  labelText: 'Cách dùng',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  prefixIcon: const Icon(Icons.description),
+                  filled: true,
+                  fillColor: Colors.grey[50],
+                ),
+                maxLines: 2,
+                validator: (value) =>
+                    value?.isEmpty ?? true ? 'Vui lòng nhập cách dùng' : null,
               ),
-              maxLines: 2,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Vui lòng nhập cách dùng';
-                }
-                return null;
-              },
-            ),
-          ],
+            ],
+          ),
         ),
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Hủy'),
+          child: const Text(
+            'Hủy',
+            style: TextStyle(fontSize: 15),
+          ),
         ),
         ElevatedButton(
           onPressed: _addMedicine,
-          child: const Text('Thêm'),
+          style: ElevatedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.add),
+              SizedBox(width: 8),
+              Text(
+                'Thêm',
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
         ),
       ],
+      actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
     );
   }
 

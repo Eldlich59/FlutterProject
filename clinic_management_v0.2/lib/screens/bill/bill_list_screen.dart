@@ -39,89 +39,208 @@ class _BillListScreenState extends State<BillListScreen> {
     }
   }
 
+  String _formatBillId(String id) {
+    return id.length > 6 ? '${id.substring(0, 6)}...' : id;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final jadeColor = Color(0xFF40E0D0); // Turquoise jade color
+    final lightJadeColor = Color(0xFFE0F2F1); // Light jade color
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Danh sách hóa đơn'),
+        elevation: 0,
+        backgroundColor: jadeColor,
+        title: const Text(
+          'Danh sách hóa đơn',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: _loadBills,
-              child: ListView.builder(
-                itemCount: _bills.length,
-                itemBuilder: (context, index) {
-                  final bill = _bills[index];
-                  return Card(
-                    margin: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    child: ListTile(
-                      title: Text('BN: ${bill.patientName}'),
-                      subtitle: Text(
-                        'Ngày: ${DateFormat('dd/MM/yyyy').format(bill.saleDate)}\n'
-                        'Tổng thanh toán: ${NumberFormat.currency(locale: 'vi_VN', symbol: 'đ').format(bill.totalCost)}',
-                      ),
-                      trailing: PopupMenuButton(
-                        itemBuilder: (context) => [
-                          PopupMenuItem(
-                            value: 'details',
-                            child: Row(
-                              children: const [
-                                Icon(Icons.info_outline),
-                                SizedBox(width: 8),
-                                Text('Chi tiết'),
-                              ],
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              lightJadeColor,
+              Colors.white,
+            ],
+          ),
+        ),
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : RefreshIndicator(
+                onRefresh: _loadBills,
+                child: _bills.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.receipt_long_outlined,
+                              size: 64,
+                              color: Colors.grey[400],
                             ),
-                          ),
-                          PopupMenuItem(
-                            value: 'print',
-                            child: Row(
-                              children: const [
-                                Icon(Icons.print),
-                                SizedBox(width: 8),
-                                Text('In hóa đơn'),
-                              ],
+                            const SizedBox(height: 16),
+                            Text(
+                              'Chưa có hóa đơn nào',
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Colors.grey[600],
+                              ),
                             ),
-                          ),
-                          PopupMenuItem(
-                            value: 'delete',
-                            child: Row(
-                              children: const [
-                                Icon(Icons.delete, color: Colors.red),
-                                SizedBox(width: 8),
-                                Text('Xóa',
-                                    style: TextStyle(color: Colors.red)),
-                              ],
+                          ],
+                        ),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: _bills.length,
+                        itemBuilder: (context, index) {
+                          final bill = _bills[index];
+                          return Card(
+                            elevation: 2,
+                            margin: const EdgeInsets.only(bottom: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                          ),
-                        ],
-                        onSelected: (value) {
-                          switch (value) {
-                            case 'details':
-                              _showBillDetails(context, bill);
-                              break;
-                            case 'print':
-                              _printBill(bill);
-                              break;
-                            case 'delete':
-                              _confirmDeleteBill(bill);
-                              break;
-                          }
+                            child: InkWell(
+                              onTap: () => _showBillDetails(context, bill),
+                              borderRadius: BorderRadius.circular(12),
+                              child: Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            'Hóa đơn #${_formatBillId(bill.id)}',
+                                            style: const TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.black87,
+                                            ),
+                                          ),
+                                        ),
+                                        PopupMenuButton(
+                                          icon: const Icon(Icons.more_vert),
+                                          itemBuilder: (context) => [
+                                            PopupMenuItem(
+                                              value: 'details',
+                                              child: Row(
+                                                children: const [
+                                                  Icon(Icons.visibility,
+                                                      color: Colors.black87),
+                                                  SizedBox(width: 12),
+                                                  Text('Chi tiết'),
+                                                ],
+                                              ),
+                                            ),
+                                            PopupMenuItem(
+                                              value: 'print',
+                                              child: Row(
+                                                children: const [
+                                                  Icon(Icons.print,
+                                                      color: Colors.blue),
+                                                  SizedBox(width: 12),
+                                                  Text('In hóa đơn'),
+                                                ],
+                                              ),
+                                            ),
+                                            PopupMenuItem(
+                                              value: 'delete',
+                                              child: Row(
+                                                children: const [
+                                                  Icon(Icons.delete,
+                                                      color: Colors.red),
+                                                  SizedBox(width: 12),
+                                                  Text('Xóa',
+                                                      style: TextStyle(
+                                                          color: Colors.red)),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                          onSelected: (value) {
+                                            if (value == 'details') {
+                                              _showBillDetails(context, bill);
+                                            } else if (value == 'print') {
+                                              _printBill(bill);
+                                            } else if (value == 'delete') {
+                                              _confirmDeleteBill(bill);
+                                            }
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 12),
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.person_outline,
+                                            size: 20, color: Colors.grey),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            bill.patientName,
+                                            style:
+                                                const TextStyle(fontSize: 16),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.calendar_today,
+                                            size: 20, color: Colors.grey),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          DateFormat('dd/MM/yyyy')
+                                              .format(bill.saleDate),
+                                          style: const TextStyle(fontSize: 16),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.payment,
+                                            size: 20, color: Colors.grey),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          NumberFormat.currency(
+                                                  locale: 'vi_VN', symbol: 'đ')
+                                              .format(bill.totalCost),
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.green,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
                         },
                       ),
-                      onTap: () => _showBillDetails(context, bill),
-                    ),
-                  );
-                },
               ),
-            ),
-      floatingActionButton: FloatingActionButton(
+      ),
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _navigateToCreateBill(context),
-        tooltip: 'Tạo hóa đơn mới',
-        child: const Icon(Icons.add),
+        icon: const Icon(Icons.add),
+        label: const Text('Tạo hóa đơn'),
+        elevation: 4,
+        backgroundColor: jadeColor,
       ),
     );
   }

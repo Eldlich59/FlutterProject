@@ -20,15 +20,32 @@ class ExaminationDetailsScreen extends StatelessWidget {
     final currencyFormat = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ');
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF5F5F7),
       appBar: AppBar(
-        title: const Text('Chi tiết phiếu khám'),
+        elevation: 0,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF2196F3), Color(0xFF1976D2)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
+        title: const Text(
+          'Chi tiết phiếu khám',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
+          ),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.edit),
+            icon: const Icon(Icons.edit, color: Colors.white),
             onPressed: () => _navigateToEdit(context),
           ),
           IconButton(
-            icon: const Icon(Icons.medical_services),
+            icon: const Icon(Icons.medical_services, color: Colors.white),
             onPressed: () => _navigateToPrescription(context),
           ),
         ],
@@ -36,22 +53,52 @@ class ExaminationDetailsScreen extends StatelessWidget {
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
+          elevation: 8,
+          shadowColor: Colors.black26,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              gradient: const LinearGradient(
+                colors: [Colors.white, Color(0xFFF8F9FF)],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+            ),
+            padding: const EdgeInsets.all(20.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildInfoRow('Bệnh nhân:', examination.patientName ?? 'N/A'),
-                const SizedBox(height: 12),
-                _buildInfoRow('Ngày khám:',
-                    dateFormat.format(examination.examinationDate)),
-                const SizedBox(height: 12),
-                _buildInfoRow('Triệu chứng:', examination.symptoms),
-                const SizedBox(height: 12),
-                _buildInfoRow('Chẩn đoán:', examination.diagnosis),
-                const SizedBox(height: 12),
-                _buildInfoRow('Phí khám:',
-                    currencyFormat.format(examination.examinationFee)),
+                _buildInfoSection(
+                  'Thông tin chung',
+                  [
+                    _buildInfoRow(
+                        'Bệnh nhân:', examination.patientName ?? 'N/A'),
+                    _buildInfoRow('Ngày khám:',
+                        dateFormat.format(examination.examinationDate)),
+                  ],
+                  Icons.person,
+                ),
+                const SizedBox(height: 24),
+                _buildInfoSection(
+                  'Chi tiết khám',
+                  [
+                    _buildInfoRow('Triệu chứng:', examination.symptoms),
+                    _buildInfoRow('Chẩn đoán:', examination.diagnosis),
+                  ],
+                  Icons.medical_information,
+                ),
+                const SizedBox(height: 24),
+                _buildInfoSection(
+                  'Chi phí',
+                  [
+                    _buildInfoRow('Phí khám:',
+                        currencyFormat.format(examination.examinationFee)),
+                  ],
+                  Icons.payment,
+                ),
               ],
             ),
           ),
@@ -60,23 +107,75 @@ class ExaminationDetailsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
+  Widget _buildInfoSection(String title, List<Widget> children, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: const TextStyle(fontSize: 16),
-        ),
-      ],
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: Colors.blueAccent, size: 24),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blueAccent,
+                ),
+              ),
+            ],
+          ),
+          const Divider(height: 24, thickness: 1),
+          ...children,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8.0),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8F9FF),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 14,
+              color: Colors.grey,
+              letterSpacing: 0.3,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 16,
+              color: Colors.black87,
+              height: 1.3,
+            ),
+          ),
+        ],
+      ),
     );
   }
 

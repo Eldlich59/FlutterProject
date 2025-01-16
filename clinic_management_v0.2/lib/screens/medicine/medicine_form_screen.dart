@@ -220,143 +220,269 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
       child: Scaffold(
         appBar: AppBar(
           title: Text(
-              widget.medicine == null ? 'Thêm thuốc mới' : 'Chỉnh sửa thuốc'),
+            widget.medicine == null ? 'Thêm thuốc mới' : 'Chỉnh sửa thuốc',
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 20,
+              color: Colors.white,
+            ),
+          ),
+          flexibleSpace: Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFFFF8A80),
+                  Color(0xFFE57373)
+                ], // Light red gradient
+              ),
+            ),
+          ),
+          elevation: 0,
           actions: [
             if (_hasChanges)
-              IconButton(
-                icon: const Icon(Icons.save),
-                onPressed: _isLoading ? null : _handleSubmit,
+              Padding(
+                padding: const EdgeInsets.only(right: 8.0),
+                child: IconButton(
+                  icon: const Icon(Icons.save, color: Colors.white),
+                  onPressed: _isLoading ? null : _handleSubmit,
+                  tooltip: 'Lưu thay đổi',
+                ),
               ),
           ],
         ),
-        body: _isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : SingleChildScrollView(
-                padding: const EdgeInsets.all(16.0),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      TextFormField(
-                        controller: _nameController,
-                        decoration: const InputDecoration(
-                          labelText: 'Tên thuốc *',
-                          hintText: 'Nhập tên thuốc',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.medication),
-                        ),
-                        textCapitalization: TextCapitalization.words,
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Vui lòng nhập tên thuốc';
-                          }
-                          if (value.trim().length < 3) {
-                            return 'Tên thuốc phải có ít nhất 3 ký tự';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _unitController,
-                        decoration: const InputDecoration(
-                          labelText: 'Đơn vị *',
-                          hintText: 'VD: Viên, Hộp, Chai...',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.scale),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Vui lòng nhập đơn vị';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _priceController,
-                        decoration: const InputDecoration(
-                          labelText: 'Giá (VNĐ) *',
-                          hintText: 'Nhập giá thuốc',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.monetization_on),
-                          suffixText: 'VNĐ',
-                        ),
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
-                          TextInputFormatter.withFunction((oldValue, newValue) {
-                            if (newValue.text.isEmpty) return newValue;
-                            final number = int.parse(newValue.text);
-                            final newString = _currencyFormat.format(number);
-                            return TextEditingValue(
-                              text: newString,
-                              selection: TextSelection.collapsed(
-                                  offset: newString.length),
-                            );
-                          }),
+        body: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Color(0xFFFF8A80),
+                Color(0xFFE57373)
+              ], // Light red gradient
+            ),
+          ),
+          child: _isLoading
+              ? const Center(
+                  child: CircularProgressIndicator(color: Colors.white))
+              : SingleChildScrollView(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Card(
+                    elevation: 8,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20),
+                        color: Colors.white,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 10,
+                            offset: const Offset(0, 5),
+                          ),
                         ],
-                        validator: _validatePrice,
                       ),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextFormField(
-                              controller: _mfgDateController,
-                              decoration: const InputDecoration(
-                                labelText: 'Ngày sản xuất *',
-                                border: OutlineInputBorder(),
-                                prefixIcon: Icon(Icons.calendar_today),
-                              ),
-                              readOnly: true,
-                              onTap: () => _selectDate(context, true),
+                      padding: const EdgeInsets.all(20.0),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            _buildFormField(
+                              controller: _nameController,
+                              label: 'Tên thuốc',
+                              hint: 'Nhập tên thuốc',
+                              icon: Icons.medication,
                               validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Chọn ngày sản xuất';
+                                if (value == null || value.trim().isEmpty) {
+                                  return 'Vui lòng nhập tên thuốc';
+                                }
+                                if (value.trim().length < 3) {
+                                  return 'Tên thuốc phải có ít nhất 3 ký tự';
                                 }
                                 return null;
                               },
                             ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: TextFormField(
-                              controller: _expDateController,
-                              decoration: const InputDecoration(
-                                labelText: 'Hạn sử dụng *',
-                                border: OutlineInputBorder(),
-                                prefixIcon: Icon(Icons.event_busy),
-                              ),
-                              readOnly: true,
-                              onTap: () => _selectDate(context, false),
+                            const SizedBox(height: 20),
+                            _buildFormField(
+                              controller: _unitController,
+                              label: 'Đơn vị',
+                              hint: 'VD: Viên, Hộp, Chai...',
+                              icon: Icons.scale,
                               validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Chọn hạn sử dụng';
+                                if (value == null || value.trim().isEmpty) {
+                                  return 'Vui lòng nhập đơn vị';
                                 }
                                 return null;
                               },
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 24),
-                      ElevatedButton.icon(
-                        onPressed: _isLoading ? null : _handleSubmit,
-                        icon: const Icon(Icons.save),
-                        label: Text(widget.medicine == null
-                            ? 'Thêm thuốc'
-                            : 'Cập nhật'),
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.all(16),
+                            const SizedBox(height: 20),
+                            _buildFormField(
+                              controller: _priceController,
+                              label: 'Giá (VNĐ)',
+                              hint: 'Nhập giá thuốc',
+                              icon: Icons.monetization_on,
+                              keyboardType: TextInputType.number,
+                              suffixText: 'VNĐ',
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly,
+                                TextInputFormatter.withFunction(
+                                    (oldValue, newValue) {
+                                  if (newValue.text.isEmpty) return newValue;
+                                  final number = int.parse(newValue.text);
+                                  final newString =
+                                      _currencyFormat.format(number);
+                                  return TextEditingValue(
+                                    text: newString,
+                                    selection: TextSelection.collapsed(
+                                        offset: newString.length),
+                                  );
+                                }),
+                              ],
+                              validator: _validatePrice,
+                            ),
+                            const SizedBox(height: 20),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _buildDateField(
+                                    controller: _mfgDateController,
+                                    label: 'Ngày sản xuất',
+                                    icon: Icons.calendar_today,
+                                    onTap: () => _selectDate(context, true),
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: _buildDateField(
+                                    controller: _expDateController,
+                                    label: 'Hạn sử dụng',
+                                    icon: Icons.event_busy,
+                                    onTap: () => _selectDate(context, false),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 32),
+                            ElevatedButton(
+                              onPressed: _isLoading ? null : _handleSubmit,
+                              style: ElevatedButton.styleFrom(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 16),
+                                backgroundColor:
+                                    const Color(0xFFEF5350), // Light red button
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                elevation: 4,
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(Icons.save, color: Colors.white),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    widget.medicine == null
+                                        ? 'Thêm thuốc'
+                                        : 'Cập nhật',
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ],
+                    ),
                   ),
                 ),
-              ),
+        ),
       ),
+    );
+  }
+
+  Widget _buildFormField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    required IconData icon,
+    TextInputType? keyboardType,
+    String? suffixText,
+    List<TextInputFormatter>? inputFormatters,
+    String? Function(String?)? validator,
+  }) {
+    return TextFormField(
+      controller: controller,
+      decoration: InputDecoration(
+        labelText: '$label *',
+        hintText: hint,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(
+              color: Color(0xFFEF5350), width: 2), // Light red border
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.red.shade200, width: 1),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFFEF5350), width: 2),
+        ),
+        prefixIcon: Icon(icon, color: const Color(0xFFEF5350)),
+        suffixText: suffixText,
+        filled: true,
+        fillColor: Colors.grey[50],
+        labelStyle: TextStyle(color: Colors.red.shade700),
+      ),
+      keyboardType: keyboardType,
+      inputFormatters: inputFormatters,
+      validator: validator,
+    );
+  }
+
+  Widget _buildDateField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return TextFormField(
+      controller: controller,
+      decoration: InputDecoration(
+        labelText: '$label *',
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFFEF5350), width: 2),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.red.shade200, width: 1),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFFEF5350), width: 2),
+        ),
+        prefixIcon: Icon(icon, color: const Color(0xFFEF5350)),
+        filled: true,
+        fillColor: Colors.grey[50],
+        labelStyle: TextStyle(color: Colors.red.shade700),
+      ),
+      readOnly: true,
+      onTap: onTap,
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return 'Vui lòng chọn $label';
+        }
+        return null;
+      },
     );
   }
 

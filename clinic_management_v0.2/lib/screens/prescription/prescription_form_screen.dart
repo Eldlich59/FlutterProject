@@ -149,22 +149,74 @@ class _PrescriptionFormScreenState extends State<PrescriptionFormScreen> {
     if (_selectedPatient == null) return const SizedBox.shrink();
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 16.0),
-      child: ListTile(
-        title: Text(
-          _selectedPatient!.name,
-          style: const TextStyle(fontWeight: FontWeight.bold),
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          gradient: LinearGradient(
+            colors: [Colors.orange.shade50, Colors.white],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
         ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Số điện thoại: ${_selectedPatient!.phone}'),
-            if (!widget.isEditing && _selectedExamination != null)
-              Text('Phiếu khám số: ${_selectedExamination!.id}'),
-          ],
-        ),
-        leading: const CircleAvatar(
-          child: Icon(Icons.person),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Thông tin bệnh nhân',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.orange.shade800,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  CircleAvatar(
+                    radius: 30,
+                    backgroundColor: Colors.orange.shade100,
+                    child: Icon(Icons.person,
+                        size: 35, color: Colors.orange.shade800),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _selectedPatient!.name,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'SĐT: ${_selectedPatient!.phone}',
+                          style: TextStyle(
+                            color: Colors.grey.shade700,
+                            fontSize: 14,
+                          ),
+                        ),
+                        if (!widget.isEditing && _selectedExamination != null)
+                          Text(
+                            'Phiếu khám số: ${_selectedExamination!.id}',
+                            style: TextStyle(
+                              color: Colors.grey.shade700,
+                              fontSize: 14,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -174,10 +226,14 @@ class _PrescriptionFormScreenState extends State<PrescriptionFormScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.isEditing ? 'Sửa toa thuốc' : 'Thêm toa thuốc mới'),
+        elevation: 0,
+        backgroundColor: Colors.orange.shade400,
+        title: Text(
+          widget.isEditing ? 'Sửa toa thuốc' : 'Thêm toa thuốc mới',
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
         actions: [
-          if (widget.prescription !=
-              null) // Only show delete button when editing
+          if (widget.prescription != null)
             IconButton(
               icon: const Icon(Icons.delete),
               onPressed: () => _showDeleteConfirmation(context),
@@ -186,129 +242,210 @@ class _PrescriptionFormScreenState extends State<PrescriptionFormScreen> {
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (widget.prescription == null) ...[
-                      DropdownButtonFormField<String>(
-                        value: _selectedPatient?.id,
-                        decoration: const InputDecoration(
-                          labelText: 'Chọn bệnh nhân',
-                          border: OutlineInputBorder(),
-                        ),
-                        items: _patients.map((patient) {
-                          return DropdownMenuItem(
-                            value: patient.id,
-                            child: Text('${patient.name} - ${patient.phone}'),
-                          );
-                        }).toList(),
-                        onChanged: (value) {
-                          if (value != null) {
-                            final selectedPatient = _patients.firstWhere(
-                              (patient) => patient.id == value,
-                            );
-                            setState(() {
-                              _selectedPatient = selectedPatient;
-                              _selectedExamination = null;
-                            });
-                            _loadExaminations(value);
-                          }
-                        },
-                        validator: (value) {
-                          if (value == null) {
-                            return 'Vui lòng chọn bệnh nhân';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      _buildPatientInfo(), // Add patient info card here
-                      if (_selectedPatient != null)
-                        DropdownButtonFormField<Examination>(
-                          value: _selectedExamination,
-                          decoration: const InputDecoration(
-                            labelText: 'Chọn phiếu khám',
-                            border: OutlineInputBorder(),
-                          ),
-                          items: _examinations.map((examination) {
+          ? const Center(
+              child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.orange),
+            ))
+          : Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Colors.orange.shade50, Colors.white],
+                ),
+              ),
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16.0),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (widget.prescription == null) ...[
+                        _buildSectionHeader('Chọn bệnh nhân'),
+                        const SizedBox(height: 8),
+                        _buildDropdownField(
+                          value: _selectedPatient?.id,
+                          items: _patients.map((patient) {
                             return DropdownMenuItem(
-                              value: examination,
-                              child: Text('Phiếu khám ${examination.id}'),
+                              value: patient.id,
+                              child: Text('${patient.name} - ${patient.phone}'),
                             );
                           }).toList(),
                           onChanged: (value) {
-                            setState(() => _selectedExamination = value);
-                          },
-                          validator: (value) {
-                            if (value == null) {
-                              return 'Vui lòng chọn phiếu khám';
+                            if (value != null) {
+                              final selectedPatient = _patients.firstWhere(
+                                (patient) => patient.id == value,
+                              );
+                              setState(() {
+                                _selectedPatient = selectedPatient;
+                                _selectedExamination = null;
+                              });
+                              _loadExaminations(value);
                             }
-                            return null;
                           },
+                          labelText: 'Chọn bệnh nhân',
                         ),
-                      const SizedBox(height: 16),
-                    ] else
-                      _buildPatientInfo(), // Show patient info in edit mode
-                    DropdownButtonFormField<Doctor>(
-                      value: _selectedDoctor,
-                      decoration: const InputDecoration(
+                        const SizedBox(height: 16),
+                        _buildPatientInfo(),
+                        if (_selectedPatient != null) ...[
+                          const SizedBox(height: 16),
+                          _buildSectionHeader('Thông tin khám'),
+                          const SizedBox(height: 8),
+                          _buildDropdownField(
+                            value: _selectedExamination,
+                            items: _examinations.map((examination) {
+                              return DropdownMenuItem(
+                                value: examination,
+                                child: Text('Phiếu khám ${examination.id}'),
+                              );
+                            }).toList(),
+                            onChanged: (value) {
+                              setState(() => _selectedExamination = value);
+                            },
+                            labelText: 'Chọn phiếu khám',
+                          ),
+                        ],
+                      ] else
+                        _buildPatientInfo(),
+                      const SizedBox(height: 24),
+                      _buildSectionHeader('Thông tin kê đơn'),
+                      const SizedBox(height: 8),
+                      _buildDropdownField(
+                        value: _selectedDoctor,
+                        items: _doctors.map((doctor) {
+                          return DropdownMenuItem(
+                            value: doctor,
+                            child: Text(doctor.name),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() => _selectedDoctor = value);
+                        },
                         labelText: 'Chọn bác sĩ',
-                        border: OutlineInputBorder(),
                       ),
-                      items: _doctors.map((doctor) {
-                        return DropdownMenuItem(
-                          value: doctor,
-                          child: Text(doctor
-                              .name), // Changed from '${doctor.id} - ${doctor.name}' to just doctor.name
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        setState(() => _selectedDoctor = value);
-                      },
-                      validator: (value) {
-                        if (value == null) {
-                          return 'Vui lòng chọn bác sĩ';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    InkWell(
-                      onTap: () => _selectDate(context),
-                      child: InputDecorator(
-                        decoration: const InputDecoration(
-                          labelText: 'Ngày kê toa',
-                          border: OutlineInputBorder(),
-                        ),
-                        child: Text(
-                          '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: _showAddMedicineDialog,
-                      child: const Text('Thêm thuốc'),
-                    ),
-                    const SizedBox(height: 16),
-                    ..._buildMedicineList(),
-                    const SizedBox(height: 24),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: _savePrescription,
-                        child: const Text('Lưu toa thuốc'),
-                      ),
-                    ),
-                  ],
+                      const SizedBox(height: 16),
+                      _buildDatePicker(),
+                      const SizedBox(height: 24),
+                      _buildSectionHeader('Danh sách thuốc'),
+                      const SizedBox(height: 16),
+                      _buildAddMedicineButton(),
+                      const SizedBox(height: 16),
+                      ..._buildMedicineList(),
+                      const SizedBox(height: 24),
+                      _buildSaveButton(),
+                    ],
+                  ),
                 ),
               ),
             ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title) {
+    return Text(
+      title,
+      style: TextStyle(
+        fontSize: 18,
+        fontWeight: FontWeight.bold,
+        color: Colors.orange.shade800,
+      ),
+    );
+  }
+
+  Widget _buildDropdownField({
+    required dynamic value,
+    required List<DropdownMenuItem> items,
+    required Function(dynamic) onChanged,
+    required String labelText,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 4,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: DropdownButtonFormField(
+        value: value,
+        items: items,
+        onChanged: onChanged,
+        decoration: InputDecoration(
+          labelText: labelText,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          filled: true,
+          fillColor: Colors.white,
+        ),
+        validator: (value) {
+          if (value == null) {
+            return 'Vui lòng chọn $labelText';
+          }
+          return null;
+        },
+      ),
+    );
+  }
+
+  Widget _buildDatePicker() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 4,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: InkWell(
+        onTap: () => _selectDate(context),
+        child: InputDecorator(
+          decoration: InputDecoration(
+            labelText: 'Ngày kê toa',
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+            filled: true,
+            fillColor: Colors.white,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
+              ),
+              Icon(Icons.calendar_today, color: Colors.orange.shade800),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAddMedicineButton() {
+    return ElevatedButton.icon(
+      onPressed: _showAddMedicineDialog,
+      icon: const Icon(Icons.add),
+      label: const Text('Thêm thuốc'),
+      style: ElevatedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
     );
   }
 
@@ -316,29 +453,56 @@ class _PrescriptionFormScreenState extends State<PrescriptionFormScreen> {
     return _details.map((detail) {
       final medicine = detail.medicine!;
       return Card(
-        margin: const EdgeInsets.only(bottom: 8.0),
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      medicine.name,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    Text('Số lượng: ${detail.quantity} ${medicine.unit}'),
-                    Text('Cách dùng: ${detail.usage}'),
-                  ],
+        elevation: 4,
+        margin: const EdgeInsets.only(bottom: 12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            gradient: LinearGradient(
+              colors: [Colors.orange.shade50, Colors.white],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  backgroundColor: Colors.orange.shade100,
+                  child: Icon(Icons.medication, color: Colors.orange.shade800),
                 ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.delete),
-                onPressed: () => _removeDetail(detail),
-              ),
-            ],
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        medicine.name,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Số lượng: ${detail.quantity} ${medicine.unit}',
+                        style: TextStyle(color: Colors.grey.shade700),
+                      ),
+                      Text(
+                        'Cách dùng: ${detail.usage}',
+                        style: TextStyle(color: Colors.grey.shade700),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete),
+                  onPressed: () => _removeDetail(detail),
+                ),
+              ],
+            ),
           ),
         ),
       );
@@ -475,5 +639,22 @@ class _PrescriptionFormScreenState extends State<PrescriptionFormScreen> {
         );
       }
     }
+  }
+
+  Widget _buildSaveButton() {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: _savePrescription,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.orange.shade400,
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        child: const Text('Lưu toa thuốc'),
+      ),
+    );
   }
 }

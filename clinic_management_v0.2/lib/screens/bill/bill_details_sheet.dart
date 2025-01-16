@@ -54,15 +54,27 @@ class _BillDetailsSheetState extends State<BillDetailsSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final turquoiseColor = Color(0xFF40E0D0); // Màu lục bích
+    final lightTurquoise = Color(0xFFE0F7F5); // Màu lục bích nhạt
+    final darkTurquoise = Color(0xFF20B2AA); // Màu lục bích đậm
+
     return Container(
-      padding: const EdgeInsets.all(16),
-      // Take up 80% of screen height
+      padding: const EdgeInsets.all(20),
       height: MediaQuery.of(context).size.height * 0.8,
-      decoration: const BoxDecoration(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        boxShadow: [
+          BoxShadow(
+            color: turquoiseColor.withOpacity(0.3),
+            spreadRadius: 2,
+            blurRadius: 5,
+            offset: const Offset(0, -3),
+          ),
+        ],
       ),
       child: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(child: CircularProgressIndicator(color: darkTurquoise))
           : Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -72,17 +84,19 @@ class _BillDetailsSheetState extends State<BillDetailsSheet> {
                   children: [
                     Text(
                       'Chi tiết hóa đơn',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                      style:
+                          Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: darkTurquoise,
+                              ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.close),
+                      icon: Icon(Icons.close, color: Colors.grey.shade600),
                       onPressed: () => Navigator.pop(context),
                     ),
                   ],
                 ),
-                const Divider(),
+                Divider(color: lightTurquoise, thickness: 2),
                 Expanded(
                   child: ListView(
                     children: [
@@ -90,62 +104,76 @@ class _BillDetailsSheetState extends State<BillDetailsSheet> {
                         'Thông tin hóa đơn',
                         [
                           'Tên bệnh nhân: ${widget.bill.patientName}',
-                          'Mã hóa đơn: ${widget.bill.id}',
+                          'Mã hóa đơn: ${widget.bill.id.substring(0, 6)}...',
                           if (widget.bill.examinationId != null)
-                            'Mã phiếu khám: ${widget.bill.examinationId}',
+                            'Mã phiếu khám: ${widget.bill.examinationId?.substring(0, 6)}...',
                           'Ngày tạo hóa đơn: ${DateFormat('dd/MM/yyyy HH:mm').format(widget.bill.saleDate)}',
                           'Tiền thuốc: ${NumberFormat.currency(locale: 'vi_VN', symbol: 'đ').format(widget.bill.medicineCost)}',
                           if (widget.bill.examinationCost != null)
                             'Tiền khám: ${NumberFormat.currency(locale: 'vi_VN', symbol: 'đ').format(widget.bill.examinationCost)}',
                           'Tổng thanh toán: ${NumberFormat.currency(locale: 'vi_VN', symbol: 'đ').format(widget.bill.totalCost)}',
                         ],
+                        Icons.receipt_long,
                       ),
                       if (_prescriptionDetails != null) ...[
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 20),
                         _buildInfoSection(
                           'Thông tin toa thuốc',
                           [
-                            'Mã toa: ${_prescriptionDetails![0].prescriptionId}',
+                            'Mã toa: ${_prescriptionDetails![0].prescriptionId.substring(0, 6)}...',
+                            'Danh sách thuốc:',
                           ],
+                          Icons.medical_information,
+                          additionalContent: ListView.builder(
+                            physics: const NeverScrollableScrollPhysics(),
+                            shrinkWrap: true,
+                            itemCount: _medicineDetails.length,
+                            itemBuilder: (context, index) {
+                              final medicine = _medicineDetails[index];
+                              return Card(
+                                elevation: 2,
+                                margin: const EdgeInsets.only(bottom: 12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  side: BorderSide(color: lightTurquoise),
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(12),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        medicine['THUOC']['TenThuoc'],
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .titleMedium
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.bold,
+                                              color: darkTurquoise,
+                                            ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      _buildMedicineDetail(
+                                        Icons.numbers,
+                                        'Số lượng: ${medicine['Sluong']} ${medicine['THUOC']['DonVi']}',
+                                      ),
+                                      _buildMedicineDetail(
+                                        Icons.info_outline,
+                                        'Cách dùng: ${medicine['Cdung']}',
+                                      ),
+                                      _buildMedicineDetail(
+                                        Icons.attach_money,
+                                        'Thành tiền: ${NumberFormat.currency(locale: 'vi_VN', symbol: 'đ').format(medicine['THUOC']['DonGia'] * medicine['Sluong'])}',
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
                         ),
                       ],
-                      const SizedBox(height: 16),
-                      Text(
-                        'Danh sách thuốc',
-                        style:
-                            Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                      ),
-                      const SizedBox(height: 8),
-                      ListView.builder(
-                        physics: const NeverScrollableScrollPhysics(),
-                        shrinkWrap: true,
-                        itemCount: _medicineDetails.length,
-                        itemBuilder: (context, index) {
-                          final medicine = _medicineDetails[index];
-                          return Card(
-                            child: ListTile(
-                              title: Text(
-                                medicine['THUOC']['TenThuoc'],
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.bold),
-                              ),
-                              subtitle: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                      'Số lượng: ${medicine['Sluong']} ${medicine['THUOC']['DonVi']}'),
-                                  Text('Cách dùng: ${medicine['Cdung']}'),
-                                  Text(
-                                    'Thành tiền: ${NumberFormat.currency(locale: 'vi_VN', symbol: 'đ').format(medicine['THUOC']['DonGia'] * medicine['Sluong'])}',
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
                     ],
                   ),
                 ),
@@ -154,22 +182,77 @@ class _BillDetailsSheetState extends State<BillDetailsSheet> {
     );
   }
 
-  Widget _buildInfoSection(String title, List<String> details) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
+  Widget _buildInfoSection(String title, List<String> details, IconData icon,
+      {Widget? additionalContent}) {
+    final turquoiseColor = Color(0xFF40E0D0);
+    final lightTurquoise = Color(0xFFE0F7F5);
+    final darkTurquoise = Color(0xFF20B2AA);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: lightTurquoise,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: turquoiseColor.withOpacity(0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: darkTurquoise),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: darkTurquoise,
+                    ),
               ),
-        ),
-        const SizedBox(height: 8),
-        ...details.map((detail) => Padding(
-              padding: const EdgeInsets.only(bottom: 4),
-              child: Text(detail),
-            )),
-      ],
+            ],
+          ),
+          if (details.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            ...details.map((detail) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Row(
+                    children: [
+                      Icon(Icons.arrow_right, size: 20, color: darkTurquoise),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          detail,
+                          style: TextStyle(color: Colors.grey.shade800),
+                        ),
+                      ),
+                    ],
+                  ),
+                )),
+          ],
+          if (additionalContent != null) ...[
+            const SizedBox(height: 12),
+            additionalContent,
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMedicineDetail(IconData icon, String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        children: [
+          Icon(icon, size: 16, color: Color(0xFF20B2AA)),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(color: Colors.grey.shade700),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

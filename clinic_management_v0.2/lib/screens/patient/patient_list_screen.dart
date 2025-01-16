@@ -73,8 +73,14 @@ class _PatientListScreenState extends State<PatientListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        title: const Text('Quản lý bệnh nhân'),
+        elevation: 0,
+        backgroundColor: Colors.green,
+        title: const Text(
+          'Quản lý bệnh nhân',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -84,13 +90,25 @@ class _PatientListScreenState extends State<PatientListScreen> {
       ),
       body: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
+          Container(
+            padding: const EdgeInsets.all(16.0),
             child: TextField(
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Tìm kiếm bệnh nhân',
-                prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(),
+                prefixIcon: const Icon(Icons.search, color: Colors.green),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                filled: true,
+                fillColor: Colors.white,
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.grey.shade300),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Colors.green),
+                ),
               ),
               onChanged: (value) => setState(() => _searchQuery = value),
             ),
@@ -102,30 +120,80 @@ class _PatientListScreenState extends State<PatientListScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _navigateToPatientForm(context),
-        child: const Icon(Icons.add),
+        backgroundColor: Colors.green,
+        icon: const Icon(Icons.add),
+        label: const Text('Thêm bệnh nhân'),
       ),
     );
   }
 
   Widget _buildPatientList() {
     if (_filteredPatients.isEmpty) {
-      return const Center(
-        child: Text('Không tìm thấy bệnh nhân'),
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.person_off, size: 64, color: Colors.grey[400]),
+            const SizedBox(height: 16),
+            Text(
+              'Không tìm thấy bệnh nhân',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey[600],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
       );
     }
 
     return ListView.builder(
       itemCount: _filteredPatients.length,
+      padding: const EdgeInsets.all(8),
       itemBuilder: (context, index) {
         final patient = _filteredPatients[index];
         return Card(
-          elevation: 2,
+          elevation: 3,
+          margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           child: ListTile(
-            title: Text(patient.name),
-            subtitle: Text(
-              'SĐT: ${patient.phone}',
+            contentPadding: const EdgeInsets.all(12),
+            leading: CircleAvatar(
+              backgroundColor: Colors.green.shade100,
+              child: const Icon(Icons.person, color: Colors.green),
+            ),
+            title: Text(
+              patient.name,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    const Icon(Icons.phone, size: 16, color: Colors.grey),
+                    const SizedBox(width: 4),
+                    Text(patient.phone),
+                  ],
+                ),
+                Row(
+                  children: [
+                    const Icon(Icons.calendar_today,
+                        size: 16, color: Colors.grey),
+                    const SizedBox(width: 4),
+                    Text(_formatDate(patient.dateOfBirth)),
+                  ],
+                ),
+              ],
             ),
             trailing: PopupMenuButton<String>(
               icon: const Icon(Icons.more_vert),
@@ -234,21 +302,61 @@ class _PatientListScreenState extends State<PatientListScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(patient.name),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: Text(
+          patient.name,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.green,
+          ),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Ngày sinh: ${_formatDate(patient.dateOfBirth)}'),
-            Text('Giới tính: ${patient.gender}'),
-            Text('Địa chỉ: ${patient.address}'),
-            Text('Số điện thoại: ${patient.phone}'),
+            _buildDetailRow(
+                Icons.cake, 'Ngày sinh', _formatDate(patient.dateOfBirth)),
+            _buildDetailRow(Icons.person, 'Giới tính', patient.gender),
+            _buildDetailRow(Icons.location_on, 'Địa chỉ', patient.address),
+            _buildDetailRow(Icons.phone, 'Số điện thoại', patient.phone),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Đóng'),
+            child: const Text('Đóng', style: TextStyle(color: Colors.green)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: Colors.grey),
+          const SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontSize: 12,
+                ),
+              ),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
           ),
         ],
       ),

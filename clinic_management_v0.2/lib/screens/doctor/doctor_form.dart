@@ -62,79 +62,156 @@ class _DoctorFormState extends State<DoctorForm> {
         16,
         MediaQuery.of(context).viewInsets.bottom + 16,
       ),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextFormField(
-              controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: 'Tên bác sĩ',
-                border: OutlineInputBorder(),
+      child: SingleChildScrollView(
+        child: Card(
+          elevation: 4,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                      Expanded(
+                        child: Text(
+                          widget.doctor == null
+                              ? 'Thêm Bác Sĩ Mới'
+                              : 'Cập Nhật Thông Tin',
+                          style: Theme.of(context).textTheme.headlineSmall,
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                      const SizedBox(width: 48), // Balance the layout
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  TextFormField(
+                    controller: _nameController,
+                    decoration: const InputDecoration(
+                      labelText: 'Tên bác sĩ',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.person),
+                      filled: true,
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Vui lòng nhập tên bác sĩ';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _specialtyController,
+                    decoration: const InputDecoration(
+                      labelText: 'Chuyên khoa',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.local_hospital),
+                      filled: true,
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Vui lòng nhập chuyên khoa';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: _phoneController,
+                          decoration: const InputDecoration(
+                            labelText: 'Số điện thoại',
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.phone),
+                            filled: true,
+                          ),
+                          keyboardType: TextInputType.phone,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: TextFormField(
+                          controller: _emailController,
+                          decoration: const InputDecoration(
+                            labelText: 'Email',
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.email),
+                            filled: true,
+                          ),
+                          keyboardType: TextInputType.emailAddress,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Card(
+                    child: Column(
+                      children: [
+                        ListTile(
+                          leading: const Icon(Icons.calendar_today),
+                          title: const Text('Ngày sinh'),
+                          subtitle: Text(_formatDate(_dateOfBirth)),
+                          onTap: () => _selectDate(context, true),
+                          trailing:
+                              const Icon(Icons.arrow_forward_ios, size: 16),
+                        ),
+                        const Divider(height: 1),
+                        ListTile(
+                          leading: const Icon(Icons.date_range),
+                          title: const Text('Ngày bắt đầu'),
+                          subtitle: Text(_formatDate(_startDate)),
+                          onTap: () => _selectDate(context, false),
+                          trailing:
+                              const Icon(Icons.arrow_forward_ios, size: 16),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Card(
+                    child: SwitchListTile(
+                      secondary: Icon(
+                        _isActive ? Icons.check_circle : Icons.cancel,
+                        color: _isActive ? Colors.green : Colors.red,
+                      ),
+                      title: const Text('Trạng thái hoạt động'),
+                      subtitle: Text(
+                          _isActive ? 'Đang hoạt động' : 'Ngừng hoạt động'),
+                      value: _isActive,
+                      onChanged: (value) => setState(() => _isActive = value),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  SafeArea(
+                    child: ElevatedButton(
+                      onPressed: _submitForm,
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: Text(
+                        widget.doctor == null ? 'Thêm Bác Sĩ' : 'Cập Nhật',
+                        style: const TextStyle(fontSize: 16),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Vui lòng nhập tên bác sĩ';
-                }
-                return null;
-              },
             ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _specialtyController,
-              decoration: const InputDecoration(
-                labelText: 'Chuyên khoa',
-                border: OutlineInputBorder(),
-              ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Vui lòng nhập chuyên khoa';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _phoneController,
-              decoration: const InputDecoration(
-                labelText: 'Số điện thoại',
-                border: OutlineInputBorder(),
-              ),
-              keyboardType: TextInputType.phone,
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _emailController,
-              decoration: const InputDecoration(
-                labelText: 'Email',
-                border: OutlineInputBorder(),
-              ),
-              keyboardType: TextInputType.emailAddress,
-            ),
-            const SizedBox(height: 16),
-            ListTile(
-              leading: const Icon(Icons.calendar_today),
-              title: Text('Ngày sinh: ${_formatDate(_dateOfBirth)}'),
-              onTap: () => _selectDate(context, true),
-            ),
-            ListTile(
-              leading: const Icon(Icons.date_range),
-              title: Text('Ngày bắt đầu: ${_formatDate(_startDate)}'),
-              onTap: () => _selectDate(context, false),
-            ),
-            const SizedBox(height: 16),
-            SwitchListTile(
-              title: const Text('Trạng thái hoạt động'),
-              value: _isActive,
-              onChanged: (value) => setState(() => _isActive = value),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _submitForm,
-              child: Text(widget.doctor == null ? 'Thêm' : 'Cập nhật'),
-            ),
-          ],
+          ),
         ),
       ),
     );

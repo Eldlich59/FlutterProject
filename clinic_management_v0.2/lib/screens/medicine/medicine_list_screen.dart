@@ -65,8 +65,14 @@ class _MedicineListScreenState extends State<MedicineListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        title: const Text('Quản lý thuốc'),
+        elevation: 0,
+        backgroundColor: Colors.red[400],
+        title: const Text(
+          'Quản lý thuốc',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -76,43 +82,74 @@ class _MedicineListScreenState extends State<MedicineListScreen> {
       ),
       body: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
+          Container(
+            padding: const EdgeInsets.all(16.0),
             child: TextField(
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Tìm kiếm thuốc',
-                prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(),
+                prefixIcon: const Icon(Icons.search, color: Colors.red),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                filled: true,
+                fillColor: Colors.white,
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.grey.shade300),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.red[400]!),
+                ),
               ),
               onChanged: (value) => setState(() => _searchQuery = value),
             ),
           ),
           Expanded(
             child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? Center(
+                    child: CircularProgressIndicator(color: Colors.red[400]))
                 : RefreshIndicator(
                     onRefresh: _loadMedicines,
+                    color: Colors.red[400],
                     child: _buildMedicineList(),
                   ),
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _navigateToMedicineForm(context),
-        child: const Icon(Icons.add),
+        backgroundColor: Colors.red[400],
+        icon: const Icon(Icons.add),
+        label: const Text('Thêm thuốc'),
       ),
     );
   }
 
   Widget _buildMedicineList() {
     if (_filteredMedicines.isEmpty) {
-      return const Center(
-        child: Text('Không có thuốc nào'),
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.medication_outlined, size: 64, color: Colors.grey[400]),
+            const SizedBox(height: 16),
+            Text(
+              'Không có thuốc nào',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey[600],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
       );
     }
 
     return ListView.builder(
       itemCount: _filteredMedicines.length,
+      padding: const EdgeInsets.all(8),
       itemBuilder: (context, index) {
         final medicine = _filteredMedicines[index];
         final bool isExpired = medicine.expiryDate.isBefore(DateTime.now());
@@ -120,29 +157,84 @@ class _MedicineListScreenState extends State<MedicineListScreen> {
             .isBefore(DateTime.now().add(const Duration(days: 30)));
 
         return Card(
-          margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          elevation: 3,
+          margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           child: ListTile(
+            contentPadding: const EdgeInsets.all(16),
+            leading: CircleAvatar(
+              backgroundColor: isExpired
+                  ? Colors.red[100]
+                  : isNearExpiry
+                      ? Colors.orange[100]
+                      : Colors.red[50],
+              child: Icon(
+                Icons.medication,
+                color: isExpired
+                    ? Colors.red
+                    : isNearExpiry
+                        ? Colors.orange
+                        : Colors.red[400],
+              ),
+            ),
             title: Text(
               medicine.name,
               style: TextStyle(
-                color: isExpired ? Colors.red : null,
+                fontSize: 16,
                 fontWeight: FontWeight.bold,
+                color: isExpired ? Colors.red : Colors.black87,
               ),
             ),
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Đơn vị: ${medicine.unit}'),
-                Text('Giá: ${_currencyFormat.format(medicine.price)}'),
-                Text(
-                  'HSD: ${DateFormat('dd/MM/yyyy').format(medicine.expiryDate)}',
-                  style: TextStyle(
-                    color: isExpired
-                        ? Colors.red
-                        : isNearExpiry
-                            ? Colors.orange
-                            : null,
-                  ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Icon(Icons.medical_information,
+                        size: 16, color: Colors.grey[600]),
+                    const SizedBox(width: 8),
+                    Text(medicine.unit),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Icon(Icons.attach_money, size: 16, color: Colors.grey[600]),
+                    const SizedBox(width: 8),
+                    Text(
+                      _currencyFormat.format(medicine.price),
+                      style: const TextStyle(fontWeight: FontWeight.w500),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.event,
+                      size: 16,
+                      color: isExpired
+                          ? Colors.red
+                          : isNearExpiry
+                              ? Colors.orange
+                              : Colors.grey[600],
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'HSD: ${DateFormat('dd/MM/yyyy').format(medicine.expiryDate)}',
+                      style: TextStyle(
+                        color: isExpired
+                            ? Colors.red
+                            : isNearExpiry
+                                ? Colors.orange
+                                : Colors.grey[600],
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -251,23 +343,79 @@ class _MedicineListScreenState extends State<MedicineListScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(medicine.name),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: Row(
+          children: [
+            const Icon(Icons.medication, color: Colors.red),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                medicine.name,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.red,
+                ),
+              ),
+            ),
+          ],
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Đơn vị: ${medicine.unit}'),
-            Text('Giá: ${_currencyFormat.format(medicine.price)}'),
-            Text(
-                'Ngày sản xuất: ${DateFormat('dd/MM/yyyy').format(medicine.manufacturingDate)}'),
-            Text(
-                'Hạn sử dụng: ${DateFormat('dd/MM/yyyy').format(medicine.expiryDate)}'),
+            _buildDetailRow(Icons.medical_information, 'Đơn vị', medicine.unit),
+            _buildDetailRow(Icons.attach_money, 'Giá',
+                _currencyFormat.format(medicine.price)),
+            _buildDetailRow(
+              Icons.calendar_today,
+              'Ngày sản xuất',
+              DateFormat('dd/MM/yyyy').format(medicine.manufacturingDate),
+            ),
+            _buildDetailRow(
+              Icons.event,
+              'Hạn sử dụng',
+              DateFormat('dd/MM/yyyy').format(medicine.expiryDate),
+            ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Đóng'),
+            child: const Text('Đóng', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: Colors.grey),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 12,
+                  ),
+                ),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),

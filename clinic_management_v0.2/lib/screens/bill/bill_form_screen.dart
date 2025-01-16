@@ -24,6 +24,32 @@ class _BillFormScreenState extends State<BillFormScreen> {
   late double _totalCost; // Add this
   bool _isLoading = false;
 
+  final Color _turquoiseColor =
+      const Color(0xFF40E0D0).withOpacity(0.85); // Turquoise color
+
+  final BoxDecoration _cardDecoration = BoxDecoration(
+    borderRadius: BorderRadius.circular(20),
+    color: Colors.white.withOpacity(0.95),
+    boxShadow: [
+      BoxShadow(
+        color: Colors.grey.withOpacity(0.1),
+        spreadRadius: 3,
+        blurRadius: 15,
+        offset: const Offset(0, 5),
+      ),
+      BoxShadow(
+        color: const Color(0xFF40E0D0).withOpacity(0.08),
+        spreadRadius: 2,
+        blurRadius: 12,
+        offset: const Offset(0, 3),
+      ),
+    ],
+    border: Border.all(
+      color: Colors.white.withOpacity(0.8),
+      width: 1.5,
+    ),
+  );
+
   @override
   void initState() {
     super.initState();
@@ -89,84 +115,102 @@ class _BillFormScreenState extends State<BillFormScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Tạo hóa đơn'),
+        title: const Text(
+          'Tạo hóa đơn',
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 24,
+            letterSpacing: 0.5,
+          ),
+        ),
+        centerTitle: true,
+        elevation: 0,
+        backgroundColor: _turquoiseColor,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            bottom: Radius.circular(20),
+          ),
+        ),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Form(
-              key: _formKey,
-              child: ListView(
-                padding: const EdgeInsets.all(16),
-                children: [
-                  DropdownButtonFormField<Map<String, dynamic>>(
-                    decoration: const InputDecoration(
-                      labelText: 'Chọn toa thuốc',
-                      border: OutlineInputBorder(),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              _turquoiseColor.withOpacity(0.15),
+              Colors.white.withOpacity(0.95),
+              Colors.white,
+            ],
+            stops: const [0.0, 0.4, 1.0],
+          ),
+        ),
+        child: _isLoading
+            ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircularProgressIndicator(
+                      valueColor:
+                          AlwaysStoppedAnimation<Color>(_turquoiseColor),
+                      strokeWidth: 3,
                     ),
-                    value: _selectedPrescription,
-                    items: _availablePrescriptions.map((prescription) {
-                      return DropdownMenuItem(
-                        value: prescription,
-                        child: Text(
-                          '${prescription['BENHNHAN']['TenBN']} - ${DateFormat('dd/MM/yyyy').format(DateTime.parse(prescription['Ngayketoa']))}',
-                        ),
-                      );
-                    }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedPrescription = value;
-                      });
-                      if (value != null) {
-                        _calculateMedicineCost(value['MaToa']);
-                      }
-                    },
-                    validator: (value) {
-                      if (value == null) return 'Vui lòng chọn toa thuốc';
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  InkWell(
-                    onTap: _selectDate,
-                    child: InputDecorator(
-                      decoration: const InputDecoration(
-                        labelText: 'Ngày lập hóa đơn',
-                        border: OutlineInputBorder(),
-                      ),
-                      child: Text(
-                        DateFormat('dd/MM/yyyy').format(_selectedDate),
+                    const SizedBox(height: 20),
+                    Text(
+                      'Đang tải...',
+                      style: TextStyle(
+                        color: _turquoiseColor,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 0.5,
                       ),
                     ),
+                  ],
+                ),
+              )
+            : Form(
+                key: _formKey,
+                child: ListView(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 24,
                   ),
-                  const SizedBox(height: 16),
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey.shade300),
-                      borderRadius: BorderRadius.circular(4),
-                      color: Theme.of(context).colorScheme.surface,
+                  children: [
+                    // Information Card
+                    _buildCard(
+                      'Thông tin hóa đơn',
+                      Icons.description_outlined,
+                      Column(
+                        children: [
+                          _buildDropdownField(),
+                          const SizedBox(height: 20),
+                          _buildDateField(),
+                        ],
+                      ),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildCostRow('Tiền thuốc:', _medicineCost),
-                        const Divider(),
-                        _buildCostRow('Tiền khám:', _examinationFee),
-                        const Divider(),
-                        _buildCostRow('Tổng tiền:', _totalCost, isTotal: true),
-                      ],
+                    const SizedBox(height: 24),
+                    // Payment Details Card
+                    _buildCard(
+                      'Chi tiết thanh toán',
+                      Icons.payment_outlined,
+                      Column(
+                        children: [
+                          _buildCostRow('Tiền thuốc:', _medicineCost),
+                          _buildDivider(),
+                          _buildCostRow('Tiền khám:', _examinationFee),
+                          _buildDivider(),
+                          _buildCostRow('Tổng tiền:', _totalCost,
+                              isTotal: true),
+                        ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: _isLoading ? null : _saveBill,
-                    child: _isLoading
-                        ? const CircularProgressIndicator()
-                        : const Text('Lưu hóa đơn'),
-                  ),
-                ],
+                    const SizedBox(height: 32),
+                    // Save Button
+                    _buildSaveButton(),
+                  ],
+                ),
               ),
-            ),
+      ),
     );
   }
 
@@ -220,19 +264,131 @@ class _BillFormScreenState extends State<BillFormScreen> {
     }
   }
 
-  Widget _buildCostRow(String label, double amount, {bool isTotal = false}) {
+  Widget _buildCard(String title, IconData icon, Widget content) {
+    return Container(
+      decoration: _cardDecoration,
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: _turquoiseColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: _turquoiseColor,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            content,
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDivider() {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Container(
+        height: 1,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Colors.transparent,
+              _turquoiseColor.withOpacity(0.2),
+              Colors.transparent,
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSaveButton() {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+      child: ElevatedButton(
+        onPressed: _isLoading ? null : _saveBill,
+        style: ElevatedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          backgroundColor: _turquoiseColor,
+          elevation: _isLoading ? 0 : 8,
+          shadowColor: _turquoiseColor.withOpacity(0.5),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _isLoading
+                ? const SizedBox(
+                    height: 24,
+                    width: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                : const Row(
+                    children: [
+                      Icon(
+                        Icons.save_outlined,
+                        size: 26,
+                        color: Colors.white,
+                      ),
+                      SizedBox(width: 12),
+                      Text(
+                        'Lưu hóa đơn',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCostRow(String label, double amount, {bool isTotal = false}) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
             label,
             style: TextStyle(
-              fontSize: isTotal ? 16 : 14,
-              fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
-              color:
-                  isTotal ? Theme.of(context).primaryColor : Colors.grey[700],
+              fontSize: isTotal ? 19 : 16,
+              fontWeight: isTotal ? FontWeight.bold : FontWeight.w500,
+              color: isTotal ? _turquoiseColor : Colors.grey[800],
+              letterSpacing: 0.5,
             ),
           ),
           Text(
@@ -242,12 +398,67 @@ class _BillFormScreenState extends State<BillFormScreen> {
               decimalDigits: 0,
             ).format(amount),
             style: TextStyle(
-              fontSize: isTotal ? 18 : 16,
-              fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
-              color: isTotal ? Theme.of(context).primaryColor : Colors.black,
+              fontSize: isTotal ? 21 : 17,
+              fontWeight: isTotal ? FontWeight.bold : FontWeight.w600,
+              color: isTotal ? _turquoiseColor : Colors.black87,
+              letterSpacing: 0.5,
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildDropdownField() {
+    return DropdownButtonFormField<Map<String, dynamic>>(
+      decoration: InputDecoration(
+        labelText: 'Chọn toa thuốc',
+        labelStyle: TextStyle(color: _turquoiseColor),
+        prefixIcon: Icon(
+          Icons.medical_services,
+          color: _turquoiseColor,
+        ),
+      ),
+      value: _selectedPrescription,
+      items: _availablePrescriptions.map((prescription) {
+        return DropdownMenuItem(
+          value: prescription,
+          child: Text(
+            '${prescription['BENHNHAN']['TenBN']} - ${DateFormat('dd/MM/yyyy').format(DateTime.parse(prescription['Ngayketoa']))}',
+          ),
+        );
+      }).toList(),
+      onChanged: (value) {
+        setState(() {
+          _selectedPrescription = value;
+        });
+        if (value != null) {
+          _calculateMedicineCost(value['MaToa']);
+        }
+      },
+      validator: (value) {
+        if (value == null) return 'Vui lòng chọn toa thuốc';
+        return null;
+      },
+    );
+  }
+
+  Widget _buildDateField() {
+    return InkWell(
+      onTap: _selectDate,
+      child: InputDecorator(
+        decoration: InputDecoration(
+          labelText: 'Ngày lập hóa đơn',
+          labelStyle: TextStyle(color: _turquoiseColor),
+          prefixIcon: Icon(
+            Icons.calendar_today,
+            color: _turquoiseColor,
+          ),
+        ),
+        child: Text(
+          DateFormat('dd/MM/yyyy').format(_selectedDate),
+          style: const TextStyle(fontSize: 16),
+        ),
       ),
     );
   }
