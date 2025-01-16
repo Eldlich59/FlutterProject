@@ -33,23 +33,29 @@ class Bill {
       return null;
     }
 
+    final totalCost = toDouble(json['TongTien']) ?? 0.0;
+    final examinationCost = toDouble(examination?['TienKham']);
+
+    // Calculate medicine cost by subtracting examination cost from total
+    final medicineCost = totalCost - (examinationCost ?? 0.0);
+
     return Bill(
-      id: json['MaHD'].toString(), // Convert int to String
-      prescriptionId: json['MaToa'].toString(), // Convert int to String
+      id: json['MaHD']?.toString() ?? '',
+      prescriptionId: json['MaToa']?.toString() ?? '',
       saleDate: DateTime.parse(json['Ngaylap']),
-      medicineCost: toDouble(json['TienThuoc']) ?? 0.0,
+      medicineCost: medicineCost,
       patientName: patient['TenBN'],
-      examinationCost: toDouble(examination?['TienKham']),
-      examinationId: examination?['MaPK']?.toString(), // Convert int to String
+      examinationCost: examinationCost,
+      examinationId: examination?['MaPK']?.toString(),
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'MaHD': int.parse(id), // Convert String back to int
+      'MaHD': id, // Don't parse to int, let database handle it
       'Ngaylap': saleDate.toIso8601String(),
       'TongTien': totalCost,
-      'MaToa': int.parse(prescriptionId), // Convert String back to int
+      'MaToa': prescriptionId,
     };
   }
 }

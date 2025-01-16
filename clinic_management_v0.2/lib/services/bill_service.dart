@@ -54,9 +54,10 @@ class BillService {
   }
 
   Future<void> deleteBill(String id) async {
-    await _supabase
-        .from('HOADONTHUOC')
-        .delete()
-        .eq('MaHD', int.parse(id)); // Convert id to int for comparison
+    try {
+      await _supabase.from('HOADONTHUOC').delete().eq('MaHD', id);
+    } catch (e) {
+      throw Exception('Không thể xóa hóa đơn: $e');
+    }
   }
 }

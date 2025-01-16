@@ -62,7 +62,7 @@ class _BillListScreenState extends State<BillListScreen> {
                       title: Text('BN: ${bill.patientName}'),
                       subtitle: Text(
                         'Ngày: ${DateFormat('dd/MM/yyyy').format(bill.saleDate)}\n'
-                        'Tổng tiền thanh toán: ${NumberFormat.currency(locale: 'vi_VN', symbol: 'đ').format(bill.totalCost)}',
+                        'Tổng thanh toán: ${NumberFormat.currency(locale: 'vi_VN', symbol: 'đ').format(bill.totalCost)}',
                       ),
                       trailing: PopupMenuButton(
                         itemBuilder: (context) => [

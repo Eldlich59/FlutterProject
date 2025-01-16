@@ -89,14 +89,15 @@ class _BillDetailsSheetState extends State<BillDetailsSheet> {
                       _buildInfoSection(
                         'Thông tin hóa đơn',
                         [
+                          'Tên bệnh nhân: ${widget.bill.patientName}',
                           'Mã hóa đơn: ${widget.bill.id}',
-                          'Ngày tạo hóa đơn: ${DateFormat('dd/MM/yyyy HH:mm').format(widget.bill.saleDate)}',
                           if (widget.bill.examinationId != null)
                             'Mã phiếu khám: ${widget.bill.examinationId}',
+                          'Ngày tạo hóa đơn: ${DateFormat('dd/MM/yyyy HH:mm').format(widget.bill.saleDate)}',
                           'Tiền thuốc: ${NumberFormat.currency(locale: 'vi_VN', symbol: 'đ').format(widget.bill.medicineCost)}',
                           if (widget.bill.examinationCost != null)
                             'Tiền khám: ${NumberFormat.currency(locale: 'vi_VN', symbol: 'đ').format(widget.bill.examinationCost)}',
-                          'Tổng tiền: ${NumberFormat.currency(locale: 'vi_VN', symbol: 'đ').format(widget.bill.totalCost)}',
+                          'Tổng thanh toán: ${NumberFormat.currency(locale: 'vi_VN', symbol: 'đ').format(widget.bill.totalCost)}',
                         ],
                       ),
                       if (_prescriptionDetails != null) ...[
