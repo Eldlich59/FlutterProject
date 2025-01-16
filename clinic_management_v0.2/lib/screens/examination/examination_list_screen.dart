@@ -4,6 +4,7 @@ import '../../models/examination.dart';
 import '../../services/supabase_service.dart';
 import 'examination_form_screen.dart';
 import '../prescription/prescription_form_screen.dart';
+import '../examination/examination_details_screen.dart';
 
 class ExaminationListScreen extends StatefulWidget {
   final String?
@@ -130,6 +131,9 @@ class _ExaminationListScreenState extends State<ExaminationListScreen> {
             trailing: PopupMenuButton<String>(
               onSelected: (value) {
                 switch (value) {
+                  case 'details':
+                    _showExaminationDetails(examination);
+                    break;
                   case 'edit':
                     _navigateToExaminationForm(context, examination);
                     break;
@@ -142,6 +146,10 @@ class _ExaminationListScreenState extends State<ExaminationListScreen> {
                 }
               },
               itemBuilder: (BuildContext context) => [
+                const PopupMenuItem(
+                  value: 'details',
+                  child: Text('Xem chi tiết'),
+                ),
                 const PopupMenuItem(
                   value: 'edit',
                   child: Text('Sửa phiếu khám'),
@@ -157,6 +165,9 @@ class _ExaminationListScreenState extends State<ExaminationListScreen> {
               ],
             ),
             onTap: () => _showExaminationDetails(examination),
+            // Add visual feedback for tap
+            tileColor: Colors.grey[50],
+            hoverColor: Colors.blue[50],
           ),
         );
       },
@@ -164,29 +175,13 @@ class _ExaminationListScreenState extends State<ExaminationListScreen> {
   }
 
   void _showExaminationDetails(Examination examination) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Chi tiết phiếu khám'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Bệnh nhân: ${examination.patientName}'),
-            Text(
-                'Ngày khám: ${_dateFormat.format(examination.examinationDate)}'),
-            Text('Triệu chứng: ${examination.symptoms}'),
-            Text('Chẩn đoán: ${examination.diagnosis}'),
-            Text(
-                'Phí khám: ${_currencyFormat.format(examination.examinationFee)}'),
-          ],
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ExaminationDetailsScreen(
+          examination: examination,
+          onExaminationUpdated: _loadExaminations,
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Đóng'),
-          ),
-        ],
       ),
     );
   }
