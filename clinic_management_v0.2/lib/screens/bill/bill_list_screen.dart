@@ -25,17 +25,25 @@ class _BillListScreenState extends State<BillListScreen> {
   }
 
   Future<void> _loadBills() async {
+    if (!mounted) return;
+
+    setState(() => _isLoading = true);
     try {
       final bills = await _supabaseService.getBills();
-      setState(() {
-        _bills = bills;
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _bills = bills;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Lỗi khi tải danh sách hóa đơn: $e')),
-      );
+      print('Error loading bills: $e');
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi khi tải danh sách hóa đơn: $e')),
+        );
+      }
     }
   }
 
@@ -246,17 +254,29 @@ class _BillListScreenState extends State<BillListScreen> {
   }
 
   Future<void> _navigateToCreateBill(BuildContext context) async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const BillFormScreen(),
-      ),
-    );
+    try {
+      final result = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const BillFormScreen(),
+        ),
+      );
 
-    if (result == true) {
-      // Refresh the bill list after creating a new bill
-      setState(() => _isLoading = true);
-      await _loadBills();
+      if (result == true) {
+        // Show success message and refresh
+        await _loadBills(); // Refresh first
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Tạo hóa đơn thành công'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      print('Navigation error: $e');
     }
   }
 

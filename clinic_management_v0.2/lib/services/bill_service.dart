@@ -9,7 +9,7 @@ class BillService {
   Future<List<Bill>> getBills() async {
     final response = await _supabase.from('HOADONTHUOC').select('''
           *,
-          TOATHUOC (
+          prescriptions:TOATHUOC!HOADONTHUOC_MaToa_fkey (
             *,
             BENHNHAN (
               TenBN

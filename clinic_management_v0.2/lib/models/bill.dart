@@ -1,6 +1,7 @@
 class Bill {
   final String id;
-  final String prescriptionId;
+  final List<String> prescriptionIds; // Changed from single prescriptionId
+  final String? prescriptionId;
   final DateTime saleDate;
   final double medicineCost;
   final String patientName;
@@ -9,6 +10,7 @@ class Bill {
 
   Bill({
     required this.id,
+    required this.prescriptionIds, // Changed
     required this.prescriptionId,
     required this.saleDate,
     required this.medicineCost,
@@ -20,11 +22,6 @@ class Bill {
   double get totalCost => medicineCost + (examinationCost ?? 0);
 
   factory Bill.fromJson(Map<String, dynamic> json) {
-    final prescription = json['TOATHUOC'] as Map<String, dynamic>;
-    final patient = prescription['BENHNHAN'] as Map<String, dynamic>;
-    final examination = prescription['PHIEUKHAM'] as Map<String, dynamic>?;
-
-    // Helper function to safely convert numeric values to double
     double? toDouble(dynamic value) {
       if (value == null) return null;
       if (value is int) return value.toDouble();
@@ -33,18 +30,42 @@ class Bill {
       return null;
     }
 
+    // Parse prescriptions data
+    List<dynamic> prescriptions = [];
+    if (json['prescriptions'] != null) {
+      prescriptions = json['prescriptions'] is List
+          ? json['prescriptions'] as List
+          : [json['prescriptions']];
+    }
+
+    // Get patient and examination data from first prescription
+    final firstPrescription =
+        prescriptions.isNotEmpty ? prescriptions.first : null;
+    final patient = firstPrescription?['BENHNHAN'] as Map<String, dynamic>?;
+    final examination =
+        firstPrescription?['PHIEUKHAM'] as Map<String, dynamic>?;
+
+    // Calculate costs
     final totalCost = toDouble(json['TongTien']) ?? 0.0;
     final examinationCost = toDouble(examination?['TienKham']);
-
-    // Calculate medicine cost by subtracting examination cost from total
     final medicineCost = totalCost - (examinationCost ?? 0.0);
+
+    // Parse MaToa array
+    List<String> prescriptionIds = [];
+    if (prescriptions.isNotEmpty) {
+      prescriptionIds = prescriptions
+          .map((p) => p['MaToa'].toString())
+          .where((id) => id.isNotEmpty)
+          .toList();
+    }
 
     return Bill(
       id: json['MaHD']?.toString() ?? '',
-      prescriptionId: json['MaToa']?.toString() ?? '',
+      prescriptionIds: prescriptionIds,
+      prescriptionId: prescriptionIds.isNotEmpty ? prescriptionIds.first : null,
       saleDate: DateTime.parse(json['Ngaylap']),
       medicineCost: medicineCost,
-      patientName: patient['TenBN'],
+      patientName: patient?['TenBN'] ?? '',
       examinationCost: examinationCost,
       examinationId: examination?['MaPK']?.toString(),
     );
@@ -52,10 +73,10 @@ class Bill {
 
   Map<String, dynamic> toJson() {
     return {
-      'MaHD': id, // Don't parse to int, let database handle it
+      'MaHD': id,
       'Ngaylap': saleDate.toIso8601String(),
       'TongTien': totalCost,
-      'MaToa': prescriptionId,
+      'MaToa': prescriptionIds, // Changed
     };
   }
 }

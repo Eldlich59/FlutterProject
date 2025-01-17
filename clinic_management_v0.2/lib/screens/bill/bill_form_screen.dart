@@ -50,6 +50,10 @@ class _BillFormScreenState extends State<BillFormScreen> {
     ),
   );
 
+  // Add these new variables
+  List<Map<String, dynamic>> _availablePatients = [];
+  Map<String, dynamic>? _selectedPatient;
+
   @override
   void initState() {
     super.initState();
@@ -57,15 +61,39 @@ class _BillFormScreenState extends State<BillFormScreen> {
     _medicineCost = 0; // Changed this line
     _examinationFee = 0; // Initialize
     _totalCost = 0; // Initialize
-    _loadPrescriptions();
+    _loadPatients(); // Changed from _loadPrescriptions
   }
 
-  Future<void> _loadPrescriptions() async {
+  // Add new method to load patients
+  Future<void> _loadPatients() async {
     setState(() => _isLoading = true);
     try {
-      final prescriptions = await _supabaseService2.getAvailablePrescriptions();
+      final patients = await SupabaseService().patientService.getPatients();
+      setState(() {
+        _availablePatients =
+            patients.map((patient) => patient.toJson()).toList();
+        _isLoading = false;
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lỗi khi tải danh sách bệnh nhân: $e')),
+      );
+      setState(() => _isLoading = false);
+    }
+  }
+
+  // Add method to load prescriptions for selected patient
+  Future<void> _loadPatientPrescriptions(String patientId) async {
+    setState(() => _isLoading = true);
+    try {
+      final prescriptions =
+          await _supabaseService2.getPrescriptionsByPatient(patientId);
       setState(() {
         _availablePrescriptions = prescriptions;
+        _selectedPrescriptions.clear(); // Clear previous selections
+        _medicineCost = 0;
+        _examinationFee = 0;
+        _totalCost = 0;
         _isLoading = false;
       });
     } catch (e) {
@@ -177,33 +205,9 @@ class _BillFormScreenState extends State<BillFormScreen> {
                   ),
                   children: [
                     // Information Card
-                    _buildCard(
-                      'Thông tin hóa đơn',
-                      Icons.description_outlined,
-                      Column(
-                        children: [
-                          _buildDropdownField(),
-                          const SizedBox(height: 20),
-                          _buildDateField(),
-                        ],
-                      ),
-                    ),
+                    _buildInformationCard(),
                     const SizedBox(height: 24),
-                    // Payment Details Card
-                    _buildCard(
-                      'Chi tiết thanh toán',
-                      Icons.payment_outlined,
-                      Column(
-                        children: [
-                          _buildCostRow('Tiền thuốc:', _medicineCost),
-                          _buildDivider(),
-                          _buildCostRow('Tiền khám:', _examinationFee),
-                          _buildDivider(),
-                          _buildCostRow('Tổng tiền:', _totalCost,
-                              isTotal: true),
-                        ],
-                      ),
-                    ),
+                    _buildPaymentDetailsCard(), // Use the new method here
                     const SizedBox(height: 32),
                     // Save Button
                     _buildSaveButton(),
@@ -228,33 +232,40 @@ class _BillFormScreenState extends State<BillFormScreen> {
 
   Future<void> _saveBill() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_selectedPrescription == null) {
+    if (_selectedPrescriptions.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng chọn toa thuốc hợp lệ')),
+        const SnackBar(content: Text('Vui lòng chọn ít nhất một toa thuốc')),
       );
       return;
     }
 
     setState(() => _isLoading = true);
     try {
-      final prescriptionId = _selectedPrescription!['MaToa'].toString();
+      final prescriptionIds = _selectedPrescriptions
+          .map((p) => p['MaToa'].toString().trim())
+          .where((id) => id.isNotEmpty)
+          .toList();
+
+      print('Creating bill with prescriptions: $prescriptionIds');
 
       await _supabaseService1.createBill(
-        prescriptionId: prescriptionId,
+        prescriptionId: prescriptionIds[0],
         saleDate: _selectedDate,
         totalCost: _totalCost,
       );
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Tạo hóa đơn thành công')),
-        );
-        Navigator.pop(context, true);
+        // Just pop with success result
+        Navigator.of(context).pop(true);
       }
     } catch (e) {
+      print('Save bill error: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi khi lưu hóa đơn: $e')),
+          SnackBar(
+            content: Text('Lỗi khi lưu hóa đơn'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     } finally {
@@ -460,6 +471,199 @@ class _BillFormScreenState extends State<BillFormScreen> {
           style: const TextStyle(fontSize: 16),
         ),
       ),
+    );
+  }
+
+  List<Map<String, dynamic>> _selectedPrescriptions =
+      []; // Changed from single selection
+
+  // Replace _buildDropdownField with this new method
+  Widget _buildPrescriptionSelectionList() {
+    if (_selectedPatient == null) {
+      return const SizedBox.shrink();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 20),
+        Text(
+          'Chọn toa thuốc',
+          style: TextStyle(
+            color: _turquoiseColor,
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 8),
+        if (_availablePrescriptions.isEmpty)
+          Center(
+            child: Text(
+              'Không có toa thuốc nào',
+              style: TextStyle(color: Colors.grey[600]),
+            ),
+          )
+        else
+          ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: _availablePrescriptions.length,
+            itemBuilder: (context, index) {
+              final prescription = _availablePrescriptions[index];
+              final isSelected = _selectedPrescriptions.contains(prescription);
+
+              return Card(
+                margin: const EdgeInsets.only(bottom: 8),
+                child: CheckboxListTile(
+                  value: isSelected,
+                  title: Text(
+                      '${prescription['BENHNHAN']['TenBN']} - ${DateFormat('dd/MM/yyyy').format(DateTime.parse(prescription['Ngayketoa']))}'),
+                  subtitle: Text('Mã toa: ${prescription['MaToa']}'),
+                  onChanged: (bool? value) async {
+                    if (value == true) {
+                      setState(() {
+                        _selectedPrescriptions.add(prescription);
+                      });
+                    } else {
+                      setState(() {
+                        _selectedPrescriptions.remove(prescription);
+                      });
+                    }
+                    await _calculateTotalCosts();
+                  },
+                ),
+              );
+            },
+          ),
+      ],
+    );
+  }
+
+  // Replace _calculateMedicineCost with this new method
+  Future<void> _calculateTotalCosts() async {
+    if (!mounted) return;
+
+    double medicineCost = 0;
+    double examinationFee = 0;
+
+    final prescriptions =
+        List<Map<String, dynamic>>.from(_selectedPrescriptions);
+
+    try {
+      for (var prescription in prescriptions) {
+        final medicines = await _supabaseService2
+            .getPrescriptionMedicines(prescription['MaToa'].toString());
+        final examination = await _supabaseService2
+            .getPrescriptionExamination(prescription['MaToa'].toString());
+
+        // Calculate medicine costs
+        for (var medicine in medicines) {
+          final quantity = medicine['Sluong'] ?? 0;
+          final price = medicine['THUOC']['DonGia'] ?? 0;
+          medicineCost += (quantity * price);
+        }
+
+        // Add examination fee
+        if (examination['PHIEUKHAM'] != null) {
+          final examFee = double.tryParse(
+                  examination['PHIEUKHAM']['TienKham'].toString()) ??
+              0;
+          examinationFee += examFee;
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          _medicineCost = medicineCost;
+          _examinationFee = examinationFee;
+          _totalCost = medicineCost + examinationFee;
+        });
+      }
+    } catch (e) {
+      print('Error calculating costs: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi khi tính tổng tiền: $e')),
+        );
+      }
+    }
+  }
+
+  Widget _buildPaymentDetailsCard() {
+    return _buildCard(
+      'Chi tiết thanh toán',
+      Icons.payment_outlined,
+      Column(
+        children: [
+          _buildCostRow('Tiền thuốc:', _medicineCost),
+          _buildDivider(),
+          _buildCostRow('Tiền khám:', _examinationFee),
+          _buildDivider(),
+          _buildCostRow('Tổng tiền:', _totalCost, isTotal: true),
+        ],
+      ),
+    );
+  }
+
+  // Update the build method's form section
+  Widget _buildInformationCard() {
+    return _buildCard(
+      'Thông tin hóa đơn',
+      Icons.description_outlined,
+      Column(
+        children: [
+          _buildPatientSelection(),
+          _buildPrescriptionSelectionList(),
+          const SizedBox(height: 20),
+          _buildDateField(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPatientSelection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Chọn bệnh nhân',
+          style: TextStyle(
+            color: _turquoiseColor,
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 8),
+        DropdownButtonFormField<Map<String, dynamic>>(
+          decoration: InputDecoration(
+            prefixIcon: Icon(Icons.person, color: _turquoiseColor),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          value: _selectedPatient,
+          items: _availablePatients.map((patient) {
+            return DropdownMenuItem(
+              value: patient,
+              child: Text('${patient['TenBN']} - ${patient['SDT']}'),
+            );
+          }).toList(),
+          onChanged: (value) {
+            setState(() {
+              _selectedPatient = value;
+              _availablePrescriptions = [];
+              _selectedPrescriptions = [];
+            });
+            if (value != null) {
+              _loadPatientPrescriptions(value['MaBN'].toString());
+            }
+          },
+          validator: (value) {
+            if (value == null) return 'Vui lòng chọn bệnh nhân';
+            return null;
+          },
+        ),
+      ],
     );
   }
 }

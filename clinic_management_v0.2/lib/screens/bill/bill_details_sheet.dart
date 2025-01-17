@@ -30,25 +30,48 @@ class _BillDetailsSheetState extends State<BillDetailsSheet> {
   Future<void> _loadPrescriptionDetails() async {
     try {
       final supabaseService = SupabaseService().prescriptionService;
+      List<PrescriptionDetail> allPrescriptionDetails = [];
+      List<Map<String, dynamic>> allMedicineDetails = [];
 
-      // Load prescription details
-      final prescription = await supabaseService
-          .getPrescriptionDetails(widget.bill.prescriptionId);
+      if (widget.bill.prescriptionIds.isEmpty) {
+        setState(() {
+          _prescriptionDetails = [];
+          _medicineDetails = [];
+          _isLoading = false;
+        });
+        return;
+      }
 
-      // Load medicine details for this prescription
-      final medicines = await supabaseService
-          .getPrescriptionMedicines(widget.bill.prescriptionId);
+      // Load details for each prescription
+      for (String prescriptionId in widget.bill.prescriptionIds) {
+        try {
+          final prescription =
+              await supabaseService.getPrescriptionDetails(prescriptionId);
+          final medicines =
+              await supabaseService.getPrescriptionMedicines(prescriptionId);
 
-      setState(() {
-        _prescriptionDetails = prescription;
-        _medicineDetails = medicines;
-        _isLoading = false;
-      });
+          allPrescriptionDetails.addAll(prescription);
+          allMedicineDetails.addAll(medicines);
+        } catch (e) {
+          print('Error loading details for prescription $prescriptionId: $e');
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          _prescriptionDetails = allPrescriptionDetails;
+          _medicineDetails = allMedicineDetails;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Lỗi khi tải chi tiết hóa đơn: $e')),
-      );
-      setState(() => _isLoading = false);
+      print('Error in _loadPrescriptionDetails: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi khi tải chi tiết hóa đơn: $e')),
+        );
+        setState(() => _isLoading = false);
+      }
     }
   }
 
