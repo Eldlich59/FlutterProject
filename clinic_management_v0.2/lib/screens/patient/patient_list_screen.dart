@@ -123,8 +123,11 @@ class _PatientListScreenState extends State<PatientListScreen> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _navigateToPatientForm(context),
         backgroundColor: Colors.green,
-        icon: const Icon(Icons.add),
-        label: const Text('Thêm bệnh nhân'),
+        icon: const Icon(Icons.add, color: Colors.white),
+        label: const Text(
+          'Thêm bệnh nhân',
+          style: TextStyle(color: Colors.white),
+        ),
       ),
     );
   }

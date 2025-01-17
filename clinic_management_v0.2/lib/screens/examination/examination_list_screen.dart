@@ -113,8 +113,9 @@ class _ExaminationListScreenState extends State<ExaminationListScreen> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _navigateToExaminationForm(context),
-        icon: const Icon(Icons.add),
-        label: const Text('Thêm phiếu khám'),
+        icon: const Icon(Icons.add, color: Colors.white),
+        label: const Text('Thêm phiếu khám',
+            style: TextStyle(color: Colors.white)),
         backgroundColor: Colors.blue.shade700,
       ),
     );

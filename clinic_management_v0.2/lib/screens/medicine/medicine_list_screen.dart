@@ -120,8 +120,8 @@ class _MedicineListScreenState extends State<MedicineListScreen> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _navigateToMedicineForm(context),
         backgroundColor: Colors.red[400],
-        icon: const Icon(Icons.add),
-        label: const Text('Thêm thuốc'),
+        icon: const Icon(Icons.add, color: Colors.white),
+        label: const Text('Thêm thuốc', style: TextStyle(color: Colors.white)),
       ),
     );
   }
