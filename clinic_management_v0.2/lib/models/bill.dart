@@ -17,8 +17,7 @@ class Bill {
     List<String>? patientNames, // Make optional
     this.examinationCost,
     this.examinationId,
-  }) : this.patientNames =
-            patientNames ?? []; // Initialize with empty list if null
+  }) : patientNames = patientNames ?? []; // Initialize with empty list if null
 
   String get patientName =>
       patientNames.isNotEmpty ? patientNames.join(', ') : 'Không có tên';

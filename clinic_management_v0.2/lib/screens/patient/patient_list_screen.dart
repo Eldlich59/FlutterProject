@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/animation.dart';
 import '../../models/patient.dart';
 import '../../services/supabase_service.dart';
 import 'patient_form_screen.dart';
@@ -10,16 +11,32 @@ class PatientListScreen extends StatefulWidget {
   State<PatientListScreen> createState() => _PatientListScreenState();
 }
 
-class _PatientListScreenState extends State<PatientListScreen> {
+class _PatientListScreenState extends State<PatientListScreen>
+    with SingleTickerProviderStateMixin {
   final patientService = SupabaseService().patientService;
   List<Patient> _patients = [];
   bool _isLoading = true;
   String _searchQuery = '';
+  late final AnimationController _animationController = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1000),
+  )..forward(); // Initialize and start animation immediately
+
+  late final Animation<double> _fadeAnimation = CurvedAnimation(
+    parent: _animationController,
+    curve: Curves.easeOut,
+  );
 
   @override
   void initState() {
     super.initState();
     _loadPatients();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadPatients() async {
@@ -35,6 +52,9 @@ class _PatientListScreenState extends State<PatientListScreen> {
           _patients = patients;
           _isLoading = false;
         });
+        // Restart animation when new data is loaded
+        _animationController.reset();
+        _animationController.forward();
       }
     } catch (e, stackTrace) {
       print('Error in _loadPatients: $e'); // Debug log
@@ -73,60 +93,115 @@ class _PatientListScreenState extends State<PatientListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      backgroundColor: Colors.green[50],
       appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.green,
+        elevation: 2,
+        backgroundColor: Colors.green[600],
         title: const Text(
           'Quản lý bệnh nhân',
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 24,
+            letterSpacing: 0.5,
+            color: Colors.white,
+          ),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh, size: 26),
             onPressed: _loadPatients,
           ),
         ],
       ),
-      body: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(16.0),
-            child: TextField(
-              decoration: InputDecoration(
-                labelText: 'Tìm kiếm bệnh nhân',
-                prefixIcon: const Icon(Icons.search, color: Colors.green),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                filled: true,
-                fillColor: Colors.white,
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Colors.green),
-                ),
-              ),
-              onChanged: (value) => setState(() => _searchQuery = value),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Colors.green[100]!, Colors.green[50]!],
+            stops: const [0.0, 0.8],
+          ),
+        ),
+        child: Column(
+          children: [
+            _buildSearchBar(),
+            Expanded(
+              child: _isLoading
+                  ? Center(
+                      child: CircularProgressIndicator(
+                        valueColor:
+                            AlwaysStoppedAnimation<Color>(Colors.green[600]!),
+                      ),
+                    )
+                  : _buildPatientList(),
+            ),
+          ],
+        ),
+      ),
+      floatingActionButton: TweenAnimationBuilder(
+        duration: const Duration(milliseconds: 800),
+        tween: Tween<double>(begin: 0, end: 1),
+        builder: (context, double value, child) {
+          return Transform.scale(
+            scale: value,
+            child: child,
+          );
+        },
+        child: FloatingActionButton.extended(
+          onPressed: () => _navigateToPatientForm(context),
+          backgroundColor: Colors.green[600],
+          elevation: 6,
+          icon: const Icon(Icons.add, color: Colors.white, size: 24),
+          label: const Text(
+            'Thêm bệnh nhân',
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+              letterSpacing: 0.5,
             ),
           ),
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _buildPatientList(),
-          ),
-        ],
+        ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _navigateToPatientForm(context),
-        backgroundColor: Colors.green,
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text(
-          'Thêm bệnh nhân',
-          style: TextStyle(color: Colors.white),
+    );
+  }
+
+  Widget _buildSearchBar() {
+    return AnimatedOpacity(
+      opacity: _isLoading ? 0.0 : 1.0,
+      duration: const Duration(milliseconds: 500),
+      child: Container(
+        padding: const EdgeInsets.all(16.0),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.green.withOpacity(0.15),
+              blurRadius: 15,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: TextField(
+          decoration: InputDecoration(
+            labelText: 'Tìm kiếm bệnh nhân',
+            labelStyle: TextStyle(color: Colors.green[700]),
+            prefixIcon: Icon(Icons.search, color: Colors.green[600]),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(15),
+            ),
+            filled: true,
+            fillColor: Colors.green[50],
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(15),
+              borderSide: BorderSide(color: Colors.green[200]!),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(15),
+              borderSide: BorderSide(color: Colors.green[600]!, width: 2),
+            ),
+          ),
+          onChanged: (value) => setState(() => _searchQuery = value),
         ),
       ),
     );
@@ -134,119 +209,192 @@ class _PatientListScreenState extends State<PatientListScreen> {
 
   Widget _buildPatientList() {
     if (_filteredPatients.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.person_off, size: 64, color: Colors.grey[400]),
-            const SizedBox(height: 16),
-            Text(
-              'Không tìm thấy bệnh nhân',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey[600],
-                fontWeight: FontWeight.w500,
+      return FadeTransition(
+        opacity: _fadeAnimation,
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.person_off, size: 80, color: Colors.grey[400]),
+              const SizedBox(height: 16),
+              Text(
+                'Không tìm thấy bệnh nhân',
+                style: TextStyle(
+                  fontSize: 18,
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.w500,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       );
     }
 
     return ListView.builder(
       itemCount: _filteredPatients.length,
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(12),
       itemBuilder: (context, index) {
         final patient = _filteredPatients[index];
-        return Card(
-          elevation: 3,
-          margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+          transform: Matrix4.translationValues(
+            0,
+            (1 - _animationController.value) * 50,
+            0,
           ),
-          child: ListTile(
-            contentPadding: const EdgeInsets.all(12),
-            leading: CircleAvatar(
-              backgroundColor: Colors.green.shade100,
-              child: const Icon(Icons.person, color: Colors.green),
-            ),
-            title: Text(
-              patient.name,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
+          child: FadeTransition(
+            opacity: _fadeAnimation,
+            child: TweenAnimationBuilder(
+              duration: Duration(milliseconds: 300 + (index * 100)),
+              tween: Tween<double>(begin: 0, end: 1),
+              builder: (context, double value, child) {
+                return Transform.scale(
+                  scale: value,
+                  child: child,
+                );
+              },
+              child: Card(
+                elevation: 3,
+                margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                child: InkWell(
+                  onTap: () => _showPatientDetails(patient),
+                  borderRadius: BorderRadius.circular(15),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [Colors.white, Colors.green[50]!],
+                      ),
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 60,
+                          height: 60,
+                          decoration: BoxDecoration(
+                            color: Colors.green[100],
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.green.withOpacity(0.1),
+                                blurRadius: 5,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Icon(
+                            Icons.person,
+                            size: 32,
+                            color: Colors.green[700],
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                patient.name,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  Icon(Icons.phone,
+                                      size: 16, color: Colors.green[600]),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    patient.phone,
+                                    style: TextStyle(
+                                      color: Colors.grey[700],
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  Icon(Icons.cake,
+                                      size: 16, color: Colors.green[600]),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    _formatDate(patient.dateOfBirth),
+                                    style: TextStyle(
+                                      color: Colors.grey[700],
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        PopupMenuButton<String>(
+                          icon: Icon(Icons.more_vert, color: Colors.grey[700]),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          onSelected: (value) {
+                            switch (value) {
+                              case 'edit':
+                                _navigateToPatientForm(context, patient);
+                                break;
+                              case 'delete':
+                                _confirmDelete(patient);
+                                break;
+                              case 'details':
+                                _showPatientDetails(patient);
+                                break;
+                            }
+                          },
+                          itemBuilder: (context) => [
+                            PopupMenuItem(
+                              value: 'details',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.info_outline,
+                                      color: Colors.green[600]),
+                                  const SizedBox(width: 12),
+                                  const Text('Chi tiết'),
+                                ],
+                              ),
+                            ),
+                            PopupMenuItem(
+                              value: 'edit',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.edit, color: Colors.blue[600]),
+                                  const SizedBox(width: 12),
+                                  const Text('Sửa'),
+                                ],
+                              ),
+                            ),
+                            PopupMenuItem(
+                              value: 'delete',
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.delete, color: Colors.red),
+                                  const SizedBox(width: 12),
+                                  const Text('Xóa'),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
             ),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    const Icon(Icons.phone, size: 16, color: Colors.grey),
-                    const SizedBox(width: 4),
-                    Text(patient.phone),
-                  ],
-                ),
-                Row(
-                  children: [
-                    const Icon(Icons.calendar_today,
-                        size: 16, color: Colors.grey),
-                    const SizedBox(width: 4),
-                    Text(_formatDate(patient.dateOfBirth)),
-                  ],
-                ),
-              ],
-            ),
-            trailing: PopupMenuButton<String>(
-              icon: const Icon(Icons.more_vert),
-              onSelected: (value) {
-                switch (value) {
-                  case 'edit':
-                    _navigateToPatientForm(context, patient);
-                    break;
-                  case 'delete':
-                    _confirmDelete(patient);
-                    break;
-                  case 'details':
-                    _showPatientDetails(patient);
-                    break;
-                }
-              },
-              itemBuilder: (context) => [
-                const PopupMenuItem(
-                  value: 'details',
-                  child: Row(
-                    children: [
-                      Icon(Icons.info_outline),
-                      SizedBox(width: 8),
-                      Text('Chi tiết'),
-                    ],
-                  ),
-                ),
-                const PopupMenuItem(
-                  value: 'edit',
-                  child: Row(
-                    children: [
-                      Icon(Icons.edit),
-                      SizedBox(width: 8),
-                      Text('Sửa'),
-                    ],
-                  ),
-                ),
-                const PopupMenuItem(
-                  value: 'delete',
-                  child: Row(
-                    children: [
-                      Icon(Icons.delete),
-                      SizedBox(width: 8),
-                      Text('Xóa'),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            onTap: () => _showPatientDetails(patient),
           ),
         );
       },
@@ -304,33 +452,46 @@ class _PatientListScreenState extends State<PatientListScreen> {
   void _showPatientDetails(Patient patient) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        title: Text(
-          patient.name,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.green,
+      builder: (context) => TweenAnimationBuilder(
+        duration: const Duration(milliseconds: 400),
+        tween: Tween<double>(begin: 0, end: 1),
+        builder: (context, double value, child) {
+          return Transform.scale(
+            scale: 0.5 + (value * 0.5),
+            child: Opacity(
+              opacity: value,
+              child: child,
+            ),
+          );
+        },
+        child: AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
           ),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildDetailRow(
-                Icons.cake, 'Ngày sinh', _formatDate(patient.dateOfBirth)),
-            _buildDetailRow(Icons.person, 'Giới tính', patient.gender),
-            _buildDetailRow(Icons.location_on, 'Địa chỉ', patient.address),
-            _buildDetailRow(Icons.phone, 'Số điện thoại', patient.phone),
+          title: Text(
+            patient.name,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.green,
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildDetailRow(
+                  Icons.cake, 'Ngày sinh', _formatDate(patient.dateOfBirth)),
+              _buildDetailRow(Icons.person, 'Giới tính', patient.gender),
+              _buildDetailRow(Icons.location_on, 'Địa chỉ', patient.address),
+              _buildDetailRow(Icons.phone, 'Số điện thoại', patient.phone),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Đóng', style: TextStyle(color: Colors.green)),
+            ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Đóng', style: TextStyle(color: Colors.green)),
-          ),
-        ],
       ),
     );
   }

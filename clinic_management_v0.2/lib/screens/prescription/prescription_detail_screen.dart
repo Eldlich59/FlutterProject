@@ -5,6 +5,7 @@ import 'package:clinic_management/models/doctor.dart';
 import 'package:clinic_management/services/supabase_service.dart';
 import 'package:clinic_management/screens/prescription/prescription_form_screen.dart';
 import 'package:clinic_management/models/patient.dart';
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 
 class PrescriptionDetailScreen extends StatelessWidget {
   final Prescription prescription;
@@ -92,179 +93,204 @@ class PrescriptionDetailScreen extends StatelessWidget {
   }
 
   Widget _buildInfoSection() {
-    return Column(
-      children: [
-        FutureBuilder<Patient?>(
-          future: prescription.patientId != null
-              ? SupabaseService()
-                  .patientService
-                  .getPatientById(prescription.patientId!)
-              : Future.value(null),
-          builder: (context, patientSnapshot) {
-            if (patientSnapshot.connectionState == ConnectionState.waiting) {
-              return const _LoadingCard();
-            }
+    return AnimationLimiter(
+      child: Column(
+        children: AnimationConfiguration.toStaggeredList(
+          duration: const Duration(milliseconds: 600),
+          childAnimationBuilder: (widget) => SlideAnimation(
+            horizontalOffset: 50.0,
+            child: FadeInAnimation(
+              child: widget,
+            ),
+          ),
+          children: [
+            FutureBuilder<Patient?>(
+              future: prescription.patientId != null
+                  ? SupabaseService()
+                      .patientService
+                      .getPatientById(prescription.patientId!)
+                  : Future.value(null),
+              builder: (context, patientSnapshot) {
+                if (patientSnapshot.connectionState ==
+                    ConnectionState.waiting) {
+                  return const _LoadingCard();
+                }
 
-            final patient = patientSnapshot.data;
-            return Card(
-              elevation: 4,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+                final patient = patientSnapshot.data;
+                return Card(
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(Icons.person, color: Colors.orange[400], size: 24),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Thông tin bệnh nhân',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.orange[400],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const Divider(height: 24),
-                    _buildInfoRow('Họ tên', patient?.name ?? 'Không xác định'),
-                    _buildInfoRow(
-                        'Ngày sinh',
-                        patient?.dateOfBirth != null
-                            ? DateFormat('dd/MM/yyyy')
-                                .format(patient!.dateOfBirth)
-                            : 'Không xác định'),
-                    _buildInfoRow(
-                        'Giới tính', patient?.gender ?? 'Không xác định'),
-                    _buildInfoRow(
-                        'Địa chỉ', patient?.address ?? 'Không xác định'),
-                  ],
-                ),
-              ),
-            );
-          },
-        ),
-        const SizedBox(height: 16),
-        FutureBuilder<Doctor>(
-          future: SupabaseService()
-              .doctorService
-              .getDoctorById(prescription.doctorId),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const _LoadingCard();
-            }
-
-            final doctor = snapshot.data;
-            return Card(
-              elevation: 4,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.medical_services,
-                            color: Colors.orange[400], size: 24),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'Bác sĩ: ${doctor?.name ?? 'Không xác định'}',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.orange[400],
+                        Row(
+                          children: [
+                            Icon(Icons.person,
+                                color: Colors.orange[400], size: 24),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Thông tin bệnh nhân',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.orange[400],
+                              ),
                             ),
-                          ),
+                          ],
                         ),
+                        const Divider(height: 24),
+                        _buildInfoRow(
+                            'Họ tên', patient?.name ?? 'Không xác định'),
+                        _buildInfoRow(
+                            'Ngày sinh',
+                            patient?.dateOfBirth != null
+                                ? DateFormat('dd/MM/yyyy')
+                                    .format(patient!.dateOfBirth)
+                                : 'Không xác định'),
+                        _buildInfoRow(
+                            'Giới tính', patient?.gender ?? 'Không xác định'),
+                        _buildInfoRow(
+                            'Địa chỉ', patient?.address ?? 'Không xác định'),
                       ],
                     ),
-                    const Divider(height: 24),
-                    _buildInfoRow(
-                        'Ngày kê toa',
-                        DateFormat('dd/MM/yyyy HH:mm')
-                            .format(prescription.prescriptionDate)),
-                  ],
-                ),
-              ),
-            );
-          },
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 16),
+            FutureBuilder<Doctor>(
+              future: SupabaseService()
+                  .doctorService
+                  .getDoctorById(prescription.doctorId),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const _LoadingCard();
+                }
+
+                final doctor = snapshot.data;
+                return Card(
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.medical_services,
+                                color: Colors.orange[400], size: 24),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Bác sĩ: ${doctor?.name ?? 'Không xác định'}',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.orange[400],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const Divider(height: 24),
+                        _buildInfoRow(
+                            'Ngày kê toa',
+                            DateFormat('dd/MM/yyyy HH:mm')
+                                .format(prescription.prescriptionDate)),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 
   Widget _buildMedicinesList(List<PrescriptionDetail> details) {
     double totalCost = 0;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: Row(
-            children: [
-              Icon(Icons.medication, color: Colors.orange[400], size: 24),
-              const SizedBox(width: 8),
-              Text(
-                'Danh sách thuốc',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.orange[400],
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-        ...details.map((detail) {
-          final medicineCost =
-              (detail.quantity * (detail.medicine?.price ?? 0)).toDouble();
-          totalCost += medicineCost;
-          return _buildMedicineCard(detail, medicineCost);
-        }),
-        const SizedBox(height: 16),
-        Card(
-          elevation: 4,
-          margin: const EdgeInsets.all(16.0),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          color: Colors.orange[50],
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Tổng tiền thuốc:',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.orange,
-                  ),
-                ),
-                Text(
-                  NumberFormat.currency(locale: 'vi_VN', symbol: 'đ')
-                      .format(totalCost),
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.orange,
-                  ),
-                ),
-              ],
+    return AnimationLimiter(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: AnimationConfiguration.toStaggeredList(
+          duration: const Duration(milliseconds: 600),
+          childAnimationBuilder: (widget) => SlideAnimation(
+            verticalOffset: 50.0,
+            child: FadeInAnimation(
+              child: widget,
             ),
           ),
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: Row(
+                children: [
+                  Icon(Icons.medication, color: Colors.orange[400], size: 24),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Danh sách thuốc',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.orange[400],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            ...details.map((detail) {
+              final medicineCost =
+                  (detail.quantity * (detail.medicine?.price ?? 0)).toDouble();
+              totalCost += medicineCost;
+              return _buildMedicineCard(detail, medicineCost);
+            }),
+            const SizedBox(height: 16),
+            Card(
+              elevation: 4,
+              margin: const EdgeInsets.all(16.0),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              color: Colors.orange[50],
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Tổng tiền thuốc:',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.orange,
+                      ),
+                    ),
+                    Text(
+                      NumberFormat.currency(locale: 'vi_VN', symbol: 'đ')
+                          .format(totalCost),
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.orange,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 
@@ -274,69 +300,76 @@ class PrescriptionDetailScreen extends StatelessWidget {
       return _buildErrorCard(detail.medicineId);
     }
 
-    return Card(
-      elevation: 3,
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.orange[50],
-                    borderRadius: BorderRadius.circular(8),
+    return AnimationConfiguration.synchronized(
+      child: SlideAnimation(
+        horizontalOffset: 50.0,
+        child: FadeInAnimation(
+          child: Card(
+            elevation: 3,
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.orange[50],
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(Icons.medication_outlined,
+                            color: Colors.orange[400]),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          medicine.name,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  child: Icon(Icons.medication_outlined,
-                      color: Colors.orange[400]),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    medicine.name,
-                    style: const TextStyle(
-                      fontSize: 18,
+                  const Divider(height: 24),
+                  _buildMedicineInfoRow(
+                      'Số lượng', '${detail.quantity} ${medicine.unit}'),
+                  _buildMedicineInfoRow(
+                      'Đơn giá',
+                      NumberFormat.currency(locale: 'vi_VN', symbol: 'đ')
+                          .format(medicine.price)),
+                  _buildMedicineInfoRow(
+                      'Thành tiền',
+                      NumberFormat.currency(locale: 'vi_VN', symbol: 'đ')
+                          .format(totalCost)),
+                  const Divider(height: 24),
+                  Text(
+                    'Cách dùng:',
+                    style: TextStyle(
                       fontWeight: FontWeight.bold,
+                      color: Colors.orange[400],
                     ),
                   ),
-                ),
-              ],
-            ),
-            const Divider(height: 24),
-            _buildMedicineInfoRow(
-                'Số lượng', '${detail.quantity} ${medicine.unit}'),
-            _buildMedicineInfoRow(
-                'Đơn giá',
-                NumberFormat.currency(locale: 'vi_VN', symbol: 'đ')
-                    .format(medicine.price)),
-            _buildMedicineInfoRow(
-                'Thành tiền',
-                NumberFormat.currency(locale: 'vi_VN', symbol: 'đ')
-                    .format(totalCost)),
-            const Divider(height: 24),
-            Text(
-              'Cách dùng:',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Colors.orange[400],
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[50],
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(detail.usage),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.grey[50],
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(detail.usage),
-            ),
-          ],
+          ),
         ),
       ),
     );

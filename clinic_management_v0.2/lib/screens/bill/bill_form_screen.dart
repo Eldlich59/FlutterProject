@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:clinic_management/models/bill.dart';
 import 'package:clinic_management/services/supabase_service.dart';
+import 'package:flutter/animation.dart';
 
 class BillFormScreen extends StatefulWidget {
   final Bill? bill;
@@ -12,7 +13,8 @@ class BillFormScreen extends StatefulWidget {
   State<BillFormScreen> createState() => _BillFormScreenState();
 }
 
-class _BillFormScreenState extends State<BillFormScreen> {
+class _BillFormScreenState extends State<BillFormScreen>
+    with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _supabaseService1 = SupabaseService().billService;
   final _supabaseService2 = SupabaseService().prescriptionService;
@@ -45,7 +47,7 @@ class _BillFormScreenState extends State<BillFormScreen> {
       ),
     ],
     border: Border.all(
-      color: Colors.white.withOpacity(0.8),
+      color: const Color(0xFF40E0D0).withOpacity(0.2),
       width: 1.5,
     ),
   );
@@ -54,14 +56,54 @@ class _BillFormScreenState extends State<BillFormScreen> {
   List<Map<String, dynamic>> _availablePatients = [];
   Map<String, dynamic>? _selectedPatient;
 
+  // Change from late to direct initialization
+  AnimationController? _animationController;
+  Animation<double>? _fadeAnimation;
+  Animation<Offset>? _slideAnimation;
+
   @override
   void initState() {
     super.initState();
+
+    // Initialize animations in initState
+    _initializeAnimations();
+
     _selectedDate = DateTime.now();
     _medicineCost = 0; // Changed this line
     _examinationFee = 0; // Initialize
     _totalCost = 0; // Initialize
     _loadPatients(); // Changed from _loadPrescriptions
+  }
+
+  void _initializeAnimations() {
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _animationController!,
+      curve: Curves.easeInOut,
+    ));
+
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.1),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _animationController!,
+      curve: Curves.easeOut,
+    ));
+
+    _animationController!.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController?.dispose();
+    super.dispose();
   }
 
   // Add new method to load patients
@@ -166,54 +208,57 @@ class _BillFormScreenState extends State<BillFormScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              _turquoiseColor.withOpacity(0.15),
+              _turquoiseColor.withOpacity(0.2),
               Colors.white.withOpacity(0.95),
               Colors.white,
             ],
             stops: const [0.0, 0.4, 1.0],
           ),
         ),
-        child: _isLoading
-            ? Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    CircularProgressIndicator(
-                      valueColor:
-                          AlwaysStoppedAnimation<Color>(_turquoiseColor),
-                      strokeWidth: 3,
-                    ),
-                    const SizedBox(height: 20),
-                    Text(
-                      'Đang tải...',
-                      style: TextStyle(
-                        color: _turquoiseColor,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w500,
-                        letterSpacing: 0.5,
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 300),
+          child: _isLoading
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      CircularProgressIndicator(
+                        valueColor:
+                            AlwaysStoppedAnimation<Color>(_turquoiseColor),
+                        strokeWidth: 3,
                       ),
-                    ),
-                  ],
-                ),
-              )
-            : Form(
-                key: _formKey,
-                child: ListView(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 24,
+                      const SizedBox(height: 20),
+                      Text(
+                        'Đang tải...',
+                        style: TextStyle(
+                          color: _turquoiseColor,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w500,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
                   ),
-                  children: [
-                    // Information Card
-                    _buildInformationCard(),
-                    const SizedBox(height: 24),
-                    _buildPaymentDetailsCard(), // Use the new method here
-                    const SizedBox(height: 32),
-                    // Save Button
-                    _buildSaveButton(),
-                  ],
+                )
+              : Form(
+                  key: _formKey,
+                  child: ListView(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 24,
+                    ),
+                    children: [
+                      // Information Card
+                      _buildInformationCard(),
+                      const SizedBox(height: 24),
+                      _buildPaymentDetailsCard(), // Use the new method here
+                      const SizedBox(height: 32),
+                      // Save Button
+                      _buildSaveButton(),
+                    ],
+                  ),
                 ),
-              ),
+        ),
       ),
     );
   }
@@ -275,8 +320,9 @@ class _BillFormScreenState extends State<BillFormScreen> {
     }
   }
 
+  // Update _buildCard method to handle nullable animations
   Widget _buildCard(String title, IconData icon, Widget content) {
-    return Container(
+    Widget card = Container(
       decoration: _cardDecoration,
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -288,8 +334,15 @@ class _BillFormScreenState extends State<BillFormScreen> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: _turquoiseColor.withOpacity(0.1),
+                    color: _turquoiseColor.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: _turquoiseColor.withOpacity(0.1),
+                        spreadRadius: 1,
+                        blurRadius: 5,
+                      ),
+                    ],
                   ),
                   child: Icon(
                     icon,
@@ -300,10 +353,11 @@ class _BillFormScreenState extends State<BillFormScreen> {
                 const SizedBox(width: 12),
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 0.5,
+                    color: _turquoiseColor.withOpacity(0.9),
                   ),
                 ),
               ],
@@ -314,6 +368,19 @@ class _BillFormScreenState extends State<BillFormScreen> {
         ),
       ),
     );
+
+    // Only wrap with animations if they are initialized
+    if (_fadeAnimation != null && _slideAnimation != null) {
+      card = FadeTransition(
+        opacity: _fadeAnimation!,
+        child: SlideTransition(
+          position: _slideAnimation!,
+          child: card,
+        ),
+      );
+    }
+
+    return card;
   }
 
   Widget _buildDivider() {

@@ -5,6 +5,7 @@ import 'medicine_service.dart';
 import 'prescription_service.dart';
 import 'bill_service.dart';
 import 'doctor_service.dart';
+import 'specialty_service.dart';
 
 class SupabaseService {
   final PatientService patientService;
@@ -13,6 +14,7 @@ class SupabaseService {
   final PrescriptionService prescriptionService;
   final BillService billService;
   final DoctorService doctorService;
+  final SpecialtyService specialtyService;
 
   SupabaseService()
       : patientService = PatientService(Supabase.instance.client),
@@ -20,5 +22,6 @@ class SupabaseService {
         medicineService = MedicineService(Supabase.instance.client),
         prescriptionService = PrescriptionService(Supabase.instance.client),
         billService = BillService(Supabase.instance.client),
-        doctorService = DoctorService(Supabase.instance.client);
+        doctorService = DoctorService(Supabase.instance.client),
+        specialtyService = SpecialtyService(Supabase.instance.client);
 }

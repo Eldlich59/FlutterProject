@@ -7,6 +7,7 @@ import 'examination/examination_list_screen.dart';
 import 'medicine/medicine_list_screen.dart';
 import 'prescription/prescription_list_screen.dart';
 import 'bill/bill_list_screen.dart';
+import 'specialty/specialty_list_screen.dart';
 import 'auth/login_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -27,6 +28,8 @@ class _HomeScreenState extends State<HomeScreen> {
     'Bác sĩ': Color(0xFF673AB7), // Tím - Màu của chuyên môn
     'Toa thuốc': Color(0xFFFF9800), // Cam - Màu của kê đơn
     'Hóa đơn': Color(0xFF009688), // Xanh ngọc - Màu của tài chính
+    'Chuyên khoa':
+        Color(0xFFBF360C), // Màu đỏ cam đậm - Màu của chuyên môn y tế
   };
 
   // Track hover and pressed states
@@ -113,6 +116,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 context,
                 MaterialPageRoute(
                     builder: (context) => const MedicineListScreen()),
+              ),
+            ),
+            _buildMenuCard(
+              context,
+              'Chuyên khoa',
+              Icons.medical_information,
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const SpecialtyListScreen()),
               ),
             ),
             _buildMenuCard(

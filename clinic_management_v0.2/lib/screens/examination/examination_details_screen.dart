@@ -4,7 +4,7 @@ import '../../models/examination.dart';
 import '../prescription/prescription_form_screen.dart';
 import 'examination_form_screen.dart';
 
-class ExaminationDetailsScreen extends StatelessWidget {
+class ExaminationDetailsScreen extends StatefulWidget {
   final Examination examination;
   final Function() onExaminationUpdated;
 
@@ -13,6 +13,44 @@ class ExaminationDetailsScreen extends StatelessWidget {
     required this.examination,
     required this.onExaminationUpdated,
   });
+
+  @override
+  _ExaminationDetailsScreenState createState() =>
+      _ExaminationDetailsScreenState();
+}
+
+class _ExaminationDetailsScreenState extends State<ExaminationDetailsScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeInOut,
+    ));
+
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0.0, 0.3),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeOut,
+    ));
+
+    _animationController.forward();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -50,56 +88,79 @@ class ExaminationDetailsScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Card(
-          elevation: 8,
-          shadowColor: Colors.black26,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              gradient: const LinearGradient(
-                colors: [Colors.white, Color(0xFFF8F9FF)],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
+      body: FadeTransition(
+        opacity: _fadeAnimation,
+        child: SlideTransition(
+          position: _slideAnimation,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16.0),
+            child: TweenAnimationBuilder<double>(
+              duration: const Duration(milliseconds: 600),
+              tween: Tween(begin: 0.95, end: 1.0),
+              curve: Curves.easeOutBack,
+              builder: (context, value, child) {
+                return Transform.scale(
+                  scale: value,
+                  child: child,
+                );
+              },
+              child: Card(
+                elevation: 8,
+                shadowColor: Colors.black26,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    gradient: const LinearGradient(
+                      colors: [Colors.white, Color(0xFFF8F9FF)],
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                    ),
+                  ),
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildInfoSection(
+                        'Thông tin chung',
+                        [
+                          _buildInfoRow('Bệnh nhân:',
+                              widget.examination.patientName ?? 'N/A'),
+                          _buildInfoRow(
+                              'Ngày khám:',
+                              dateFormat
+                                  .format(widget.examination.examinationDate)),
+                        ],
+                        Icons.person,
+                      ),
+                      const SizedBox(height: 24),
+                      _buildInfoSection(
+                        'Chi tiết khám',
+                        [
+                          _buildInfoRow(
+                              'Triệu chứng:', widget.examination.symptoms),
+                          _buildInfoRow(
+                              'Chẩn đoán:', widget.examination.diagnosis),
+                        ],
+                        Icons.medical_information,
+                      ),
+                      const SizedBox(height: 24),
+                      _buildInfoSection(
+                        'Chi phí',
+                        [
+                          _buildInfoRow(
+                              'Phí khám:',
+                              currencyFormat
+                                  .format(widget.examination.examinationFee)),
+                        ],
+                        Icons.payment,
+                      ),
+                    ],
+                  ),
+                ),
               ),
-            ),
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildInfoSection(
-                  'Thông tin chung',
-                  [
-                    _buildInfoRow(
-                        'Bệnh nhân:', examination.patientName ?? 'N/A'),
-                    _buildInfoRow('Ngày khám:',
-                        dateFormat.format(examination.examinationDate)),
-                  ],
-                  Icons.person,
-                ),
-                const SizedBox(height: 24),
-                _buildInfoSection(
-                  'Chi tiết khám',
-                  [
-                    _buildInfoRow('Triệu chứng:', examination.symptoms),
-                    _buildInfoRow('Chẩn đoán:', examination.diagnosis),
-                  ],
-                  Icons.medical_information,
-                ),
-                const SizedBox(height: 24),
-                _buildInfoSection(
-                  'Chi phí',
-                  [
-                    _buildInfoRow('Phí khám:',
-                        currencyFormat.format(examination.examinationFee)),
-                  ],
-                  Icons.payment,
-                ),
-              ],
             ),
           ),
         ),
@@ -108,39 +169,52 @@ class ExaminationDetailsScreen extends StatelessWidget {
   }
 
   Widget _buildInfoSection(String title, List<Widget> children, IconData icon) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+    return TweenAnimationBuilder<double>(
+      duration: const Duration(milliseconds: 500),
+      tween: Tween(begin: 0.0, end: 1.0),
+      builder: (context, value, child) {
+        return Transform.scale(
+          scale: value,
+          child: Opacity(
+            opacity: value,
+            child: child,
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, color: Colors.blueAccent, size: 24),
-              const SizedBox(width: 8),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.blueAccent,
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon, color: Colors.blueAccent, size: 24),
+                const SizedBox(width: 8),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blueAccent,
+                  ),
                 ),
-              ),
-            ],
-          ),
-          const Divider(height: 24, thickness: 1),
-          ...children,
-        ],
+              ],
+            ),
+            const Divider(height: 24, thickness: 1),
+            ...children,
+          ],
+        ),
       ),
     );
   }
@@ -183,12 +257,13 @@ class ExaminationDetailsScreen extends StatelessWidget {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => ExaminationFormScreen(examination: examination),
+        builder: (context) =>
+            ExaminationFormScreen(examination: widget.examination),
       ),
     );
 
     if (result == true) {
-      onExaminationUpdated();
+      widget.onExaminationUpdated();
     }
   }
 
@@ -196,8 +271,15 @@ class ExaminationDetailsScreen extends StatelessWidget {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => PrescriptionFormScreen(examination: examination),
+        builder: (context) =>
+            PrescriptionFormScreen(examination: widget.examination),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
   }
 }

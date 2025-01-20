@@ -1,3 +1,5 @@
+import './specialty.dart';
+
 class Doctor {
   final String id;
   final String name;
@@ -7,6 +9,7 @@ class Doctor {
   final DateTime dateOfBirth;
   final DateTime? startDate;
   final bool isActive;
+  final List<Specialty> specialties;
 
   Doctor({
     required this.id,
@@ -17,6 +20,7 @@ class Doctor {
     required this.dateOfBirth,
     this.startDate,
     required this.isActive,
+    this.specialties = const [],
   });
 
   factory Doctor.fromJson(Map<String, dynamic> json) {
@@ -33,6 +37,10 @@ class Doctor {
           ? DateTime.parse(json['NgayVaoLam'])
           : null,
       isActive: json['TrangThai'] ?? true,
+      specialties: (json['specialties'] as List?)
+              ?.map((s) => Specialty.fromJson(s))
+              .toList() ??
+          [],
     );
   }
 

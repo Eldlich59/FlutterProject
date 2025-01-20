@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../../models/medicine.dart';
 import '../../services/supabase_service.dart';
 import 'medicine_form_screen.dart';
@@ -17,6 +18,7 @@ class _MedicineListScreenState extends State<MedicineListScreen> {
   List<Medicine> _medicines = [];
   bool _isLoading = true;
   String _searchQuery = '';
+  int _detailRowCount = 0;
 
   @override
   void initState() {
@@ -65,13 +67,13 @@ class _MedicineListScreenState extends State<MedicineListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      backgroundColor: Colors.red[50], // Lighter red background
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.red[400],
         title: const Text(
           'Quản lý thuốc',
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
         actions: [
           IconButton(
@@ -84,18 +86,30 @@ class _MedicineListScreenState extends State<MedicineListScreen> {
         children: [
           Container(
             padding: const EdgeInsets.all(16.0),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.red.withOpacity(0.1),
+                  spreadRadius: 1,
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
             child: TextField(
               decoration: InputDecoration(
                 labelText: 'Tìm kiếm thuốc',
-                prefixIcon: const Icon(Icons.search, color: Colors.red),
+                labelStyle: TextStyle(color: Colors.red[400]),
+                prefixIcon: Icon(Icons.search, color: Colors.red[400]),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
                 filled: true,
-                fillColor: Colors.white,
+                fillColor: Colors.red[50],
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
+                  borderSide: BorderSide(color: Colors.red[200]!),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -118,11 +132,26 @@ class _MedicineListScreenState extends State<MedicineListScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _navigateToMedicineForm(context),
+        onPressed: () => _showMedicineForm(null),
         backgroundColor: Colors.red[400],
+        elevation: 4,
         icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text('Thêm thuốc', style: TextStyle(color: Colors.white)),
-      ),
+        label: const Text(
+          'Thêm thuốc',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+      )
+          .animate()
+          .scale(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOutBack,
+          )
+          .slideY(
+            begin: 2,
+            duration: const Duration(milliseconds: 500),
+            curve: Curves.easeOutQuad,
+          )
+          .fadeIn(duration: const Duration(milliseconds: 300)),
     );
   }
 
@@ -132,7 +161,10 @@ class _MedicineListScreenState extends State<MedicineListScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.medication_outlined, size: 64, color: Colors.grey[400]),
+            Icon(Icons.medication_outlined, size: 64, color: Colors.grey[400])
+                .animate()
+                .fade(duration: const Duration(milliseconds: 500))
+                .scale(delay: const Duration(milliseconds: 200)),
             const SizedBox(height: 16),
             Text(
               'Không có thuốc nào',
@@ -141,7 +173,7 @@ class _MedicineListScreenState extends State<MedicineListScreen> {
                 color: Colors.grey[600],
                 fontWeight: FontWeight.w500,
               ),
-            ),
+            ).animate().fadeIn(delay: const Duration(milliseconds: 300)),
           ],
         ),
       );
@@ -157,148 +189,154 @@ class _MedicineListScreenState extends State<MedicineListScreen> {
             .isBefore(DateTime.now().add(const Duration(days: 30)));
 
         return Card(
-          elevation: 3,
+          elevation: 2,
           margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          child: ListTile(
-            contentPadding: const EdgeInsets.all(16),
-            leading: CircleAvatar(
-              backgroundColor: isExpired
-                  ? Colors.red[100]
-                  : isNearExpiry
-                      ? Colors.orange[100]
-                      : Colors.red[50],
-              child: Icon(
-                Icons.medication,
+          color: Colors.white,
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
                 color: isExpired
-                    ? Colors.red
+                    ? Colors.red[300]!
                     : isNearExpiry
-                        ? Colors.orange
-                        : Colors.red[400],
+                        ? Colors.orange[300]!
+                        : Colors.red[100]!,
+                width: 1,
               ),
             ),
-            title: Text(
-              medicine.name,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: isExpired ? Colors.red : Colors.black87,
+            child: ListTile(
+              contentPadding: const EdgeInsets.all(16),
+              leading: CircleAvatar(
+                backgroundColor: isExpired
+                    ? Colors.red[100]
+                    : isNearExpiry
+                        ? Colors.orange[100]
+                        : Colors.red[50],
+                child: Icon(
+                  Icons.medication,
+                  color: isExpired
+                      ? Colors.red
+                      : isNearExpiry
+                          ? Colors.orange[700]
+                          : Colors.red[400],
+                  size: 24,
+                ),
               ),
-            ),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Icon(Icons.medical_information,
-                        size: 16, color: Colors.grey[600]),
-                    const SizedBox(width: 8),
-                    Text(medicine.unit),
-                  ],
+              title: Text(
+                medicine.name,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: isExpired ? Colors.red : Colors.black87,
                 ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Icon(Icons.attach_money, size: 16, color: Colors.grey[600]),
-                    const SizedBox(width: 8),
-                    Text(
-                      _currencyFormat.format(medicine.price),
-                      style: const TextStyle(fontWeight: FontWeight.w500),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Icon(
-                      Icons.event,
-                      size: 16,
-                      color: isExpired
-                          ? Colors.red
-                          : isNearExpiry
-                              ? Colors.orange
-                              : Colors.grey[600],
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'HSD: ${DateFormat('dd/MM/yyyy').format(medicine.expiryDate)}',
-                      style: TextStyle(
+              ),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(Icons.medical_information,
+                          size: 16, color: Colors.grey[600]),
+                      const SizedBox(width: 8),
+                      Text(medicine.unit),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(Icons.attach_money,
+                          size: 16, color: Colors.grey[600]),
+                      const SizedBox(width: 8),
+                      Text(
+                        _currencyFormat.format(medicine.price),
+                        style: const TextStyle(fontWeight: FontWeight.w500),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.event,
+                        size: 16,
                         color: isExpired
                             ? Colors.red
                             : isNearExpiry
                                 ? Colors.orange
                                 : Colors.grey[600],
-                        fontWeight: FontWeight.w500,
                       ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'HSD: ${DateFormat('dd/MM/yyyy').format(medicine.expiryDate)}',
+                        style: TextStyle(
+                          color: isExpired
+                              ? Colors.red
+                              : isNearExpiry
+                                  ? Colors.orange
+                                  : Colors.grey[600],
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              trailing: PopupMenuButton<String>(
+                icon: const Icon(Icons.more_vert),
+                onSelected: (value) {
+                  switch (value) {
+                    case 'edit':
+                      _showMedicineForm(medicine);
+                      break;
+                    case 'delete':
+                      _confirmDelete(medicine);
+                      break;
+                    case 'details':
+                      _showMedicineDetails(medicine);
+                      break;
+                  }
+                },
+                itemBuilder: (context) => [
+                  const PopupMenuItem(
+                    value: 'details',
+                    child: ListTile(
+                      leading: Icon(Icons.info),
+                      title: Text('Chi tiết'),
+                      dense: true,
                     ),
-                  ],
-                ),
-              ],
+                  ),
+                  const PopupMenuItem(
+                    value: 'edit',
+                    child: ListTile(
+                      leading: Icon(Icons.edit),
+                      title: Text('Sửa'),
+                      dense: true,
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: 'delete',
+                    child: ListTile(
+                      leading: Icon(Icons.delete),
+                      title: Text('Xóa'),
+                      dense: true,
+                    ),
+                  ),
+                ],
+              ),
+              onTap: () => _showMedicineDetails(medicine),
             ),
-            trailing: PopupMenuButton<String>(
-              icon: const Icon(Icons.more_vert),
-              onSelected: (value) {
-                switch (value) {
-                  case 'edit':
-                    _navigateToMedicineForm(context, medicine);
-                    break;
-                  case 'delete':
-                    _confirmDelete(medicine);
-                    break;
-                  case 'details':
-                    _showMedicineDetails(medicine);
-                    break;
-                }
-              },
-              itemBuilder: (context) => [
-                const PopupMenuItem(
-                  value: 'details',
-                  child: ListTile(
-                    leading: Icon(Icons.info),
-                    title: Text('Chi tiết'),
-                    dense: true,
-                  ),
-                ),
-                const PopupMenuItem(
-                  value: 'edit',
-                  child: ListTile(
-                    leading: Icon(Icons.edit),
-                    title: Text('Sửa'),
-                    dense: true,
-                  ),
-                ),
-                const PopupMenuItem(
-                  value: 'delete',
-                  child: ListTile(
-                    leading: Icon(Icons.delete),
-                    title: Text('Xóa'),
-                    dense: true,
-                  ),
-                ),
-              ],
-            ),
-            onTap: () => _showMedicineDetails(medicine),
           ),
-        );
+        )
+            .animate(delay: Duration(milliseconds: 50 * index))
+            .fadeIn(duration: const Duration(milliseconds: 500))
+            .slideX(begin: 0.2, curve: Curves.easeOutQuad)
+            .scale(begin: const Offset(0.8, 0.8));
       },
     );
-  }
-
-  Future<void> _navigateToMedicineForm(BuildContext context,
-      [Medicine? medicine]) async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => MedicineFormScreen(medicine: medicine),
-      ),
-    );
-
-    if (result == true) {
-      _loadMedicines();
-    }
   }
 
   Future<void> _confirmDelete(Medicine medicine) async {
@@ -339,27 +377,40 @@ class _MedicineListScreenState extends State<MedicineListScreen> {
     }
   }
 
+  void _resetDetailRowCount() {
+    _detailRowCount = 0;
+  }
+
   void _showMedicineDetails(Medicine medicine) {
+    _resetDetailRowCount();
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
-        title: Row(
-          children: [
-            const Icon(Icons.medication, color: Colors.red),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                medicine.name,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.red,
+        backgroundColor: Colors.white,
+        title: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.red[50],
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.medication, color: Colors.red[400]),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  medicine.name,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.red[700],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -385,7 +436,13 @@ class _MedicineListScreenState extends State<MedicineListScreen> {
             child: const Text('Đóng', style: TextStyle(color: Colors.red)),
           ),
         ],
-      ),
+      )
+          .animate()
+          .scale(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOutBack,
+          )
+          .fadeIn(),
     );
   }
 
@@ -418,7 +475,26 @@ class _MedicineListScreenState extends State<MedicineListScreen> {
             ),
           ),
         ],
-      ),
+      )
+          .animate()
+          .fadeIn(delay: Duration(milliseconds: 100 * _detailRowCount++)),
     );
+  }
+
+  void _showMedicineForm(Medicine? medicine) async {
+    // Make method async
+    final result = await showDialog<bool>(
+      // Capture the dialog result
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return MedicineFormDialog(medicine: medicine);
+      },
+    );
+
+    if (result == true && mounted) {
+      // Check if we need to refresh
+      _loadMedicines(); // Reload the list if changes were made
+    }
   }
 }

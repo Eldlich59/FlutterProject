@@ -23,7 +23,8 @@ class PrescriptionFormScreen extends StatefulWidget {
   State<PrescriptionFormScreen> createState() => _PrescriptionFormScreenState();
 }
 
-class _PrescriptionFormScreenState extends State<PrescriptionFormScreen> {
+class _PrescriptionFormScreenState extends State<PrescriptionFormScreen>
+    with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final List<PrescriptionDetail> _details = [];
   final _supabaseService1 = SupabaseService().prescriptionService;
@@ -42,9 +43,24 @@ class _PrescriptionFormScreenState extends State<PrescriptionFormScreen> {
   bool _isLoading = true;
   DateTime _selectedDate = DateTime.now();
 
+  late AnimationController _animationController;
+  late Animation<double> _animation;
+
   @override
   void initState() {
     super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 500),
+      vsync: this,
+    );
+    _animation = CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeInOut,
+    );
+
+    // Start animation regardless of editing mode
+    _animationController.forward();
+
     if (widget.prescription != null) {
       _selectedDate = widget.prescription!.prescriptionDate;
     }
@@ -60,6 +76,12 @@ class _PrescriptionFormScreenState extends State<PrescriptionFormScreen> {
     }
   }
 
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
   Future<void> _loadData() async {
     try {
       final medicines = await _supabaseService2.getMedicines();
@@ -71,6 +93,10 @@ class _PrescriptionFormScreenState extends State<PrescriptionFormScreen> {
         final patient = await _supabaseService3
             .getPatientById(widget.prescription!.patientId!);
         setState(() => _selectedPatient = patient);
+        // Load examinations for this patient if patient exists
+        if (patient != null && patient.id != null) {
+          await _loadExaminations(patient.id!);
+        }
       }
 
       setState(() {
@@ -78,10 +104,9 @@ class _PrescriptionFormScreenState extends State<PrescriptionFormScreen> {
         _patients = patients;
         _doctors = doctors;
         if (widget.prescription != null && doctors.isNotEmpty) {
-          // Find matching doctor if exists
           _selectedDoctor = doctors.firstWhere(
             (d) => d.id == widget.prescription!.doctorId,
-            orElse: () => doctors[0], // Default to first doctor if not found
+            orElse: () => doctors[0],
           );
         }
         _isLoading = false;
@@ -98,7 +123,21 @@ class _PrescriptionFormScreenState extends State<PrescriptionFormScreen> {
     try {
       final examinations =
           await _supabaseService4.getExaminations(patientId: patientId);
-      setState(() => _examinations = examinations);
+      if (examinations.isNotEmpty) {
+        // Sort examinations by date in descending order and select the most recent one
+        examinations
+            .sort((a, b) => b.examinationDate.compareTo(a.examinationDate));
+        setState(() {
+          _examinations = examinations;
+          _selectedExamination =
+              examinations.first; // Select the most recent examination
+        });
+      } else {
+        setState(() {
+          _examinations = [];
+          _selectedExamination = null;
+        });
+      }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Lỗi khi tải danh sách khám: $e')),
@@ -204,7 +243,7 @@ class _PrescriptionFormScreenState extends State<PrescriptionFormScreen> {
                         ),
                         if (!widget.isEditing && _selectedExamination != null)
                           Text(
-                            'Phiếu khám số: ${_selectedExamination!.id}',
+                            'Phiếu khám số: ${_selectedExamination!.id.substring(0, 6)}...',
                             style: TextStyle(
                               color: Colors.grey.shade700,
                               fontSize: 14,
@@ -246,95 +285,115 @@ class _PrescriptionFormScreenState extends State<PrescriptionFormScreen> {
               child: CircularProgressIndicator(
               valueColor: AlwaysStoppedAnimation<Color>(Colors.orange),
             ))
-          : Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Colors.orange.shade50, Colors.white],
-                ),
-              ),
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16.0),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (widget.prescription == null) ...[
-                        _buildSectionHeader('Chọn bệnh nhân'),
-                        const SizedBox(height: 8),
-                        _buildDropdownField(
-                          value: _selectedPatient?.id,
-                          items: _patients.map((patient) {
-                            return DropdownMenuItem(
-                              value: patient.id,
-                              child: Text('${patient.name} - ${patient.phone}'),
-                            );
-                          }).toList(),
-                          onChanged: (value) {
-                            if (value != null) {
-                              final selectedPatient = _patients.firstWhere(
-                                (patient) => patient.id == value,
-                              );
-                              setState(() {
-                                _selectedPatient = selectedPatient;
-                                _selectedExamination = null;
-                              });
-                              _loadExaminations(value);
-                            }
-                          },
-                          labelText: 'Chọn bệnh nhân',
-                        ),
-                        const SizedBox(height: 16),
-                        _buildPatientInfo(),
-                        if (_selectedPatient != null) ...[
-                          const SizedBox(height: 16),
-                          _buildSectionHeader('Thông tin khám'),
+          : FadeTransition(
+              opacity: _animation,
+              child: SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(0.1, 0),
+                  end: Offset.zero,
+                ).animate(_animation),
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Colors.orange.shade50, Colors.white],
+                    ),
+                  ),
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (widget.prescription == null) ...[
+                            _buildSectionHeader('Chọn bệnh nhân'),
+                            const SizedBox(height: 8),
+                            _buildDropdownField(
+                              value: _selectedPatient?.id,
+                              items: _patients.map((patient) {
+                                return DropdownMenuItem(
+                                  value: patient.id,
+                                  child: Text(
+                                      '${patient.name} - ${patient.phone}'),
+                                );
+                              }).toList(),
+                              onChanged: (value) async {
+                                if (value != null) {
+                                  final selectedPatient = _patients.firstWhere(
+                                    (patient) => patient.id == value,
+                                  );
+                                  setState(() {
+                                    _selectedPatient = selectedPatient;
+                                    _selectedExamination =
+                                        null; // Reset examination before loading new ones
+                                    _examinations =
+                                        []; // Clear existing examinations
+                                  });
+                                  await _loadExaminations(
+                                      value); // Load and auto-select most recent examination
+                                }
+                              },
+                              labelText: 'Chọn bệnh nhân',
+                            ),
+                            const SizedBox(height: 16),
+                            _buildPatientInfo(),
+                            if (_selectedPatient != null) ...[
+                              const SizedBox(height: 16),
+                              _buildSectionHeader('Thông tin khám'),
+                              const SizedBox(height: 8),
+                              _buildDropdownField(
+                                value: _selectedExamination,
+                                items: _examinations.map((examination) {
+                                  return DropdownMenuItem(
+                                    value: examination,
+                                    child: Text(
+                                        'Phiếu khám ${examination.id.substring(0, 6)}...'),
+                                  );
+                                }).toList(),
+                                onChanged: (value) {
+                                  setState(() => _selectedExamination = value);
+                                },
+                                labelText: 'Chọn phiếu khám',
+                              ),
+                            ],
+                          ] else
+                            _buildPatientInfo(),
+                          const SizedBox(height: 24),
+                          _buildSectionHeader('Thông tin kê đơn'),
                           const SizedBox(height: 8),
                           _buildDropdownField(
-                            value: _selectedExamination,
-                            items: _examinations.map((examination) {
+                            value: _selectedDoctor,
+                            items: _doctors.map((doctor) {
                               return DropdownMenuItem(
-                                value: examination,
-                                child: Text('Phiếu khám ${examination.id}'),
+                                value: doctor,
+                                child: Text(
+                                  doctor.name +
+                                      (doctor.isActive
+                                          ? ''
+                                          : ' (Ngừng hoạt động)'),
+                                ),
                               );
                             }).toList(),
                             onChanged: (value) {
-                              setState(() => _selectedExamination = value);
+                              setState(() => _selectedDoctor = value);
                             },
-                            labelText: 'Chọn phiếu khám',
+                            labelText: 'Chọn bác sĩ',
                           ),
+                          const SizedBox(height: 16),
+                          _buildDatePicker(),
+                          const SizedBox(height: 24),
+                          _buildSectionHeader('Danh sách thuốc'),
+                          const SizedBox(height: 16),
+                          _buildAddMedicineButton(),
+                          const SizedBox(height: 16),
+                          ..._buildMedicineList(),
+                          const SizedBox(height: 24),
+                          _buildSaveButton(),
                         ],
-                      ] else
-                        _buildPatientInfo(),
-                      const SizedBox(height: 24),
-                      _buildSectionHeader('Thông tin kê đơn'),
-                      const SizedBox(height: 8),
-                      _buildDropdownField(
-                        value: _selectedDoctor,
-                        items: _doctors.map((doctor) {
-                          return DropdownMenuItem(
-                            value: doctor,
-                            child: Text(doctor.name),
-                          );
-                        }).toList(),
-                        onChanged: (value) {
-                          setState(() => _selectedDoctor = value);
-                        },
-                        labelText: 'Chọn bác sĩ',
                       ),
-                      const SizedBox(height: 16),
-                      _buildDatePicker(),
-                      const SizedBox(height: 24),
-                      _buildSectionHeader('Danh sách thuốc'),
-                      const SizedBox(height: 16),
-                      _buildAddMedicineButton(),
-                      const SizedBox(height: 16),
-                      ..._buildMedicineList(),
-                      const SizedBox(height: 24),
-                      _buildSaveButton(),
-                    ],
+                    ),
                   ),
                 ),
               ),
@@ -359,6 +418,44 @@ class _PrescriptionFormScreenState extends State<PrescriptionFormScreen> {
     required Function(dynamic) onChanged,
     required String labelText,
   }) {
+    if (labelText == 'Chọn bác sĩ') {
+      // Modify items to disable inactive doctors
+      items = items.map((item) {
+        final doctor = item.value as Doctor;
+        return DropdownMenuItem(
+          value: doctor,
+          enabled: doctor.isActive ||
+              (value != null && doctor.id == (value as Doctor).id),
+          child: Container(
+            // Wrap in Container to constrain width
+            constraints:
+                const BoxConstraints(minWidth: 100), // Add minimum width
+            child: Row(
+              mainAxisSize: MainAxisSize.min, // Add this
+              children: [
+                Flexible(
+                  // Replace Expanded with Flexible
+                  child: Text(
+                    doctor.name,
+                    overflow:
+                        TextOverflow.ellipsis, // Add ellipsis for long text
+                    style: TextStyle(
+                      color: doctor.isActive ? null : Colors.grey,
+                    ),
+                  ),
+                ),
+                if (!doctor.isActive)
+                  const Text(
+                    ' (Ngừng hoạt động)',
+                    style: TextStyle(color: Colors.red),
+                  ),
+              ],
+            ),
+          ),
+        );
+      }).toList();
+    }
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -372,25 +469,60 @@ class _PrescriptionFormScreenState extends State<PrescriptionFormScreen> {
           ),
         ],
       ),
-      child: DropdownButtonFormField(
-        value: value,
-        items: items,
-        onChanged: onChanged,
-        decoration: InputDecoration(
-          labelText: labelText,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide.none,
+      child: Column(
+        children: [
+          DropdownButtonFormField(
+            value: value,
+            items: items,
+            onChanged: onChanged,
+            decoration: InputDecoration(
+              labelText: labelText,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              filled: true,
+              fillColor: Colors.white,
+            ),
+            validator: (value) {
+              if (value == null) {
+                return 'Vui lòng chọn $labelText';
+              }
+              if (labelText == 'Chọn bác sĩ') {
+                final doctor = value as Doctor;
+                if (!doctor.isActive) {
+                  return 'Vui lòng chọn bác sĩ đang hoạt động';
+                }
+              }
+              return null;
+            },
           ),
-          filled: true,
-          fillColor: Colors.white,
-        ),
-        validator: (value) {
-          if (value == null) {
-            return 'Vui lòng chọn $labelText';
-          }
-          return null;
-        },
+          if (labelText == 'Chọn bác sĩ' &&
+              value != null &&
+              !(value as Doctor).isActive)
+            Container(
+              padding: const EdgeInsets.all(8),
+              margin: const EdgeInsets.only(top: 8),
+              decoration: BoxDecoration(
+                color: Colors.orange.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.orange),
+              ),
+              child: Row(
+                children: const [
+                  Icon(Icons.warning_amber_rounded,
+                      color: Colors.orange, size: 20),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Bác sĩ này hiện không còn hoạt động',
+                      style: TextStyle(color: Colors.orange),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
       ),
     );
   }
