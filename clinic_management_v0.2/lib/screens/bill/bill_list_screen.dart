@@ -315,18 +315,31 @@ class _BillListScreenState extends State<BillListScreen> {
     if (confirmed == true) {
       try {
         setState(() => _isLoading = true);
+
+        // Ensure we have a valid ID before proceeding
+        if (bill.id.isEmpty) {
+          throw Exception('Mã hóa đơn không hợp lệ');
+        }
+
         await _supabaseService.deleteBill(bill.id);
-        _loadBills(); // Refresh the list after deletion
+        await _loadBills(); // Refresh the list after deletion
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Đã xóa hóa đơn thành công')),
+            const SnackBar(
+              content: Text('Đã xóa hóa đơn thành công'),
+              backgroundColor: Colors.green,
+            ),
           );
         }
       } catch (e) {
+        setState(() => _isLoading = false);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Lỗi khi xóa hóa đơn: $e')),
+            SnackBar(
+              content: Text(e.toString()),
+              backgroundColor: Colors.red,
+            ),
           );
         }
       }

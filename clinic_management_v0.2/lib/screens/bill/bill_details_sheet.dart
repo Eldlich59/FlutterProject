@@ -20,10 +20,13 @@ class _BillDetailsSheetState extends State<BillDetailsSheet> {
   bool _isLoading = true;
   List<PrescriptionDetail>? _prescriptionDetails;
   List<Map<String, dynamic>> _medicineDetails = [];
+  List<String> _selectedPrescriptionIds = []; // Change this line
 
   @override
   void initState() {
     super.initState();
+    // Initialize with all prescription IDs
+    _selectedPrescriptionIds = List.from(widget.bill.prescriptionIds);
     _loadPrescriptionDetails();
   }
 
@@ -45,13 +48,25 @@ class _BillDetailsSheetState extends State<BillDetailsSheet> {
       // Load details for each prescription
       for (String prescriptionId in widget.bill.prescriptionIds) {
         try {
+          print('Loading prescription: $prescriptionId'); // Debug print
           final prescription =
               await supabaseService.getPrescriptionDetails(prescriptionId);
           final medicines =
               await supabaseService.getPrescriptionMedicines(prescriptionId);
 
+          print(
+              'Medicines for $prescriptionId: ${medicines.length}'); // Debug print
+
+          // Add prescription ID to each medicine detail
+          final medicinesWithPrescriptionId = medicines
+              .map((medicine) => {
+                    ...medicine,
+                    'prescriptionId': prescriptionId,
+                  })
+              .toList();
+
           allPrescriptionDetails.addAll(prescription);
-          allMedicineDetails.addAll(medicines);
+          allMedicineDetails.addAll(medicinesWithPrescriptionId);
         } catch (e) {
           print('Error loading details for prescription $prescriptionId: $e');
         }
@@ -128,8 +143,6 @@ class _BillDetailsSheetState extends State<BillDetailsSheet> {
                         [
                           'Tên bệnh nhân: ${widget.bill.patientName}',
                           'Mã hóa đơn: ${widget.bill.id.substring(0, 6)}...',
-                          if (widget.bill.examinationId != null)
-                            'Mã phiếu khám: ${widget.bill.examinationId?.substring(0, 6)}...',
                           'Ngày tạo hóa đơn: ${DateFormat('dd/MM/yyyy HH:mm').format(widget.bill.saleDate)}',
                           'Tiền thuốc: ${NumberFormat.currency(locale: 'vi_VN', symbol: 'đ').format(widget.bill.medicineCost)}',
                           if (widget.bill.examinationCost != null)
@@ -140,68 +153,137 @@ class _BillDetailsSheetState extends State<BillDetailsSheet> {
                       ),
                       if (_prescriptionDetails != null) ...[
                         const SizedBox(height: 20),
-                        _buildInfoSection(
-                          'Thông tin toa thuốc',
-                          [
-                            'Mã toa: ${_prescriptionDetails![0].prescriptionId.substring(0, 6)}...',
-                            'Danh sách thuốc:',
-                          ],
-                          Icons.medical_information,
-                          additionalContent: ListView.builder(
-                            physics: const NeverScrollableScrollPhysics(),
-                            shrinkWrap: true,
-                            itemCount: _medicineDetails.length,
-                            itemBuilder: (context, index) {
-                              final medicine = _medicineDetails[index];
-                              return Card(
-                                elevation: 2,
-                                margin: const EdgeInsets.only(bottom: 12),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  side: BorderSide(color: lightTurquoise),
-                                ),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(12),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        medicine['THUOC']['TenThuoc'],
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .titleMedium
-                                            ?.copyWith(
-                                              fontWeight: FontWeight.bold,
-                                              color: darkTurquoise,
-                                            ),
-                                      ),
-                                      const SizedBox(height: 8),
-                                      _buildMedicineDetail(
-                                        Icons.numbers,
-                                        'Số lượng: ${medicine['Sluong']} ${medicine['THUOC']['DonVi']}',
-                                      ),
-                                      _buildMedicineDetail(
-                                        Icons.info_outline,
-                                        'Cách dùng: ${medicine['Cdung']}',
-                                      ),
-                                      _buildMedicineDetail(
-                                        Icons.attach_money,
-                                        'Thành tiền: ${NumberFormat.currency(locale: 'vi_VN', symbol: 'đ').format(medicine['THUOC']['DonGia'] * medicine['Sluong'])}',
-                                      ),
-                                    ],
-                                  ),
-                                ),
+                        // Show selected prescriptions as chips
+                        if (_selectedPrescriptionIds.isNotEmpty)
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: _selectedPrescriptionIds.map((id) {
+                              return Chip(
+                                backgroundColor: Color(0xFFE0F7F5),
+                                label: Text(
+                                    'Toa ${widget.bill.prescriptionIds.indexOf(id) + 1}'),
+                                deleteIcon: Icon(Icons.close, size: 18),
+                                onDeleted: () {
+                                  setState(() {
+                                    _selectedPrescriptionIds.remove(id);
+                                  });
+                                },
                               );
-                            },
+                            }).toList(),
                           ),
-                        ),
+                        const SizedBox(height: 12),
+                        // Only show dropdown if there are unselected prescriptions
+                        if (_selectedPrescriptionIds.length <
+                            widget.bill.prescriptionIds.length)
+                          DropdownButton<String>(
+                            hint: Text('Chọn toa thuốc'),
+                            value: null,
+                            onChanged: (String? newValue) {
+                              if (newValue != null) {
+                                setState(() {
+                                  _selectedPrescriptionIds.add(newValue);
+                                });
+                              }
+                            },
+                            items: widget.bill.prescriptionIds
+                                .where((id) =>
+                                    !_selectedPrescriptionIds.contains(id))
+                                .map<DropdownMenuItem<String>>((String value) {
+                              return DropdownMenuItem<String>(
+                                value: value,
+                                child: Text(
+                                    'Toa thuốc ${widget.bill.prescriptionIds.indexOf(value) + 1}'),
+                              );
+                            }).toList(),
+                          ),
+                        if (_selectedPrescriptionIds.isNotEmpty) ...[
+                          const SizedBox(height: 20),
+                          ..._selectedPrescriptionIds.map((prescriptionId) {
+                            return _buildPrescriptionDetails(prescriptionId);
+                          }).toList(),
+                        ],
                       ],
                     ],
                   ),
                 ),
               ],
             ),
+    );
+  }
+
+  Widget _buildPrescriptionDetails(String prescriptionId) {
+    final lightTurquoise = Color(0xFFE0F7F5);
+    final darkTurquoise = Color(0xFF20B2AA);
+
+    // Filter medicines for this prescription
+    final prescriptionMedicines = _medicineDetails
+        .where((medicine) => medicine['prescriptionId'] == prescriptionId)
+        .toList();
+
+    return Column(
+      children: [
+        _buildInfoSection(
+          'Toa thuốc ${widget.bill.prescriptionIds.indexOf(prescriptionId) + 1}',
+          [
+            'Mã toa: ${prescriptionId.substring(0, 6)}...',
+            'Số lượng thuốc: ${prescriptionMedicines.length}',
+            'Danh sách thuốc:',
+          ],
+          Icons.medical_information,
+          additionalContent: prescriptionMedicines.isEmpty
+              ? Text('Không có thuốc trong toa này',
+                  style: TextStyle(color: Colors.grey))
+              : ListView.builder(
+                  physics: const NeverScrollableScrollPhysics(),
+                  shrinkWrap: true,
+                  itemCount: prescriptionMedicines.length,
+                  itemBuilder: (context, index) {
+                    final medicine = prescriptionMedicines[index];
+                    return Card(
+                      elevation: 2,
+                      margin: const EdgeInsets.only(bottom: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(color: lightTurquoise),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              medicine['THUOC']['TenThuoc'],
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: darkTurquoise,
+                                  ),
+                            ),
+                            const SizedBox(height: 8),
+                            _buildMedicineDetail(
+                              Icons.numbers,
+                              'Số lượng: ${medicine['Sluong']} ${medicine['THUOC']['DonVi']}',
+                            ),
+                            _buildMedicineDetail(
+                              Icons.info_outline,
+                              'Cách dùng: ${medicine['Cdung']}',
+                            ),
+                            _buildMedicineDetail(
+                              Icons.attach_money,
+                              'Thành tiền: ${NumberFormat.currency(locale: 'vi_VN', symbol: 'đ').format(medicine['THUOC']['DonGia'] * medicine['Sluong'])}',
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+        ),
+        const SizedBox(height: 20),
+      ],
     );
   }
 

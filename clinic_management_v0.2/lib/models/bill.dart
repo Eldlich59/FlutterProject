@@ -1,23 +1,27 @@
 class Bill {
   final String id;
-  final List<String> prescriptionIds; // Changed from single prescriptionId
+  final List<String> prescriptionIds;
   final String? prescriptionId;
   final DateTime saleDate;
   final double medicineCost;
-  final String patientName;
+  final List<String> patientNames;
   final double? examinationCost;
   final String? examinationId;
 
   Bill({
     required this.id,
-    required this.prescriptionIds, // Changed
-    required this.prescriptionId,
+    this.prescriptionIds = const [], // Make optional with default empty list
+    this.prescriptionId,
     required this.saleDate,
     required this.medicineCost,
-    required this.patientName,
+    List<String>? patientNames, // Make optional
     this.examinationCost,
     this.examinationId,
-  });
+  }) : this.patientNames =
+            patientNames ?? []; // Initialize with empty list if null
+
+  String get patientName =>
+      patientNames.isNotEmpty ? patientNames.join(', ') : 'Không có tên';
 
   double get totalCost => medicineCost + (examinationCost ?? 0);
 
@@ -30,42 +34,55 @@ class Bill {
       return null;
     }
 
-    // Parse prescriptions data
-    List<dynamic> prescriptions = [];
-    if (json['prescriptions'] != null) {
-      prescriptions = json['prescriptions'] is List
-          ? json['prescriptions'] as List
-          : [json['prescriptions']];
+    // Safely handle bill ID
+    String getBillId(dynamic value) {
+      if (value == null) return '';
+      if (value is int) return value.toString();
+      if (value is String) return value;
+      return value.toString();
     }
 
-    // Get patient and examination data from first prescription
-    final firstPrescription =
-        prescriptions.isNotEmpty ? prescriptions.first : null;
-    final patient = firstPrescription?['BENHNHAN'] as Map<String, dynamic>?;
-    final examination =
-        firstPrescription?['PHIEUKHAM'] as Map<String, dynamic>?;
+    List<dynamic> billDetails = json['bill_details'] ?? [];
+    List<String> prescriptionIds = [];
+    List<String> patientNames = [];
+
+    for (var detail in billDetails) {
+      var prescription = detail['prescriptions'];
+      if (prescription != null) {
+        var prescriptionId = prescription['MaToa']?.toString();
+        if (prescriptionId != null) {
+          prescriptionIds.add(prescriptionId);
+        }
+
+        var patient = prescription['BENHNHAN'];
+        if (patient != null) {
+          String? patientName = patient['TenBN']?.toString();
+          if (patientName != null &&
+              patientName.isNotEmpty &&
+              !patientNames.contains(patientName)) {
+            patientNames.add(patientName);
+          }
+        }
+      }
+    }
+
+    final firstDetail = billDetails.isNotEmpty ? billDetails.first : null;
+    final firstPrescription = firstDetail?['prescriptions'];
+    final examination = firstPrescription?['PHIEUKHAM'];
 
     // Calculate costs
     final totalCost = toDouble(json['TongTien']) ?? 0.0;
     final examinationCost = toDouble(examination?['TienKham']);
     final medicineCost = totalCost - (examinationCost ?? 0.0);
 
-    // Parse MaToa array
-    List<String> prescriptionIds = [];
-    if (prescriptions.isNotEmpty) {
-      prescriptionIds = prescriptions
-          .map((p) => p['MaToa'].toString())
-          .where((id) => id.isNotEmpty)
-          .toList();
-    }
-
     return Bill(
-      id: json['MaHD']?.toString() ?? '',
+      id: getBillId(json['MaHD']),
       prescriptionIds: prescriptionIds,
       prescriptionId: prescriptionIds.isNotEmpty ? prescriptionIds.first : null,
-      saleDate: DateTime.parse(json['Ngaylap']),
+      saleDate:
+          DateTime.parse(json['Ngaylap'] ?? DateTime.now().toIso8601String()),
       medicineCost: medicineCost,
-      patientName: patient?['TenBN'] ?? '',
+      patientNames: patientNames,
       examinationCost: examinationCost,
       examinationId: examination?['MaPK']?.toString(),
     );

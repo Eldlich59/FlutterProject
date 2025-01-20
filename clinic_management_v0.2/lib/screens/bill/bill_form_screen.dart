@@ -249,7 +249,7 @@ class _BillFormScreenState extends State<BillFormScreen> {
       print('Creating bill with prescriptions: $prescriptionIds');
 
       await _supabaseService1.createBill(
-        prescriptionId: prescriptionIds[0],
+        prescriptionIds: prescriptionIds,
         saleDate: _selectedDate,
         totalCost: _totalCost,
       );
