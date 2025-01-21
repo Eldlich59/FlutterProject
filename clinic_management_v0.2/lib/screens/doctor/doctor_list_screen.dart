@@ -419,8 +419,17 @@ class _DoctorListScreenState extends State<DoctorListScreen>
                   children: [
                     _buildStatusBadge(doctor.isActive),
                     const SizedBox(height: 16),
-                    _buildDetailTile(
-                        Icons.work, 'Chuyên khoa', doctor.specialty),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildDetailTile(
+                            Icons.work,
+                            'Chuyên khoa',
+                            doctor.specialty,
+                          ),
+                        ),
+                      ],
+                    ),
                     _buildDetailTile(
                         Icons.phone, 'Điện thoại', doctor.phone ?? 'N/A'),
                     _buildDetailTile(

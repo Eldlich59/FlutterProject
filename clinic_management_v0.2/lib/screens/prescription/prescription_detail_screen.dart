@@ -197,6 +197,7 @@ class PrescriptionDetailScreen extends StatelessWidget {
                                 ),
                               ),
                             ),
+                            _buildDoctorStatus(doctor?.isActive ?? false),
                           ],
                         ),
                         const Divider(height: 24),
@@ -448,6 +449,42 @@ class PrescriptionDetailScreen extends StatelessWidget {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
           content: Text('Tính năng in toa thuốc đang được phát triển')),
+    );
+  }
+
+  Widget _buildDoctorStatus(bool isActive) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: isActive ? Colors.green[50] : Colors.red[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isActive ? Colors.green : Colors.red,
+          width: 1,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: isActive ? Colors.green : Colors.red,
+            ),
+          ),
+          const SizedBox(width: 4),
+          Text(
+            isActive ? 'Đang hoạt động' : 'Không hoạt động',
+            style: TextStyle(
+              color: isActive ? Colors.green : Colors.red,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
