@@ -18,18 +18,16 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  static const Color primaryColor = Color(0xFF64B5F6); // Light blue primary
+  static const Color primaryColor = Color(0xFF1A73E8); // Google Blue
 
-  // Định nghĩa map màu sắc cho từng mục
   static const Map<String, Color> menuColors = {
-    'Bệnh nhân': Color(0xFF4CAF50), // Xanh lá - Màu của sự quan tâm
-    'Khám bệnh': Color(0xFF2196F3), // Xanh dương - Màu của y tế
-    'Thuốc': Color(0xFFE91E63), // Hồng - Màu của dược phẩm
-    'Bác sĩ': Color(0xFF673AB7), // Tím - Màu của chuyên môn
-    'Toa thuốc': Color(0xFFFF9800), // Cam - Màu của kê đơn
-    'Hóa đơn': Color(0xFF009688), // Xanh ngọc - Màu của tài chính
-    'Chuyên khoa':
-        Color(0xFFBF360C), // Màu đỏ cam đậm - Màu của chuyên môn y tế
+    'Bệnh nhân': Color(0xFF34A853), // Google Green
+    'Khám bệnh': Color(0xFF1A73E8), // Google Blue
+    'Thuốc': Color(0xFFEA4335), // Google Red
+    'Bác sĩ': Color(0xFF9C27B0), // Purple
+    'Toa thuốc': Color(0xFFFBBC04), // Google Yellow
+    'Hóa đơn': Color(0xFF00ACC1), // Cyan
+    'Chuyên khoa': Color(0xFFFF5722), // Orange
   };
 
   // Track hover and pressed states
@@ -56,8 +54,9 @@ class _HomeScreenState extends State<HomeScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Color(0xFFE3F2FD), // Very light blue
-            Color(0xFFF5F5F5), // Almost white
+            Color(0xFFE8F5E9),
+            Color(0xFFE3F2FD),
+            Color(0xFFF3E5F5),
           ],
         ),
       ),
@@ -65,20 +64,57 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: Colors.transparent,
         appBar: AppBar(
           elevation: 0,
-          backgroundColor: primaryColor,
-          title: const Text(
-            'Phòng Khám',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1.2,
-              color: Colors.white,
+          flexibleSpace: Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFF1A73E8), Color(0xFF0D47A1)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
             ),
           ),
+          title: Row(
+            children: [
+              const Icon(Icons.local_hospital, size: 32),
+              const SizedBox(width: 12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: const [
+                  Text(
+                    'Phòng Khám',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                  Text(
+                    'Hệ thống quản lý',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w300,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
           actions: [
-            IconButton(
-              icon: const Icon(Icons.logout, size: 28, color: Colors.white),
-              onPressed: () => _handleLogout(context),
+            Container(
+              margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: primaryColor,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                ),
+                icon: const Icon(Icons.logout, size: 20),
+                label: const Text('Đăng xuất'),
+                onPressed: () => _handleLogout(context),
+              ),
             ),
           ],
         ),
@@ -100,26 +136,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             _buildMenuCard(
               context,
-              'Khám bệnh',
-              Icons.medical_services,
-              () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => const ExaminationListScreen()),
-              ),
-            ),
-            _buildMenuCard(
-              context,
-              'Thuốc',
-              Icons.medication,
-              () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => const MedicineListScreen()),
-              ),
-            ),
-            _buildMenuCard(
-              context,
               'Chuyên khoa',
               Icons.medical_information,
               () => Navigator.push(
@@ -136,6 +152,26 @@ class _HomeScreenState extends State<HomeScreen> {
                 context,
                 MaterialPageRoute(
                     builder: (context) => const DoctorListScreen()),
+              ),
+            ),
+            _buildMenuCard(
+              context,
+              'Khám bệnh',
+              Icons.medical_services,
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const ExaminationListScreen()),
+              ),
+            ),
+            _buildMenuCard(
+              context,
+              'Thuốc',
+              Icons.medication,
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const MedicineListScreen()),
               ),
             ),
             _buildMenuCard(
@@ -178,21 +214,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ? 1.05
             : 1.0;
 
-    Future<void> handleTap() async {
-      HapticFeedback.lightImpact();
-      _onPress(title, true);
-
-      // Thêm hiệu ứng press
-      await Future.delayed(const Duration(milliseconds: 150));
-      _onPress(title, false);
-
-      // Thêm delay trước khi navigate
-      await Future.delayed(const Duration(milliseconds: 200));
-      if (context.mounted) {
-        onTap();
-      }
-    }
-
     return Hero(
       tag: title,
       child: Material(
@@ -207,24 +228,36 @@ class _HomeScreenState extends State<HomeScreen> {
           },
           child: Container(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(15),
+              borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: mainColor.withOpacity(0.2),
+                  color: mainColor.withOpacity(0.1),
+                  blurRadius: 10,
                   spreadRadius: 2,
-                  blurRadius: 8,
                   offset: const Offset(0, 4),
+                ),
+                BoxShadow(
+                  color: mainColor.withOpacity(0.1),
+                  blurRadius: 20,
+                  spreadRadius: -2,
+                  offset: const Offset(0, 8),
                 ),
               ],
             ),
             child: Card(
               elevation: 0,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(15),
+                borderRadius: BorderRadius.circular(20),
               ),
               child: InkWell(
-                borderRadius: BorderRadius.circular(15),
-                onTap: handleTap,
+                borderRadius: BorderRadius.circular(20),
+                onTap: () async {
+                  HapticFeedback.mediumImpact();
+                  _onPress(title, true);
+                  await Future.delayed(const Duration(milliseconds: 150));
+                  _onPress(title, false);
+                  if (context.mounted) onTap();
+                },
                 splashColor: mainColor.withOpacity(0.1),
                 highlightColor: mainColor.withOpacity(0.15),
                 child: MouseRegion(
@@ -233,42 +266,42 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(15),
+                      borderRadius: BorderRadius.circular(20),
                       gradient: LinearGradient(
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                         colors: [
                           Colors.white,
-                          mainColor.withOpacity(isHovered ? 0.25 : 0.15),
+                          mainColor.withOpacity(isHovered ? 0.15 : 0.05),
                         ],
-                        stops: const [0.2, 1.0],
                       ),
                     ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        AnimatedScale(
-                          scale: isHovered ? 1.1 : 1.0,
+                        AnimatedContainer(
                           duration: const Duration(milliseconds: 200),
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: mainColor.withOpacity(0.1),
+                          ),
                           child: Icon(
                             icon,
-                            size: 56,
+                            size: 48,
                             color: mainColor,
                           ),
                         ),
                         const SizedBox(height: 16),
-                        AnimatedDefaultTextStyle(
-                          duration: const Duration(milliseconds: 200),
+                        Text(
+                          title,
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                             color: mainColor,
                             letterSpacing: 0.5,
                           ),
-                          child: Text(
-                            title,
-                            textAlign: TextAlign.center,
-                          ),
+                          textAlign: TextAlign.center,
                         ),
                       ],
                     ),

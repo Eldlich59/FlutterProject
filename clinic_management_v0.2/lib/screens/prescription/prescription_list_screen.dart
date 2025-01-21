@@ -27,9 +27,9 @@ class _PrescriptionListScreenState extends State<PrescriptionListScreen>
   DateTime? _selectedDate;
 
   // Update color constants
-  static const Color primaryColor = Color(0xFFFF9800); // Orange
-  static const Color secondaryColor = Color(0xFFFFB74D); // Light Orange
-  static const Color backgroundColor = Color(0xFFFFF3E0); // Very Light Orange
+  static const Color primaryColor = Color(0xFFFFB300); // Amber 700
+  static const Color secondaryColor = Color(0xFFFFC107); // Amber 500
+  static const Color backgroundColor = Color(0xFFFFF3E0); // Orange 50
   static const Color cardColor = Colors.white;
 
   late AnimationController _fabAnimationController;
@@ -70,7 +70,7 @@ class _PrescriptionListScreenState extends State<PrescriptionListScreen>
       decoration: BoxDecoration(
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.15),
+            color: Colors.amber.withOpacity(0.15), // Updated shadow color
             spreadRadius: 1,
             blurRadius: 10,
             offset: const Offset(0, 3),
@@ -287,12 +287,14 @@ class _PrescriptionListScreenState extends State<PrescriptionListScreen>
 
   Widget _buildPrescriptionCard(Prescription prescription) {
     return Card(
-      // Remove the Hero widget here, keep its child
       elevation: 2,
       color: cardColor,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(15),
+        side: BorderSide(
+            color: primaryColor.withOpacity(0.2),
+            width: 1), // Updated border color
       ),
       child: InkWell(
         onTap: () => _navigateToPrescriptionDetails(prescription),
@@ -305,7 +307,8 @@ class _PrescriptionListScreenState extends State<PrescriptionListScreen>
               end: Alignment.bottomRight,
               colors: [
                 Colors.white,
-                backgroundColor.withOpacity(0.3),
+                Color(0xFFFFFDE7)
+                    .withOpacity(0.5), // Very light yellow background
               ],
             ),
           ),
@@ -339,7 +342,7 @@ class _PrescriptionListScreenState extends State<PrescriptionListScreen>
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Bác sĩ: ${prescription.doctorName}',
+                      'Bác sĩ kê đơn: ${prescription.doctorName}',
                       style: TextStyle(
                         color: Colors.grey[600],
                         fontSize: 14,
@@ -431,11 +434,11 @@ class _PrescriptionListScreenState extends State<PrescriptionListScreen>
         child: FloatingActionButton.extended(
           onPressed: _navigateToAddPrescription, // Change to use the method
           elevation: 4,
-          backgroundColor: Colors.orange.shade400,
+          backgroundColor: primaryColor,
           icon: const Icon(Icons.add, color: Colors.white),
           label: const Text(
             'Thêm toa thuốc',
-            style: TextStyle(color: Colors.white),
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
           ),
         ),
       ),

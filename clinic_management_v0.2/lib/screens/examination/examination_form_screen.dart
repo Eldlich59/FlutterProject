@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:clinic_management/models/examination.dart';
 import 'package:clinic_management/services/supabase_service.dart';
 import 'package:clinic_management/models/patient.dart';
+import 'package:clinic_management/models/doctor.dart';
 import 'package:intl/intl.dart';
 
 class ExaminationFormScreen extends StatefulWidget {
@@ -18,6 +19,7 @@ class _ExaminationFormScreenState extends State<ExaminationFormScreen>
   final _formKey = GlobalKey<FormState>();
   final _supabaseService1 = SupabaseService().patientService;
   final _supabaseService2 = SupabaseService().examinationService;
+  final _supabaseService3 = SupabaseService().doctorService; // Add this line
 
   late TextEditingController _symptomsController;
   late TextEditingController _diagnosisController;
@@ -27,7 +29,9 @@ class _ExaminationFormScreenState extends State<ExaminationFormScreen>
   final _dateFormat = DateFormat('dd/MM/yyyy HH:mm');
 
   Patient? _selectedPatient;
+  Doctor? _selectedDoctor; // Add this line
   List<Patient> _patients = [];
+  List<Doctor> _doctors = []; // Add this line
   bool _isLoading = false;
 
   // Add custom colors
@@ -85,6 +89,7 @@ class _ExaminationFormScreenState extends State<ExaminationFormScreen>
       text: widget.examination?.examinationFee.toString() ?? '100000',
     );
     _loadPatients();
+    _loadDoctors(); // Add this line
 
     _animationController.forward();
   }
@@ -96,6 +101,23 @@ class _ExaminationFormScreenState extends State<ExaminationFormScreen>
       if (widget.examination != null) {
         _selectedPatient = _patients.firstWhere(
           (p) => p.id == widget.examination!.patientId,
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lỗi: ${e.toString()}')),
+      );
+    }
+  }
+
+  // Add this method
+  Future<void> _loadDoctors() async {
+    try {
+      final doctors = await _supabaseService3.getDoctor();
+      setState(() => _doctors = doctors);
+      if (widget.examination != null && widget.examination!.doctorId != null) {
+        _selectedDoctor = _doctors.firstWhere(
+          (d) => d.id == widget.examination!.doctorId,
         );
       }
     } catch (e) {
@@ -388,6 +410,65 @@ class _ExaminationFormScreenState extends State<ExaminationFormScreen>
             },
           ),
           const SizedBox(height: 16),
+          // Add doctor dropdown
+          DropdownButtonFormField<Doctor>(
+            value: _selectedDoctor,
+            decoration: InputDecoration(
+              labelText: 'Bác sĩ',
+              prefixIcon: Icon(Icons.medical_services, color: primaryBlue),
+              filled: true,
+              fillColor: Colors.white,
+            ),
+            items: _doctors.map((doctor) {
+              return DropdownMenuItem<Doctor>(
+                value: doctor,
+                enabled: doctor.isActive,
+                child: DefaultTextStyle(
+                  style: const TextStyle(fontSize: 14),
+                  child: Container(
+                    constraints: const BoxConstraints(maxWidth: 300),
+                    child: RichText(
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      text: TextSpan(
+                        style: const TextStyle(color: Colors.black),
+                        children: [
+                          TextSpan(
+                            text: '${doctor.name} - ${doctor.specialty}',
+                            style: TextStyle(
+                              color:
+                                  doctor.isActive ? Colors.black : Colors.grey,
+                              fontStyle: doctor.isActive
+                                  ? FontStyle.normal
+                                  : FontStyle.italic,
+                            ),
+                          ),
+                          if (!doctor.isActive)
+                            const TextSpan(
+                              text: ' (OFF)',
+                              style: TextStyle(
+                                color: Colors.red,
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+            onChanged: (value) {
+              setState(() => _selectedDoctor = value);
+            },
+            validator: (value) {
+              if (value == null) {
+                return 'Vui lòng chọn bác sĩ';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 16),
           InkWell(
             onTap: () => _selectDate(context),
             borderRadius: BorderRadius.circular(10),
@@ -492,7 +573,10 @@ class _ExaminationFormScreenState extends State<ExaminationFormScreen>
   }
 
   Future<void> _handleSubmit() async {
-    if (!_formKey.currentState!.validate() || _selectedPatient == null) {
+    if (!_formKey.currentState!.validate() ||
+        _selectedPatient == null ||
+        _selectedDoctor == null) {
+      // Add doctor validation
       return;
     }
 
@@ -503,6 +587,8 @@ class _ExaminationFormScreenState extends State<ExaminationFormScreen>
         id: widget.examination?.id ?? '',
         patientId: _selectedPatient!.id ?? '',
         patientName: _selectedPatient!.name,
+        doctorId: _selectedDoctor!.id, // Add this line
+        // Add this line
         examinationDate: _selectedDate,
         symptoms: _symptomsController.text,
         diagnosis: _diagnosisController.text,

@@ -129,6 +129,10 @@ class _ExaminationDetailsScreenState extends State<ExaminationDetailsScreen>
                           _buildInfoRow('Bệnh nhân:',
                               widget.examination.patientName ?? 'N/A'),
                           _buildInfoRow(
+                              'Bác sĩ khám:',
+                              widget.examination.doctorName ??
+                                  'Chưa phân công'),
+                          _buildInfoRow(
                               'Ngày khám:',
                               dateFormat
                                   .format(widget.examination.examinationDate)),

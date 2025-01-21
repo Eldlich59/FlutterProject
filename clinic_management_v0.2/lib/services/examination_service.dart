@@ -7,9 +7,8 @@ class ExaminationService {
   ExaminationService(this._supabase);
 
   Future<List<Examination>> getExaminations({String? patientId}) async {
-    var query = _supabase
-        .from('PHIEUKHAM')
-        .select('*, BENHNHAN!inner(TenBN)'); // Join with BENHNHAN table
+    var query = _supabase.from('PHIEUKHAM').select(
+        '*, BENHNHAN!inner(TenBN), BACSI!left(TenBS)'); // Add BACSI join
 
     if (patientId != null) {
       query = query.eq('MaBN', patientId);
@@ -20,8 +19,8 @@ class ExaminationService {
     return (data as List)
         .map((json) => Examination.fromJson({
               ...json,
-              'TenBN': json['BENHNHAN']
-                  ['TenBN'], // Map the patient name from the joined data
+              'TenBN': json['BENHNHAN']['TenBN'],
+              'TenBS': json['BACSI']?['TenBS'], // Map the doctor name
             }))
         .toList();
   }

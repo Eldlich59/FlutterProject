@@ -41,9 +41,9 @@ class _LoginScreenState extends State<LoginScreen>
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Color(0xFF4FC3F7),
-              Color(0xFF29B6F6),
-              Color(0xFF03A9F4),
+              Color(0xFF64B5F6), // Lighter blue
+              Color(0xFF2196F3), // Bright blue
+              Color(0xFF1E88E5), // Medium bright blue
             ],
           ),
         ),
@@ -54,166 +54,199 @@ class _LoginScreenState extends State<LoginScreen>
               child: FadeTransition(
                 opacity: _fadeAnimation,
                 child: Card(
-                  elevation: 12,
-                  shadowColor: Colors.black26,
+                  elevation: 16,
+                  shadowColor: Colors.blue.withOpacity(0.3),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(24),
+                    borderRadius: BorderRadius.circular(30),
                   ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(32.0),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            padding: EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Color(0xFFE1F5FE),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              Icons.local_hospital,
-                              size: 72,
-                              color: Color(0xFF0288D1),
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                          Text(
-                            'Phòng Khám',
-                            style: TextStyle(
-                              fontSize: 32,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF0288D1),
-                              letterSpacing: 1.2,
-                            ),
-                          ),
-                          const SizedBox(height: 40),
-                          TextFormField(
-                            controller: _emailController,
-                            keyboardType: TextInputType.emailAddress,
-                            decoration: InputDecoration(
-                              labelText: 'Email',
-                              labelStyle: TextStyle(color: Color(0xFF0288D1)),
-                              prefixIcon: const Icon(Icons.email,
-                                  color: Color(0xFF0288D1)),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                                borderSide:
-                                    BorderSide(color: Color(0xFF0288D1)),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                                borderSide:
-                                    BorderSide(color: Color(0xFF90CAF9)),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                                borderSide: BorderSide(
-                                    color: Color(0xFF0288D1), width: 2),
-                              ),
-                              filled: true,
-                              fillColor: Colors.grey[50],
-                            ),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Vui lòng nhập email';
-                              }
-                              if (!value.contains('@')) {
-                                return 'Email không hợp lệ';
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 24),
-                          TextFormField(
-                            controller: _passwordController,
-                            obscureText: _obscurePassword,
-                            // Thêm handler cho sự kiện Enter
-                            onFieldSubmitted: (_) => _handleLogin(),
-                            decoration: InputDecoration(
-                              labelText: 'Mật khẩu',
-                              labelStyle: TextStyle(color: Color(0xFF0288D1)),
-                              prefixIcon: const Icon(Icons.lock,
-                                  color: Color(0xFF0288D1)),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                                borderSide:
-                                    BorderSide(color: Color(0xFF0288D1)),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                                borderSide:
-                                    BorderSide(color: Color(0xFF90CAF9)),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                                borderSide: BorderSide(
-                                    color: Color(0xFF0288D1), width: 2),
-                              ),
-                              filled: true,
-                              fillColor: Colors.grey[50],
-                              suffixIcon: IconButton(
-                                icon: Icon(
-                                  _obscurePassword
-                                      ? Icons.visibility_off
-                                      : Icons.visibility,
-                                  color: Color(0xFF0288D1),
-                                ),
-                                onPressed: () {
-                                  setState(() =>
-                                      _obscurePassword = !_obscurePassword);
-                                },
-                              ),
-                            ),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Vui lòng nhập mật khẩu';
-                              }
-                              if (value.length < 6) {
-                                return 'Mật khẩu phải có ít nhất 6 ký tự';
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 32),
-                          SizedBox(
-                            width: double.infinity,
-                            height: 56,
-                            child: ElevatedButton(
-                              onPressed: _isLoading ? null : _handleLogin,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Color(0xFF0288D1),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                elevation: 4,
-                                shadowColor: Color(0xFF0288D1).withOpacity(0.5),
-                              ),
-                              child: _isLoading
-                                  ? const SizedBox(
-                                      height: 24,
-                                      width: 24,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2.5,
-                                        valueColor:
-                                            AlwaysStoppedAnimation<Color>(
-                                                Colors.white),
-                                      ),
-                                    )
-                                  : const Text(
-                                      'Đăng nhập',
-                                      style: TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                        letterSpacing: 1.2,
-                                        color: Colors
-                                            .white, // Thêm màu trắng cho text
-                                      ),
-                                    ),
-                            ),
-                          ),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(30),
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Colors.white,
+                          Color(0xFFBBDEFB), // Very light blue
                         ],
+                      ),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(32.0),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              padding: EdgeInsets.all(20),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    Color(0xFF2196F3), // Bright blue
+                                    Color(0xFF64B5F6), // Lighter blue
+                                  ],
+                                ),
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.blue.withOpacity(0.3),
+                                    blurRadius: 12,
+                                    offset: Offset(0, 6),
+                                  ),
+                                ],
+                              ),
+                              child: Icon(
+                                Icons.local_hospital,
+                                size: 72,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+                            Text(
+                              'Phòng Khám',
+                              style: TextStyle(
+                                fontSize: 36,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF1976D2),
+                                letterSpacing: 1.5,
+                                shadows: [
+                                  Shadow(
+                                    color: Colors.blue.withOpacity(0.3),
+                                    offset: Offset(0, 2),
+                                    blurRadius: 4,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 40),
+                            TextFormField(
+                              controller: _emailController,
+                              keyboardType: TextInputType.emailAddress,
+                              decoration: InputDecoration(
+                                labelText: 'Email',
+                                labelStyle: TextStyle(color: Color(0xFF1976D2)),
+                                prefixIcon: const Icon(Icons.email,
+                                    color: Color(0xFF1976D2)),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  borderSide:
+                                      BorderSide(color: Color(0xFF1A237E)),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  borderSide:
+                                      BorderSide(color: Color(0xFF90CAF9)),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  borderSide: BorderSide(
+                                      color: Color(0xFF2196F3), width: 2),
+                                ),
+                                filled: true,
+                                fillColor: Colors.grey[50],
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Vui lòng nhập email';
+                                }
+                                if (!value.contains('@')) {
+                                  return 'Email không hợp lệ';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 24),
+                            TextFormField(
+                              controller: _passwordController,
+                              obscureText: _obscurePassword,
+                              // Thêm handler cho sự kiện Enter
+                              onFieldSubmitted: (_) => _handleLogin(),
+                              decoration: InputDecoration(
+                                labelText: 'Mật khẩu',
+                                labelStyle: TextStyle(color: Color(0xFF1976D2)),
+                                prefixIcon: const Icon(Icons.lock,
+                                    color: Color(0xFF1976D2)),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  borderSide:
+                                      BorderSide(color: Color(0xFF1A237E)),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  borderSide:
+                                      BorderSide(color: Color(0xFF90CAF9)),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  borderSide: BorderSide(
+                                      color: Color(0xFF2196F3), width: 2),
+                                ),
+                                filled: true,
+                                fillColor: Colors.grey[50],
+                                suffixIcon: IconButton(
+                                  icon: Icon(
+                                    _obscurePassword
+                                        ? Icons.visibility_off
+                                        : Icons.visibility,
+                                    color: Color(0xFF1976D2),
+                                  ),
+                                  onPressed: () {
+                                    setState(() =>
+                                        _obscurePassword = !_obscurePassword);
+                                  },
+                                ),
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Vui lòng nhập mật khẩu';
+                                }
+                                if (value.length < 6) {
+                                  return 'Mật khẩu phải có ít nhất 6 ký tự';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 32),
+                            SizedBox(
+                              width: double.infinity,
+                              height: 56,
+                              child: ElevatedButton(
+                                onPressed: _isLoading ? null : _handleLogin,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Color(0xFF2196F3),
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  elevation: 8,
+                                  shadowColor:
+                                      Color(0xFF1A237E).withOpacity(0.5),
+                                  padding: EdgeInsets.symmetric(vertical: 16),
+                                ),
+                                child: _isLoading
+                                    ? const SizedBox(
+                                        height: 24,
+                                        width: 24,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 3,
+                                          valueColor:
+                                              AlwaysStoppedAnimation<Color>(
+                                                  Colors.white),
+                                        ),
+                                      )
+                                    : const Text(
+                                        'Đăng nhập',
+                                        style: TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
+                                          letterSpacing: 1.5,
+                                        ),
+                                      ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),

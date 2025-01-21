@@ -20,7 +20,7 @@ class PrescriptionDetailScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: Colors.orange[300],
+        backgroundColor: Colors.amber[800],
         foregroundColor: Colors.white,
         title: const Text('Chi tiết toa thuốc',
             style: TextStyle(fontWeight: FontWeight.bold)),
@@ -54,7 +54,7 @@ class PrescriptionDetailScreen extends StatelessWidget {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Colors.orange[100]!.withOpacity(0.3),
+              Colors.amber[100]!.withOpacity(0.7),
               Colors.white,
             ],
           ),
@@ -130,14 +130,14 @@ class PrescriptionDetailScreen extends StatelessWidget {
                         Row(
                           children: [
                             Icon(Icons.person,
-                                color: Colors.orange[400], size: 24),
+                                color: Colors.amber[800], size: 24),
                             const SizedBox(width: 8),
                             Text(
                               'Thông tin bệnh nhân',
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.orange[400],
+                                color: Colors.amber[800],
                               ),
                             ),
                           ],
@@ -185,15 +185,15 @@ class PrescriptionDetailScreen extends StatelessWidget {
                         Row(
                           children: [
                             Icon(Icons.medical_services,
-                                color: Colors.orange[400], size: 24),
+                                color: Colors.amber[800], size: 24),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                'Bác sĩ: ${doctor?.name ?? 'Không xác định'}',
+                                'Bác sĩ kê đơn: ${doctor?.name ?? 'Không xác định'}',
                                 style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.orange[400],
+                                  color: Colors.amber[800],
                                 ),
                               ),
                             ),
@@ -235,14 +235,14 @@ class PrescriptionDetailScreen extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Row(
                 children: [
-                  Icon(Icons.medication, color: Colors.orange[400], size: 24),
+                  Icon(Icons.medication, color: Colors.amber[800], size: 24),
                   const SizedBox(width: 8),
                   Text(
                     'Danh sách thuốc',
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: Colors.orange[400],
+                      color: Colors.amber[800],
                     ),
                   ),
                 ],
@@ -262,27 +262,27 @@ class PrescriptionDetailScreen extends StatelessWidget {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
-              color: Colors.orange[50],
+              color: Colors.amber[100],
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
+                    Text(
                       'Tổng tiền thuốc:',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Colors.orange,
+                        color: Colors.amber[900],
                       ),
                     ),
                     Text(
                       NumberFormat.currency(locale: 'vi_VN', symbol: 'đ')
                           .format(totalCost),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Colors.orange,
+                        color: Colors.amber[900],
                       ),
                     ),
                   ],
@@ -321,11 +321,11 @@ class PrescriptionDetailScreen extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: Colors.orange[50],
+                          color: Colors.amber[100],
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Icon(Icons.medication_outlined,
-                            color: Colors.orange[400]),
+                            color: Colors.amber[800]),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -355,7 +355,7 @@ class PrescriptionDetailScreen extends StatelessWidget {
                     'Cách dùng:',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: Colors.orange[400],
+                      color: Colors.amber[800],
                     ),
                   ),
                   const SizedBox(height: 8),

@@ -409,14 +409,12 @@ class _SpecialtyListScreenState extends State<SpecialtyListScreen>
                       onChanged: (value) =>
                           setState(() => isSelfRegistration = value!),
                     ),
-                    if (specialty == null) ...[
-                      const SizedBox(height: 16),
-                      SwitchListTile(
-                        title: const Text('Trạng thái hoạt động'),
-                        value: isActive,
-                        onChanged: (value) => setState(() => isActive = value),
-                      ),
-                    ],
+                    const SizedBox(height: 16),
+                    SwitchListTile(
+                      title: const Text('Trạng thái hoạt động'),
+                      value: isActive,
+                      onChanged: (value) => setState(() => isActive = value),
+                    ),
                     const SizedBox(height: 24),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,
@@ -453,8 +451,7 @@ class _SpecialtyListScreenState extends State<SpecialtyListScreen>
                                     .updateSpecialty(
                                   id: specialty.id,
                                   name: name,
-                                  isActive: specialty
-                                      .isActive, // Use existing active status
+                                  isActive: isActive,
                                   isSelfRegistration: isSelfRegistration,
                                 );
                               }
