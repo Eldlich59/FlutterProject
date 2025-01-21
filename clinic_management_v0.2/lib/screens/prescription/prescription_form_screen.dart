@@ -419,7 +419,6 @@ class _PrescriptionFormScreenState extends State<PrescriptionFormScreen>
     required String labelText,
   }) {
     if (labelText == 'Chọn bác sĩ') {
-      // Modify items to disable inactive doctors
       items = items.map((item) {
         final doctor = item.value as Doctor;
         return DropdownMenuItem(
@@ -427,27 +426,26 @@ class _PrescriptionFormScreenState extends State<PrescriptionFormScreen>
           enabled: doctor.isActive ||
               (value != null && doctor.id == (value as Doctor).id),
           child: Container(
-            // Wrap in Container to constrain width
-            constraints:
-                const BoxConstraints(minWidth: 100), // Add minimum width
+            constraints: const BoxConstraints(minWidth: 100),
             child: Row(
-              mainAxisSize: MainAxisSize.min, // Add this
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Flexible(
-                  // Replace Expanded with Flexible
                   child: Text(
                     doctor.name,
-                    overflow:
-                        TextOverflow.ellipsis, // Add ellipsis for long text
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       color: doctor.isActive ? null : Colors.grey,
                     ),
                   ),
                 ),
                 if (!doctor.isActive)
-                  const Text(
-                    ' (Ngừng hoạt động)',
-                    style: TextStyle(color: Colors.red),
+                  Opacity(
+                    opacity: doctor.id == (value as Doctor?)?.id ? 1.0 : 0.5,
+                    child: const Text(
+                      ' (Ngừng hoạt động)',
+                      style: TextStyle(color: Colors.red),
+                    ),
                   ),
               ],
             ),

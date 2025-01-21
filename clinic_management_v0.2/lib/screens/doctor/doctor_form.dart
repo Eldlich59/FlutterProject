@@ -238,42 +238,46 @@ class _DoctorFormState extends State<DoctorForm>
                                 ),
                               ),
                               items: [
-                                // Show all specialties, but disable inactive ones
-                                ..._specialties.map((specialty) =>
-                                    DropdownMenuItem(
-                                      value: specialty.id,
-                                      enabled: specialty.isActive ||
-                                          specialty.id == _selectedSpecialtyId,
-                                      child: Opacity(
-                                        opacity: specialty.isActive ? 1.0 : 0.5,
-                                        child: ConstrainedBox(
-                                          constraints: const BoxConstraints(
-                                              minWidth: 100, maxWidth: 300),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Flexible(
-                                                child: Text(
-                                                  specialty.name,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                ),
-                                              ),
-                                              if (!specialty.isActive)
-                                                Text(
-                                                  ' (Ngừng hoạt động)',
-                                                  style: TextStyle(
-                                                    color: specialty.id ==
-                                                            _selectedSpecialtyId
-                                                        ? Colors.red
-                                                        : Colors.black,
+                                ..._specialties
+                                    .map((specialty) => DropdownMenuItem(
+                                          value: specialty.id,
+                                          enabled: specialty.isActive ||
+                                              specialty.id ==
+                                                  _selectedSpecialtyId,
+                                          child: ConstrainedBox(
+                                            constraints: const BoxConstraints(
+                                                minWidth: 100, maxWidth: 300),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Flexible(
+                                                  child: Opacity(
+                                                    opacity: specialty.isActive
+                                                        ? 1.0
+                                                        : 0.5,
+                                                    child: Text(
+                                                      specialty.name,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                    ),
                                                   ),
                                                 ),
-                                            ],
+                                                if (!specialty.isActive)
+                                                  Opacity(
+                                                    opacity: specialty.id ==
+                                                            _selectedSpecialtyId
+                                                        ? 1.0
+                                                        : 0.5,
+                                                    child: const Text(
+                                                      ' (Ngừng hoạt động)',
+                                                      style: TextStyle(
+                                                          color: Colors.red),
+                                                    ),
+                                                  ),
+                                              ],
+                                            ),
                                           ),
-                                        ),
-                                      ),
-                                    )),
+                                        )),
                               ],
                               onChanged: (value) {
                                 setState(() {
