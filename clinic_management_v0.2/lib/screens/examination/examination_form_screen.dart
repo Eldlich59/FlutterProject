@@ -414,7 +414,7 @@ class _ExaminationFormScreenState extends State<ExaminationFormScreen>
           DropdownButtonFormField<Doctor>(
             value: _selectedDoctor,
             decoration: InputDecoration(
-              labelText: 'Bác sĩ',
+              labelText: 'Bác sĩ khám',
               prefixIcon: Icon(Icons.medical_services, color: primaryBlue),
               filled: true,
               fillColor: Colors.white,

@@ -278,6 +278,18 @@ class _ExaminationListScreenState extends State<ExaminationListScreen> {
                           const Divider(height: 16),
                           Row(
                             children: [
+                              const Icon(Icons.medical_services,
+                                  size: 16, color: Colors.grey),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Bác sĩ khám: ${examination.doctorName ?? 'Chưa có'}',
+                                style: TextStyle(color: Colors.grey.shade700),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
                               const Icon(Icons.calendar_today,
                                   size: 16, color: Colors.grey),
                               const SizedBox(width: 8),
