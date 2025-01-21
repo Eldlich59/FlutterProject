@@ -177,7 +177,7 @@ class _HomeScreenState extends State<HomeScreen> {
             _buildMenuCard(
               context,
               'Toa thuốc',
-              Icons.medical_information,
+              Icons.description, // Changed from Icons.medical_information
               () => Navigator.push(
                 context,
                 MaterialPageRoute(
