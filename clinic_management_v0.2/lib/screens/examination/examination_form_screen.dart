@@ -3,7 +3,6 @@ import 'package:clinic_management/models/examination.dart';
 import 'package:clinic_management/services/supabase_service.dart';
 import 'package:clinic_management/models/patient.dart';
 import 'package:intl/intl.dart';
-import 'package:flutter/animation.dart';
 
 class ExaminationFormScreen extends StatefulWidget {
   final Examination? examination;

@@ -5,7 +5,6 @@ import 'package:clinic_management/services/supabase_service.dart';
 import 'package:clinic_management/services/bill_service.dart';
 import 'package:clinic_management/screens/bill/bill_form_screen.dart';
 import 'package:clinic_management/screens/bill/bill_details_sheet.dart';
-import 'package:flutter/animation.dart';
 
 class BillListScreen extends StatefulWidget {
   const BillListScreen({super.key});

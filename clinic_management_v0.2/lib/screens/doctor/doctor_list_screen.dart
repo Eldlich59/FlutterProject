@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:clinic_management/models/doctor.dart';
 import 'package:clinic_management/services/supabase_service.dart';
 import 'package:clinic_management/screens/doctor/doctor_form.dart';
-import 'package:flutter/animation.dart';
 
 class DoctorListScreen extends StatefulWidget {
   const DoctorListScreen({super.key});
