@@ -342,4 +342,27 @@ class PrescriptionService {
 
     return List<Map<String, dynamic>>.from(response);
   }
+
+  Future<List<Map<String, dynamic>>> getPrescriptionsByPatientWithStatus(
+      String patientId) async {
+    final response = await _supabase.from('TOATHUOC').select('''
+        *,
+        BENHNHAN!inner (*),
+        PHIEUKHAM!inner (
+          *,
+          BACSI!inner (
+            MaBS,
+            TenBS,
+            TrangThai
+          ),
+          CHUYENKHOA!inner (
+            MaCK,
+            TenCK,
+            TrangThaiHD
+          )
+        )
+      ''').eq('MaBN', patientId).order('Ngayketoa', ascending: false);
+
+    return List<Map<String, dynamic>>.from(response);
+  }
 }

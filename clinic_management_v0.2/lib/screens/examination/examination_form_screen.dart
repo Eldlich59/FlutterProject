@@ -4,6 +4,7 @@ import 'package:clinic_management/services/supabase_service.dart';
 import 'package:clinic_management/models/patient.dart';
 import 'package:clinic_management/models/doctor.dart';
 import 'package:intl/intl.dart';
+import 'package:uuid/uuid.dart';
 
 class ExaminationFormScreen extends StatefulWidget {
   final Examination? examination;
@@ -74,6 +75,11 @@ class _ExaminationFormScreenState extends State<ExaminationFormScreen>
     curve: const Interval(0.4, 1.0, curve: Curves.easeOut),
   ));
 
+  String? _selectedSpecialty;
+  List<String> _specialties = [];
+
+  final _uuid = const Uuid();
+
   @override
   void initState() {
     super.initState();
@@ -115,16 +121,33 @@ class _ExaminationFormScreenState extends State<ExaminationFormScreen>
     try {
       final doctors = await _supabaseService3.getDoctor();
       setState(() => _doctors = doctors);
+      _updateSpecialties();
       if (widget.examination != null && widget.examination!.doctorId != null) {
         _selectedDoctor = _doctors.firstWhere(
           (d) => d.id == widget.examination!.doctorId,
         );
+        _selectedSpecialty = _selectedDoctor?.specialty;
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Lỗi: ${e.toString()}')),
       );
     }
+  }
+
+  // Add this method to get unique specialties
+  void _updateSpecialties() {
+    final specialties = _doctors.map((d) => d.specialty).toSet().toList();
+    specialties.sort();
+    setState(() {
+      _specialties = specialties;
+      // Reset selected specialty if it's not in the list
+      if (_selectedDoctor != null) {
+        _selectedSpecialty = _selectedDoctor!.specialty;
+      } else if (!specialties.contains(_selectedSpecialty)) {
+        _selectedSpecialty = null;
+      }
+    });
   }
 
   Future<void> _selectDate(BuildContext context) async {
@@ -410,7 +433,40 @@ class _ExaminationFormScreenState extends State<ExaminationFormScreen>
             },
           ),
           const SizedBox(height: 16),
-          // Add doctor dropdown
+          // Add specialty dropdown before doctor dropdown
+          DropdownButtonFormField<String>(
+            value: _selectedSpecialty,
+            decoration: InputDecoration(
+              labelText: 'Chuyên khoa',
+              prefixIcon: Icon(Icons.local_hospital, color: primaryBlue),
+              filled: true,
+              fillColor: Colors.white,
+            ),
+            items: _specialties.map((specialty) {
+              return DropdownMenuItem(
+                value: specialty,
+                child: Text(specialty),
+              );
+            }).toList(),
+            onChanged: (value) {
+              setState(() {
+                _selectedSpecialty = value;
+                // Reset selected doctor if their specialty doesn't match
+                if (_selectedDoctor?.specialty != value) {
+                  _selectedDoctor = null;
+                }
+              });
+            },
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Vui lòng chọn chuyên khoa';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 16),
+
+          // Modify doctor dropdown to filter by specialty
           DropdownButtonFormField<Doctor>(
             value: _selectedDoctor,
             decoration: InputDecoration(
@@ -419,7 +475,9 @@ class _ExaminationFormScreenState extends State<ExaminationFormScreen>
               filled: true,
               fillColor: Colors.white,
             ),
-            items: _doctors.map((doctor) {
+            items: _doctors
+                .where((d) => d.specialty == _selectedSpecialty)
+                .map((doctor) {
               return DropdownMenuItem<Doctor>(
                 value: doctor,
                 enabled: doctor.isActive,
@@ -434,7 +492,7 @@ class _ExaminationFormScreenState extends State<ExaminationFormScreen>
                         style: const TextStyle(color: Colors.black),
                         children: [
                           TextSpan(
-                            text: '${doctor.name} - ${doctor.specialty}',
+                            text: doctor.name,
                             style: TextStyle(
                               color:
                                   doctor.isActive ? Colors.black : Colors.grey,
@@ -458,9 +516,11 @@ class _ExaminationFormScreenState extends State<ExaminationFormScreen>
                 ),
               );
             }).toList(),
-            onChanged: (value) {
-              setState(() => _selectedDoctor = value);
-            },
+            onChanged: _selectedSpecialty == null
+                ? null
+                : (value) {
+                    setState(() => _selectedDoctor = value);
+                  },
             validator: (value) {
               if (value == null) {
                 return 'Vui lòng chọn bác sĩ';
@@ -584,7 +644,8 @@ class _ExaminationFormScreenState extends State<ExaminationFormScreen>
 
     try {
       final examination = Examination(
-        id: widget.examination?.id ?? '',
+        id: widget.examination?.id ??
+            _uuid.v4(), // Generate UUID for new examinations
         patientId: _selectedPatient!.id ?? '',
         patientName: _selectedPatient!.name,
         doctorId: _selectedDoctor!.id, // Add this line

@@ -336,10 +336,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
     if (confirmed == true && context.mounted) {
       await Supabase.instance.client.auth.signOut();
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (context) => const LoginScreen()),
-        (route) => false,
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (context) => const LoginScreen(),
+        ),
+        (route) => false, // This removes all previous routes
       );
     }
   }
