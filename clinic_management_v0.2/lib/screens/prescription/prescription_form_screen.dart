@@ -124,13 +124,19 @@ class _PrescriptionFormScreenState extends State<PrescriptionFormScreen>
       final examinations =
           await _supabaseService4.getExaminations(patientId: patientId);
       if (examinations.isNotEmpty) {
-        // Sort examinations by date in descending order and select the most recent one
         examinations
             .sort((a, b) => b.examinationDate.compareTo(a.examinationDate));
         setState(() {
           _examinations = examinations;
-          _selectedExamination =
-              examinations.first; // Select the most recent examination
+          _selectedExamination = examinations.first;
+          // Automatically select the doctor from the examination
+          if (_selectedExamination != null && _doctors.isNotEmpty) {
+            _selectedDoctor = _doctors.firstWhere(
+              (d) => d.id == _selectedExamination!.doctorId,
+              orElse: () => _doctors.firstWhere((d) => d.isActive,
+                  orElse: () => _doctors[0]),
+            );
+          }
         });
       } else {
         setState(() {
@@ -353,7 +359,18 @@ class _PrescriptionFormScreenState extends State<PrescriptionFormScreen>
                                   );
                                 }).toList(),
                                 onChanged: (value) {
-                                  setState(() => _selectedExamination = value);
+                                  setState(() {
+                                    _selectedExamination = value;
+                                    // Automatically select the doctor when examination changes
+                                    if (value != null && _doctors.isNotEmpty) {
+                                      _selectedDoctor = _doctors.firstWhere(
+                                        (d) => d.id == value.doctorId,
+                                        orElse: () => _doctors.firstWhere(
+                                            (d) => d.isActive,
+                                            orElse: () => _doctors[0]),
+                                      );
+                                    }
+                                  });
                                 },
                                 labelText: 'Chọn phiếu khám',
                               ),
@@ -749,18 +766,23 @@ class _PrescriptionFormScreenState extends State<PrescriptionFormScreen>
           await _supabaseService3.getPatientById(widget.examination!.patientId);
       setState(() => _selectedPatient = patient);
 
-      // First load all examinations for this patient
       final examinations = await _supabaseService4.getExaminations(
           patientId: widget.examination!.patientId);
 
-      // Then update state with all examinations and select the current one
       setState(() {
         _examinations = examinations;
-        // Find the matching examination in the loaded list
         _selectedExamination = examinations.firstWhere(
           (e) => e.id == widget.examination!.id,
           orElse: () => widget.examination!,
         );
+        // Automatically select the doctor from the examination
+        if (_selectedExamination != null && _doctors.isNotEmpty) {
+          _selectedDoctor = _doctors.firstWhere(
+            (d) => d.id == _selectedExamination!.doctorId,
+            orElse: () => _doctors.firstWhere((d) => d.isActive,
+                orElse: () => _doctors[0]),
+          );
+        }
       });
     } catch (e) {
       if (mounted) {
