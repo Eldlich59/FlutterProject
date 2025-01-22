@@ -383,75 +383,174 @@ class _MedicineListScreenState extends State<MedicineListScreen> {
 
   void _showMedicineDetails(Medicine medicine) {
     _resetDetailRowCount();
+    final bool isExpired = medicine.expiryDate.isBefore(DateTime.now());
+    final bool isNearExpiry = medicine.expiryDate
+        .isBefore(DateTime.now().add(const Duration(days: 30)));
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(20),
         ),
         backgroundColor: Colors.white,
-        title: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Colors.red[50],
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Row(
+        contentPadding: EdgeInsets.zero,
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.medication, color: Colors.red[400]),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  medicine.name,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.red[700],
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.red[50],
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
                   ),
+                ),
+                child: Column(
+                  children: [
+                    CircleAvatar(
+                      radius: 30,
+                      backgroundColor: Colors.white,
+                      child: Icon(
+                        Icons.medication,
+                        size: 35,
+                        color: isExpired
+                            ? Colors.red
+                            : isNearExpiry
+                                ? Colors.orange[700]
+                                : Colors.red[400],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      medicine.name,
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.red[700],
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    if (isExpired || isNearExpiry)
+                      Container(
+                        margin: const EdgeInsets.only(top: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isExpired
+                              ? Colors.red.withOpacity(0.1)
+                              : Colors.orange.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.warning_rounded,
+                              size: 16,
+                              color: isExpired ? Colors.red : Colors.orange,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              isExpired
+                                  ? 'Đã hết hạn sử dụng'
+                                  : 'Sắp hết hạn sử dụng',
+                              style: TextStyle(
+                                color:
+                                    isExpired ? Colors.red : Colors.orange[700],
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    _buildDetailRow(
+                      Icons.medical_information,
+                      'Đơn vị',
+                      medicine.unit,
+                      Colors.blue[700]!,
+                    ),
+                    _buildDetailRow(
+                      Icons.attach_money,
+                      'Giá',
+                      _currencyFormat.format(medicine.price),
+                      Colors.green[700]!,
+                    ),
+                    _buildDetailRow(
+                      Icons.calendar_today,
+                      'Ngày sản xuất',
+                      DateFormat('dd/MM/yyyy')
+                          .format(medicine.manufacturingDate),
+                      Colors.purple[700]!,
+                    ),
+                    _buildDetailRow(
+                      Icons.event,
+                      'Hạn sử dụng',
+                      DateFormat('dd/MM/yyyy').format(medicine.expiryDate),
+                      isExpired
+                          ? Colors.red
+                          : isNearExpiry
+                              ? Colors.orange[700]!
+                              : Colors.teal[700]!,
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildDetailRow(Icons.medical_information, 'Đơn vị', medicine.unit),
-            _buildDetailRow(Icons.attach_money, 'Giá',
-                _currencyFormat.format(medicine.price)),
-            _buildDetailRow(
-              Icons.calendar_today,
-              'Ngày sản xuất',
-              DateFormat('dd/MM/yyyy').format(medicine.manufacturingDate),
-            ),
-            _buildDetailRow(
-              Icons.event,
-              'Hạn sử dụng',
-              DateFormat('dd/MM/yyyy').format(medicine.expiryDate),
-            ),
-          ],
-        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Đóng', style: TextStyle(color: Colors.red)),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.red[400],
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            ),
+            child: const Text(
+              'Đóng',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
           ),
         ],
-      )
-          .animate()
-          .scale(
+      ).animate().scale(
             duration: const Duration(milliseconds: 300),
             curve: Curves.easeOutBack,
-          )
-          .fadeIn(),
+          ),
     );
   }
 
-  Widget _buildDetailRow(IconData icon, String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
+  Widget _buildDetailRow(
+      IconData icon, String label, String value, Color color) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Row(
         children: [
-          Icon(icon, size: 20, color: Colors.grey),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, size: 20, color: color),
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -460,25 +559,29 @@ class _MedicineListScreenState extends State<MedicineListScreen> {
                 Text(
                   label,
                   style: TextStyle(
-                    color: Colors.grey[600],
+                    color: color,
                     fontSize: 12,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
+                const SizedBox(height: 2),
                 Text(
                   value,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey[800],
                   ),
                 ),
               ],
             ),
           ),
         ],
-      )
-          .animate()
-          .fadeIn(delay: Duration(milliseconds: 100 * _detailRowCount++)),
-    );
+      ),
+    ).animate().fadeIn(
+          delay: Duration(milliseconds: 100 * _detailRowCount++),
+          duration: const Duration(milliseconds: 200),
+        );
   }
 
   void _showMedicineForm(Medicine? medicine) async {

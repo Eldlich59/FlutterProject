@@ -391,125 +391,276 @@ class _DoctorListScreenState extends State<DoctorListScreen>
   void _showDoctorDetails(Doctor doctor) {
     showGeneralDialog(
       context: context,
-      pageBuilder: (context, animation, secondaryAnimation) => Container(),
+      pageBuilder: (_, __, ___) => Container(),
       transitionBuilder: (context, animation, secondaryAnimation, child) {
         final curvedAnimation = CurvedAnimation(
           parent: animation,
-          curve: Curves.easeInOut,
+          curve: Curves.easeInOutCubic,
         );
         return ScaleTransition(
           scale: Tween<double>(begin: 0.8, end: 1.0).animate(curvedAnimation),
           child: FadeTransition(
             opacity: curvedAnimation,
-            child: AlertDialog(
+            child: Dialog(
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(28),
               ),
-              title: Text(
-                doctor.name,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 24,
-                ),
-              ),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _buildStatusBadge(doctor.isActive),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildDetailTile(
-                            Icons.work,
-                            'Chuyên khoa',
-                            doctor.specialty,
-                          ),
-                        ),
-                      ],
-                    ),
-                    _buildDetailTile(
-                        Icons.phone, 'Điện thoại', doctor.phone ?? 'N/A'),
-                    _buildDetailTile(
-                        Icons.email, 'Email', doctor.email ?? 'N/A'),
-                    _buildDetailTile(Icons.calendar_today, 'Ngày sinh',
-                        _formatDate(doctor.dateOfBirth)),
-                    _buildDetailTile(Icons.date_range, 'Ngày bắt đầu',
-                        _formatDate(doctor.startDate)),
-                  ],
+              elevation: 0,
+              backgroundColor: Colors.transparent,
+              child: SingleChildScrollView(
+                child: Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(28),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 10,
+                        offset: const Offset(0, 5),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _buildHeaderSection(doctor),
+                      const SizedBox(height: 24),
+                      _buildInfoSection(doctor),
+                      const SizedBox(height: 24),
+                      _buildActionButtons(context, doctor),
+                    ],
+                  ),
                 ),
               ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Đóng'),
-                ),
-                ElevatedButton.icon(
-                  icon: const Icon(Icons.edit),
-                  label: const Text('Cập nhật'),
-                  onPressed: () {
-                    Navigator.pop(context);
-                    _showDoctorForm(context, doctor);
-                  },
-                ),
-              ],
             ),
           ),
         );
       },
-      transitionDuration: const Duration(milliseconds: 300),
+      transitionDuration: const Duration(milliseconds: 400),
       barrierDismissible: true,
       barrierLabel: '',
       barrierColor: Colors.black54,
     );
   }
 
-  Widget _buildDetailTile(IconData icon, String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
+  Widget _buildHeaderSection(Doctor doctor) {
+    return Stack(
+      children: [
+        Column(
+          children: [
+            Hero(
+              tag: 'doctor_avatar_${doctor.id}',
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    colors: [
+                      Theme.of(context).primaryColor.withOpacity(0.2),
+                      Theme.of(context).primaryColor.withOpacity(0.1),
+                    ],
+                  ),
+                ),
+                child: CircleAvatar(
+                  radius: 50,
+                  backgroundColor: Colors.white,
+                  child: Icon(
+                    Icons.person,
+                    size: 60,
+                    color: Theme.of(context).primaryColor,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              doctor.name,
+              style: const TextStyle(
+                fontSize: 26,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.5,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            _buildStatusBadge(doctor.isActive),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildInfoSection(Doctor doctor) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: Column(
         children: [
-          Icon(icon, color: const Color(0xFF6750A4)),
-          const SizedBox(width: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: const TextStyle(
-                  color: Color(0xFF79747E),
-                  fontSize: 12,
-                ),
-              ),
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  color: Color(0xFF1C1B1F),
-                ),
-              ),
-            ],
+          _buildDetailTile(
+            Icons.work_rounded,
+            'Chuyên khoa',
+            doctor.specialty,
+            const Color(0xFF5B8FF9),
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12),
+            child: Divider(height: 1),
+          ),
+          _buildDetailTile(
+            Icons.phone_rounded,
+            'Điện thoại',
+            doctor.phone ?? 'N/A',
+            const Color(0xFF5AD8A6),
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12),
+            child: Divider(height: 1),
+          ),
+          _buildDetailTile(
+            Icons.email_rounded,
+            'Email',
+            doctor.email ?? 'N/A',
+            const Color(0xFFF6BD16),
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12),
+            child: Divider(height: 1),
+          ),
+          _buildDetailTile(
+            Icons.cake_rounded,
+            'Ngày sinh',
+            _formatDate(doctor.dateOfBirth),
+            const Color(0xFF5D7092),
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12),
+            child: Divider(height: 1),
+          ),
+          _buildDetailTile(
+            Icons.calendar_today_rounded,
+            'Ngày bắt đầu',
+            _formatDate(doctor.startDate),
+            const Color(0xFF6750A4),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildStatusBadge(bool isActive) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: isActive ? const Color(0xFFE8DEF8) : const Color(0xFFFFE2E2),
-        borderRadius: BorderRadius.circular(15),
-      ),
-      child: Text(
-        isActive ? 'Đang hoạt động' : 'Ngừng hoạt động',
-        style: TextStyle(
-          color: isActive ? const Color(0xFF6750A4) : Colors.red,
-          fontWeight: FontWeight.w500,
+  Widget _buildActionButtons(BuildContext context, Doctor doctor) {
+    return Row(
+      children: [
+        Expanded(
+          child: TextButton(
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: BorderSide(color: Theme.of(context).primaryColor),
+              ),
+            ),
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Đóng',
+              style: TextStyle(color: Theme.of(context).primaryColor),
+            ),
+          ),
         ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              backgroundColor: Theme.of(context).primaryColor,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            onPressed: () {
+              Navigator.pop(context);
+              _showDoctorForm(context, doctor);
+            },
+            child: const Text('Cập nhật'),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDetailTile(
+      IconData icon, String label, String value, Color color) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(icon, color: color, size: 22),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatusBadge(bool isActive) {
+    final color = isActive ? const Color(0xFF5AD8A6) : const Color(0xFFFF6B6B);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withOpacity(0.5)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            isActive ? Icons.check_circle_rounded : Icons.cancel_rounded,
+            size: 18,
+            color: color,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            isActive ? 'Đang hoạt động' : 'Ngừng hoạt động',
+            style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.w600,
+              fontSize: 14,
+            ),
+          ),
+        ],
       ),
     );
   }

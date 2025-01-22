@@ -451,79 +451,173 @@ class _PatientListScreenState extends State<PatientListScreen>
   void _showPatientDetails(Patient patient) {
     showDialog(
       context: context,
-      builder: (context) => TweenAnimationBuilder(
-        duration: const Duration(milliseconds: 400),
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        elevation: 8,
+        child: TweenAnimationBuilder(
+          duration: const Duration(milliseconds: 400),
+          tween: Tween<double>(begin: 0, end: 1),
+          builder: (context, double value, child) {
+            return Transform.scale(
+              scale: 0.5 + (value * 0.5),
+              child: Opacity(
+                opacity: value,
+                child: child,
+              ),
+            );
+          },
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            constraints: const BoxConstraints(maxWidth: 400),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Column(
+                  children: [
+                    Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        color: Colors.green[100],
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.green.withOpacity(0.2),
+                            blurRadius: 10,
+                            offset: const Offset(0, 5),
+                          ),
+                        ],
+                      ),
+                      child: Icon(
+                        Icons.person,
+                        size: 40,
+                        color: Colors.green[700],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      patient.name,
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                const Divider(height: 1),
+                const SizedBox(height: 24),
+                ..._buildDetailItems(patient),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 32, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    'Đóng',
+                    style: TextStyle(fontSize: 16),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _buildDetailItems(Patient patient) {
+    final details = [
+      {
+        'icon': Icons.cake,
+        'label': 'Ngày sinh',
+        'value': _formatDate(patient.dateOfBirth)
+      },
+      {'icon': Icons.person, 'label': 'Giới tính', 'value': patient.gender},
+      {'icon': Icons.location_on, 'label': 'Địa chỉ', 'value': patient.address},
+      {'icon': Icons.phone, 'label': 'Số điện thoại', 'value': patient.phone},
+    ];
+
+    return details.asMap().entries.map((entry) {
+      final detail = entry.value;
+      return TweenAnimationBuilder(
+        duration: Duration(milliseconds: 400 + (entry.key * 100)),
         tween: Tween<double>(begin: 0, end: 1),
         builder: (context, double value, child) {
-          return Transform.scale(
-            scale: 0.5 + (value * 0.5),
+          return Transform.translate(
+            offset: Offset(50 * (1 - value), 0),
             child: Opacity(
               opacity: value,
               child: child,
             ),
           );
         },
-        child: AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          title: Text(
-            patient.name,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Colors.green,
-            ),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildDetailRow(
-                  Icons.cake, 'Ngày sinh', _formatDate(patient.dateOfBirth)),
-              _buildDetailRow(Icons.person, 'Giới tính', patient.gender),
-              _buildDetailRow(Icons.location_on, 'Địa chỉ', patient.address),
-              _buildDetailRow(Icons.phone, 'Số điện thoại', patient.phone),
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 16),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.green[50],
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.green.withOpacity(0.1),
+                blurRadius: 5,
+                offset: const Offset(0, 2),
+              ),
             ],
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Đóng', style: TextStyle(color: Colors.green)),
-            ),
-          ],
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  detail['icon'] as IconData,
+                  size: 24,
+                  color: Colors.green[600],
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      detail['label'] as String,
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      detail['value'] as String,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildDetailRow(IconData icon, String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        children: [
-          Icon(icon, size: 20, color: Colors.grey),
-          const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 12,
-                ),
-              ),
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
+      );
+    }).toList();
   }
 
   String _formatDate(DateTime date) {
