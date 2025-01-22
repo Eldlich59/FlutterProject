@@ -584,7 +584,8 @@ class _BillFormScreenState extends State<BillFormScreen>
                   value: isSelected,
                   title: Text(
                       '${prescription['BENHNHAN']['TenBN']} - ${DateFormat('dd/MM/yyyy').format(DateTime.parse(prescription['Ngayketoa']))}'),
-                  subtitle: Text('Mã toa: ${prescription['MaToa']}'),
+                  subtitle: Text(
+                      'Mã toa: ${prescription['MaToa'].toString().substring(0, 6)}...'),
                   onChanged: (bool? value) async {
                     if (value == true) {
                       setState(() {
