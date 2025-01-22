@@ -18,16 +18,16 @@ class SpecialtyService {
         .toList();
   }
 
-  Future<List<Specialty>> getDoctorSpecialties(String doctorId) async {
-    final response = await _supabase
-        .from('BACSI_CHUYENKHOA')
-        .select('CHUYENKHOA(*)')
-        .eq('MaBS', doctorId);
+  // Future<List<Specialty>> getDoctorSpecialties(String doctorId) async {
+  //   final response = await _supabase
+  //       .from('BACSI_CHUYENKHOA')
+  //       .select('CHUYENKHOA(*)')
+  //       .eq('MaBS', doctorId);
 
-    return (response as List)
-        .map((json) => Specialty.fromJson(json['CHUYENKHOA']))
-        .toList();
-  }
+  //   return (response as List)
+  //       .map((json) => Specialty.fromJson(json['CHUYENKHOA']))
+  //       .toList();
+  // }
 
   Future<void> addSpecialty({
     required String name,
