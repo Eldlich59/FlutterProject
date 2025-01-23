@@ -26,11 +26,12 @@ class _PrescriptionListScreenState extends State<PrescriptionListScreen>
   final TextEditingController _doctorSearchController = TextEditingController();
   DateTime? _selectedDate;
 
-  // Update color constants
+  // Update color scheme to golden theme
   static const Color primaryColor = Color(0xFFFFB300); // Amber 700
   static const Color secondaryColor = Color(0xFFFFC107); // Amber 500
-  static const Color backgroundColor = Color(0xFFFFF3E0); // Orange 50
-  static const Color cardColor = Colors.white;
+  static const Color backgroundColor = Color(0xFFFFF8E1); // Amber 50
+  static const Color accentColor = Color(0xFFFF8F00); // Amber 800
+  static const Color cardShadowColor = Color(0x29FFB300); // Amber shadow
 
   late AnimationController _fabAnimationController;
   late Animation<double> _fabAnimation;
@@ -66,12 +67,12 @@ class _PrescriptionListScreenState extends State<PrescriptionListScreen>
 
   Widget _buildSearchBar() {
     return Container(
-      margin: const EdgeInsets.all(16.0),
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.amber.withOpacity(0.15), // Updated shadow color
-            spreadRadius: 1,
+            color: Colors.black.withOpacity(0.1),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -79,26 +80,31 @@ class _PrescriptionListScreenState extends State<PrescriptionListScreen>
       ),
       child: Card(
         elevation: 0,
-        color: cardColor,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.all(12.0),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Row(
                 children: [
-                  const Icon(Icons.search, color: primaryColor),
-                  const SizedBox(width: 10),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: primaryColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(Icons.search, color: primaryColor, size: 20),
+                  ),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: TextField(
                       controller: _patientSearchController,
                       decoration: InputDecoration(
-                        hintText: 'Tìm kiếm...',
+                        hintText: 'Tìm kiếm bệnh nhân hoặc bác sĩ...',
                         hintStyle: TextStyle(color: Colors.grey[400]),
                         border: InputBorder.none,
                       ),
+                      style: const TextStyle(fontSize: 15),
                       onChanged: (value) {
                         _doctorSearchController.text = value;
                         _filterPrescriptions();
@@ -117,29 +123,37 @@ class _PrescriptionListScreenState extends State<PrescriptionListScreen>
                 ],
               ),
             ),
-            Container(
-              height: 1,
-              color: Colors.grey[200],
-            ),
+            Divider(height: 1, color: Colors.grey[200]),
             InkWell(
               onTap: () => _selectDate(context),
               child: Padding(
-                padding: const EdgeInsets.all(12.0),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 child: Row(
                   children: [
-                    Icon(
-                      Icons.calendar_today,
-                      color: _selectedDate != null ? primaryColor : Colors.grey,
-                      size: 20,
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: primaryColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        Icons.calendar_today,
+                        color:
+                            _selectedDate != null ? primaryColor : Colors.grey,
+                        size: 20,
+                      ),
                     ),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: 12),
                     Text(
                       _selectedDate != null
                           ? DateFormat('dd/MM/yyyy').format(_selectedDate!)
                           : 'Chọn ngày',
                       style: TextStyle(
-                        color:
-                            _selectedDate != null ? primaryColor : Colors.grey,
+                        color: _selectedDate != null
+                            ? primaryColor
+                            : Colors.grey[600],
+                        fontSize: 15,
                       ),
                     ),
                     if (_selectedDate != null) ...[
@@ -286,111 +300,246 @@ class _PrescriptionListScreenState extends State<PrescriptionListScreen>
   }
 
   Widget _buildPrescriptionCard(Prescription prescription) {
-    return Card(
-      elevation: 2,
-      color: cardColor,
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(15),
-        side: BorderSide(
-            color: primaryColor.withOpacity(0.2),
-            width: 1), // Updated border color
-      ),
-      child: InkWell(
-        onTap: () => _navigateToPrescriptionDetails(prescription),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(15),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Colors.white,
-                Color(0xFFFFFDE7)
-                    .withOpacity(0.5), // Very light yellow background
-              ],
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeInOut,
+      child: Card(
+        elevation: 4,
+        shadowColor: cardShadowColor,
+        margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: InkWell(
+          onTap: () => _navigateToPrescriptionDetails(prescription),
+          borderRadius: BorderRadius.circular(20),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.white,
+                  const Color(0xFFFFF8E1).withOpacity(0.5),
+                ],
+                stops: const [0.3, 1.0],
+              ),
+              border: Border.all(
+                color: primaryColor.withOpacity(0.1),
+                width: 1,
+              ),
             ),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  color: primaryColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Center(
+            child: Row(
+              children: [
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    color: primaryColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: primaryColor.withOpacity(0.3),
+                      width: 2,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: primaryColor.withOpacity(0.2),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
                   child: Icon(
                     Icons.medical_information,
                     color: primaryColor,
+                    size: 32,
                   ),
                 ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      prescription.patientName ?? '',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: primaryColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: primaryColor.withOpacity(0.3),
+                            width: 1.5,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: primaryColor.withOpacity(0.1),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Text(
+                          'Mã: ${prescription.id.length > 6 ? "${prescription.id.substring(0, 6)}..." : prescription.id}',
+                          style: TextStyle(
+                            color: primaryColor.withOpacity(0.8),
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
                       ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[100],
+                              borderRadius: BorderRadius.circular(10),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.grey.withOpacity(0.1),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Icon(
+                              Icons.person,
+                              size: 14,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              prescription.patientName ?? '',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey[800],
+                                height: 1.3,
+                                letterSpacing: 0.3,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[100],
+                              borderRadius: BorderRadius.circular(10),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.grey.withOpacity(0.1),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Icon(
+                              Icons.medical_services,
+                              size: 14,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'BS. ${prescription.doctorName}',
+                              style: TextStyle(
+                                color: Colors.grey[700],
+                                fontSize: 14,
+                                height: 1.3,
+                                letterSpacing: 0.3,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[100],
+                              borderRadius: BorderRadius.circular(10),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.grey.withOpacity(0.1),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Icon(
+                              Icons.calendar_today,
+                              size: 14,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            DateFormat('dd/MM/yyyy')
+                                .format(prescription.prescriptionDate),
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 13,
+                              height: 1.3,
+                              letterSpacing: 0.3,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                PopupMenuButton(
+                  icon:
+                      Icon(Icons.more_vert, color: Colors.grey[700], size: 24),
+                  offset: const Offset(0, 40),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 8,
+                  itemBuilder: (context) => [
+                    PopupMenuItem(
+                      child: const ListTile(
+                        leading: Icon(Icons.visibility),
+                        title: Text('Chi tiết'),
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                      onTap: () => _navigateToPrescriptionDetails(prescription),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Bác sĩ kê đơn: ${prescription.doctorName}',
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 14,
+                    PopupMenuItem(
+                      child: const ListTile(
+                        leading: Icon(Icons.edit),
+                        title: Text('Sửa'),
+                        contentPadding: EdgeInsets.zero,
                       ),
+                      onTap: () => Future(
+                          () => _navigateToEditPrescription(prescription)),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      DateFormat('dd/MM/yyyy')
-                          .format(prescription.prescriptionDate),
-                      style: TextStyle(
-                        color: Colors.grey[500],
-                        fontSize: 13,
+                    PopupMenuItem(
+                      child: const ListTile(
+                        leading: Icon(Icons.delete, color: Colors.red),
+                        title: Text('Xóa'),
+                        contentPadding: EdgeInsets.zero,
                       ),
+                      onTap: () => Future(() => _confirmDelete(prescription)),
                     ),
                   ],
                 ),
-              ),
-              PopupMenuButton(
-                icon: const Icon(Icons.more_vert),
-                itemBuilder: (context) => [
-                  PopupMenuItem(
-                    child: const ListTile(
-                      leading: Icon(Icons.visibility),
-                      title: Text('Chi tiết'),
-                      contentPadding: EdgeInsets.zero,
-                    ),
-                    onTap: () => _navigateToPrescriptionDetails(prescription),
-                  ),
-                  PopupMenuItem(
-                    child: const ListTile(
-                      leading: Icon(Icons.edit),
-                      title: Text('Sửa'),
-                      contentPadding: EdgeInsets.zero,
-                    ),
-                    onTap: () =>
-                        Future(() => _navigateToEditPrescription(prescription)),
-                  ),
-                  PopupMenuItem(
-                    child: const ListTile(
-                      leading: Icon(Icons.delete, color: Colors.red),
-                      title: Text('Xóa'),
-                      contentPadding: EdgeInsets.zero,
-                    ),
-                    onTap: () => Future(() => _confirmDelete(prescription)),
-                  ),
-                ],
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -403,12 +552,31 @@ class _PrescriptionListScreenState extends State<PrescriptionListScreen>
       backgroundColor: backgroundColor,
       appBar: AppBar(
         elevation: 0,
+        leading: IconButton(
+          icon: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white24,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.arrow_back_ios_new,
+              color: Colors.white,
+              size: 20,
+            ),
+          ),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
         flexibleSpace: Container(
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [primaryColor, secondaryColor],
+              colors: [
+                primaryColor,
+                secondaryColor,
+              ],
+              stops: const [0.3, 1.0],
             ),
           ),
         ),
@@ -416,10 +584,54 @@ class _PrescriptionListScreenState extends State<PrescriptionListScreen>
           'Danh sách toa thuốc',
           style: TextStyle(
             color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 24,
+            fontWeight: FontWeight.w600,
+            fontSize: 20,
+            letterSpacing: 0.5,
           ),
         ),
+        actions: [
+          Container(
+            margin: const EdgeInsets.only(right: 16),
+            child: IconButton(
+              icon: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white24,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.refresh,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              ),
+              onPressed: () {
+                _loadPrescriptions();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Row(
+                      children: [
+                        SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        ),
+                        SizedBox(width: 16),
+                        Text('Đang tải lại dữ liệu...'),
+                      ],
+                    ),
+                    duration: Duration(seconds: 1),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -434,11 +646,15 @@ class _PrescriptionListScreenState extends State<PrescriptionListScreen>
         child: FloatingActionButton.extended(
           onPressed: _navigateToAddPrescription, // Change to use the method
           elevation: 4,
-          backgroundColor: primaryColor,
+          backgroundColor: accentColor,
           icon: const Icon(Icons.add, color: Colors.white),
           label: const Text(
             'Thêm toa thuốc',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+              fontSize: 15,
+            ),
           ),
         ),
       ),

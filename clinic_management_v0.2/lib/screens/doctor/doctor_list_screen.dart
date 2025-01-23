@@ -110,6 +110,11 @@ class _DoctorListScreenState extends State<DoctorListScreen>
         appBar: AppBar(
           elevation: 0,
           backgroundColor: purpleTheme.primaryColor,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
+            onPressed: () => Navigator.of(context).pop(),
+            tooltip: 'Trở về trang chủ',
+          ),
           title: const Text(
             'Quản lý Bác sĩ',
             style: TextStyle(
@@ -117,6 +122,32 @@ class _DoctorListScreenState extends State<DoctorListScreen>
               color: Colors.white,
             ),
           ),
+          actions: [
+            Container(
+              margin: const EdgeInsets.only(right: 8),
+              child: IconButton(
+                icon: const Icon(Icons.refresh_rounded, color: Colors.white),
+                tooltip: 'Làm mới danh sách',
+                onPressed: () async {
+                  // Visual feedback animation
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Đang cập nhật danh sách...'),
+                      duration: Duration(milliseconds: 1000),
+                    ),
+                  );
+                  // Reset animation controller
+                  _animationController.reset();
+                  // Load the updated data
+                  await _loadDoctors();
+                  // Start the animation
+                  if (mounted) {
+                    _animationController.forward();
+                  }
+                },
+              ),
+            ),
+          ],
           bottom: PreferredSize(
             preferredSize: const Size.fromHeight(70),
             child: Container(

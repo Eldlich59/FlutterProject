@@ -96,6 +96,14 @@ class _PatientListScreenState extends State<PatientListScreen>
       appBar: AppBar(
         elevation: 2,
         backgroundColor: Colors.green[600],
+        leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back_ios_new,
+            color: Colors.white,
+          ),
+          onPressed: () => Navigator.of(context).pop(),
+          tooltip: 'Trở về trang chủ',
+        ),
         title: const Text(
           'Quản lý bệnh nhân',
           style: TextStyle(
@@ -106,9 +114,30 @@ class _PatientListScreenState extends State<PatientListScreen>
           ),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh, size: 26),
-            onPressed: _loadPatients,
+          Container(
+            margin: const EdgeInsets.only(right: 8),
+            child: IconButton(
+              icon: const Icon(
+                Icons.refresh_rounded,
+                size: 28,
+                color: Colors.white,
+              ),
+              onPressed: () {
+                // Add loading animation when refreshing
+                setState(() => _isLoading = true);
+                _loadPatients().then((_) {
+                  // Show success message
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Đã cập nhật danh sách bệnh nhân'),
+                      backgroundColor: Colors.green,
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                });
+              },
+              tooltip: 'Làm mới danh sách',
+            ),
           ),
         ],
       ),

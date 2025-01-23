@@ -78,6 +78,14 @@ class _ExaminationListScreenState extends State<ExaminationListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: Colors.white,
+          ),
+          onPressed: () => Navigator.of(context).pop(),
+          tooltip: 'Trở về trang chủ',
+        ),
         title: Text(
           widget.patientId != null
               ? 'Lịch sử khám bệnh'
@@ -86,8 +94,34 @@ class _ExaminationListScreenState extends State<ExaminationListScreen> {
             fontWeight: FontWeight.bold,
             fontSize: 22,
             letterSpacing: 0.5,
+            color: Colors.white,
           ),
         ),
+        actions: [
+          Container(
+            margin: const EdgeInsets.only(right: 8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: IconButton(
+              icon: const Icon(
+                Icons.refresh_rounded,
+                color: Colors.white,
+              ),
+              onPressed: () {
+                _loadExaminations();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Đang tải lại danh sách...'),
+                    duration: Duration(seconds: 1),
+                  ),
+                );
+              },
+              tooltip: 'Tải lại danh sách',
+            ),
+          ),
+        ],
         flexibleSpace: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(

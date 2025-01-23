@@ -5,6 +5,7 @@ import 'package:clinic_management/services/supabase_service.dart';
 import 'package:clinic_management/services/bill_service.dart';
 import 'package:clinic_management/screens/bill/bill_form_screen.dart';
 import 'package:clinic_management/screens/bill/bill_details_sheet.dart';
+import 'package:shimmer/shimmer.dart';
 
 class BillListScreen extends StatefulWidget {
   const BillListScreen({super.key});
@@ -22,6 +23,12 @@ class _BillListScreenState extends State<BillListScreen>
   late AnimationController _fabAnimationController;
   late Animation<double> _fabScaleAnimation;
   late Animation<double> _fabOpacityAnimation;
+
+  // Update color constants
+  final Color primaryColor = const Color(0xFF2B5876);
+  final Color secondaryColor = const Color(0xFFE7F0F7);
+  final Color accentColor = const Color(0xFF4E4376);
+  final Color textColor = const Color(0xFF2D3436);
 
   @override
   void initState() {
@@ -111,25 +118,78 @@ class _BillListScreenState extends State<BillListScreen>
 
   @override
   Widget build(BuildContext context) {
-    final jadeColor = Color(0xFF009688);
-    final lightJadeColor = Color(0xFFE0F2F1);
-    final accentJadeColor = Color(0xFF26A69A);
-
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: jadeColor,
+        backgroundColor: primaryColor,
+        leading: Container(
+          margin: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.white24,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: IconButton(
+            icon: const Icon(
+              Icons.arrow_back_ios_new_rounded,
+              color: Colors.white,
+              size: 22,
+            ),
+            onPressed: () => Navigator.of(context).pop(),
+            tooltip: 'Trở về trang chủ',
+          ),
+        ),
         title: const Text(
           'Danh sách hóa đơn',
           style: TextStyle(
             fontSize: 24,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w600,
             letterSpacing: 0.5,
+            color: Colors.white,
+          ),
+        ),
+        actions: [
+          IconButton(
+            icon: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              child: _isLoading
+                  ? const SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : const Icon(
+                      Icons.refresh,
+                      color: Colors.white, // Explicit white color
+                      size: 28, // Slightly larger size
+                    ),
+            ),
+            style: IconButton.styleFrom(
+              foregroundColor: Colors.white,
+              backgroundColor: Colors.white
+                  .withOpacity(0.2), // Semi-transparent white background
+              padding: const EdgeInsets.all(8),
+            ),
+            onPressed: _isLoading ? null : _loadBills,
+            tooltip: 'Tải lại',
+          ),
+          const SizedBox(width: 12), // Increased spacing
+        ],
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [primaryColor, accentColor],
+            ),
           ),
         ),
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(
-            bottom: Radius.circular(20),
+            bottom: Radius.circular(30),
           ),
         ),
       ),
@@ -139,64 +199,79 @@ class _BillListScreenState extends State<BillListScreen>
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              lightJadeColor,
-              Colors.white.withOpacity(0.9),
+              secondaryColor,
+              Colors.white,
             ],
+            stops: const [0.0, 0.4],
           ),
         ),
         child: _isLoading
-            ? Center(
-                child: CircularProgressIndicator(
-                  color: jadeColor,
-                  strokeWidth: 3,
-                ),
-              )
+            ? _buildShimmerLoading()
             : RefreshIndicator(
-                color: jadeColor,
+                color: primaryColor,
                 onRefresh: _loadBills,
-                child: _bills.isEmpty
-                    ? _buildEmptyState(jadeColor)
-                    : _buildBillsList(
-                        jadeColor, lightJadeColor, accentJadeColor),
+                child: _bills.isEmpty ? _buildEmptyState() : _buildBillsList(),
               ),
       ),
-      floatingActionButton: ScaleTransition(
-        scale: _fabScaleAnimation,
-        child: FadeTransition(
-          opacity: _fabOpacityAnimation,
-          child: FloatingActionButton.extended(
-            onPressed: () => _navigateToCreateBill(context),
-            icon: const Icon(Icons.add),
-            label: const Text(
-              'Tạo hóa đơn',
-              style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.5),
+      floatingActionButton: _buildFAB(),
+    );
+  }
+
+  Widget _buildShimmerLoading() {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Shimmer.fromColors(
+        baseColor: Colors.grey[300]!,
+        highlightColor: Colors.grey[100]!,
+        child: ListView.builder(
+          itemCount: 5,
+          itemBuilder: (_, __) => Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: Container(
+              height: 140,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+              ),
             ),
-            elevation: 4,
-            backgroundColor: accentJadeColor,
           ),
         ),
       ),
     );
   }
 
-  Widget _buildEmptyState(Color jadeColor) {
+  Widget _buildEmptyState() {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.receipt_long_outlined,
-            size: 80,
-            color: jadeColor.withOpacity(0.5),
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: secondaryColor,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.receipt_long_outlined,
+              size: 80,
+              color: primaryColor,
+            ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 24),
           Text(
             'Chưa có hóa đơn nào',
             style: TextStyle(
-              fontSize: 20,
-              color: jadeColor,
-              fontWeight: FontWeight.w500,
-              letterSpacing: 0.5,
+              fontSize: 24,
+              color: textColor,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Tạo hóa đơn mới ngay bây giờ',
+            style: TextStyle(
+              fontSize: 16,
+              color: textColor.withOpacity(0.6),
             ),
           ),
         ],
@@ -204,26 +279,18 @@ class _BillListScreenState extends State<BillListScreen>
     );
   }
 
-  Widget _buildBillsList(
-      Color jadeColor, Color lightJadeColor, Color accentJadeColor) {
+  Widget _buildBillsList() {
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: _bills.length,
       itemBuilder: (context, index) {
         final bill = _bills[index];
-        return _buildAnimatedBillCard(
-          bill,
-          index,
-          jadeColor,
-          lightJadeColor,
-          accentJadeColor,
-        );
+        return _buildAnimatedBillCard(bill, index);
       },
     );
   }
 
-  Widget _buildAnimatedBillCard(Bill bill, int index, Color jadeColor,
-      Color lightJadeColor, Color accentJadeColor) {
+  Widget _buildAnimatedBillCard(Bill bill, int index) {
     final delay = index * 100;
     final slideAnimation = Tween<Offset>(
       begin: const Offset(0.5, 0),
@@ -257,15 +324,25 @@ class _BillListScreenState extends State<BillListScreen>
       position: slideAnimation,
       child: FadeTransition(
         opacity: fadeAnimation,
-        child: AnimatedContainer(
-          duration: Duration(milliseconds: 300),
-          child: Card(
-            elevation: 4,
-            shadowColor: jadeColor.withOpacity(0.3),
-            margin: const EdgeInsets.only(bottom: 16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: primaryColor.withOpacity(0.08),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+              BoxShadow(
+                color: primaryColor.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Material(
+            color: Colors.transparent,
             child: InkWell(
               onTap: () => _showBillDetails(context, bill),
               borderRadius: BorderRadius.circular(20),
@@ -277,13 +354,13 @@ class _BillListScreenState extends State<BillListScreen>
                     end: Alignment.bottomRight,
                     colors: [
                       Colors.white,
-                      lightJadeColor.withOpacity(0.4),
+                      secondaryColor.withOpacity(0.5),
                     ],
                   ),
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: _buildBillContent(bill, jadeColor, accentJadeColor),
+                  padding: const EdgeInsets.all(20),
+                  child: _buildBillContent(bill),
                 ),
               ),
             ),
@@ -293,21 +370,30 @@ class _BillListScreenState extends State<BillListScreen>
     );
   }
 
-  Widget _buildBillContent(Bill bill, Color jadeColor, Color accentJadeColor) {
+  Widget _buildBillContent(Bill bill) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Expanded(
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    primaryColor.withOpacity(0.1),
+                    accentColor.withOpacity(0.1)
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(20),
+              ),
               child: Text(
-                'Hóa đơn #${_formatBillId(bill.id)}',
+                'Mã hóa đơn #${_formatBillId(bill.id)}',
                 style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: jadeColor,
-                  letterSpacing: 0.5,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: primaryColor,
                 ),
               ),
             ),
@@ -357,50 +443,76 @@ class _BillListScreenState extends State<BillListScreen>
             ),
           ],
         ),
+        const SizedBox(height: 16),
+        _buildInfoRow(Icons.person_outline, bill.patientName, accentColor),
         const SizedBox(height: 12),
-        Row(
-          children: [
-            Icon(Icons.person_outline, size: 20, color: accentJadeColor),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                bill.patientName,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-          ],
+        _buildInfoRow(
+          Icons.calendar_today,
+          DateFormat('dd/MM/yyyy').format(bill.saleDate),
+          Colors.grey.shade600,
         ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            const Icon(Icons.calendar_today, size: 20, color: Colors.grey),
-            const SizedBox(width: 8),
-            Text(
-              DateFormat('dd/MM/yyyy').format(bill.saleDate),
-              style: const TextStyle(fontSize: 16),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            const Icon(Icons.payment, size: 20, color: Colors.grey),
-            const SizedBox(width: 8),
-            Text(
-              NumberFormat.currency(locale: 'vi_VN', symbol: 'đ')
-                  .format(bill.totalCost),
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.green,
-              ),
-            ),
-          ],
+        const SizedBox(height: 12),
+        _buildInfoRow(
+          Icons.payment,
+          NumberFormat.currency(locale: 'vi_VN', symbol: 'đ')
+              .format(bill.totalCost),
+          Colors.green.shade600,
+          isBold: true,
         ),
       ],
+    );
+  }
+
+  Widget _buildInfoRow(IconData icon, String text, Color color,
+      {bool isBold = false}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: color),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: isBold ? FontWeight.bold : FontWeight.w500,
+                color: color,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFAB() {
+    return ScaleTransition(
+      scale: _fabScaleAnimation,
+      child: FadeTransition(
+        opacity: _fabOpacityAnimation,
+        child: FloatingActionButton.extended(
+          onPressed: () => _navigateToCreateBill(context),
+          icon: const Icon(Icons.add, color: Colors.white),
+          label: const Text(
+            'Tạo hóa đơn',
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.5,
+              color: Colors.white,
+            ),
+          ),
+          elevation: 4,
+          backgroundColor: primaryColor,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(30),
+          ),
+        ),
+      ),
     );
   }
 

@@ -203,6 +203,20 @@ class _ExaminationFormScreenState extends State<ExaminationFormScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(
+              Icons.arrow_back_ios_new,
+              size: 20,
+            ),
+          ),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
         title: Text(
           widget.examination == null ? 'Thêm phiếu khám' : 'Sửa phiếu khám',
           style: const TextStyle(

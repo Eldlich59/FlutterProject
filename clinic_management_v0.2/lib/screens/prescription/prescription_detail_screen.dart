@@ -22,6 +22,20 @@ class PrescriptionDetailScreen extends StatelessWidget {
         elevation: 0,
         backgroundColor: Colors.amber[800],
         foregroundColor: Colors.white,
+        leading: IconButton(
+          icon: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white24,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(
+              Icons.arrow_back_ios_new,
+              size: 20,
+            ),
+          ),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
         title: const Text('Chi tiết toa thuốc',
             style: TextStyle(fontWeight: FontWeight.bold)),
         actions: [

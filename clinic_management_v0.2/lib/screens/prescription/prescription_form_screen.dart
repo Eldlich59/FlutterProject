@@ -273,6 +273,21 @@ class _PrescriptionFormScreenState extends State<PrescriptionFormScreen>
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.orange.shade400,
+        leading: IconButton(
+          icon: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(
+              Icons.arrow_back_ios_new,
+              size: 20,
+              color: Colors.white,
+            ),
+          ),
+          onPressed: () => Navigator.pop(context),
+        ),
         title: Text(
           widget.isEditing ? 'Sửa toa thuốc' : 'Thêm toa thuốc mới',
           style: const TextStyle(fontWeight: FontWeight.bold),
