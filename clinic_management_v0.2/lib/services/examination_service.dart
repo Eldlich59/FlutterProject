@@ -7,28 +7,33 @@ class ExaminationService {
   ExaminationService(this._supabase);
 
   Future<List<Examination>> getExaminations({String? patientId}) async {
-    var query = _supabase.from('PHIEUKHAM').select('''
-      *, 
-      BENHNHAN!inner(TenBN), 
-      BACSI!left(TenBS),
-      CHUYENKHOA!left(MaCK, TenCK)
-    ''');
+    try {
+      var query = _supabase.from('PHIEUKHAM').select('''
+        *, 
+        BENHNHAN!inner(TenBN), 
+        BACSI(TenBS),
+        CHUYENKHOA(MaCK, TenCK)
+      ''');
 
-    if (patientId != null) {
-      query = query.eq('MaBN', patientId);
+      if (patientId != null) {
+        query = query.eq('MaBN', patientId);
+      }
+
+      final response = await query.order('NgayKham', ascending: false);
+
+      return (response as List)
+          .map((json) => Examination.fromJson({
+                ...json,
+                'TenBN': json['BENHNHAN']?['TenBN'],
+                'TenBS': json['BACSI']?['TenBS'],
+                'MaCK': json['CHUYENKHOA']?['MaCK'],
+                'TenCK': json['CHUYENKHOA']?['TenCK'],
+              }))
+          .toList();
+    } catch (e) {
+      print('Error fetching examinations: $e');
+      return [];
     }
-
-    final data = await query.order('NgayKham', ascending: false);
-
-    return (data as List)
-        .map((json) => Examination.fromJson({
-              ...json,
-              'TenBN': json['BENHNHAN']['TenBN'],
-              'TenBS': json['BACSI']?['TenBS'],
-              'MaCK': json['CHUYENKHOA']?['MaCK'],
-              'TenCK': json['CHUYENKHOA']?['TenCK'],
-            }))
-        .toList();
   }
 
   Future<void> addExamination(Examination examination) async {
