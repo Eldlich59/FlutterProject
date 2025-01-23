@@ -10,6 +10,8 @@ class Examination {
   final String? doctorName; // Add this field
   final String? specialtyId; // Add this field
   final String? specialtyName; // Add this field
+  final bool? isDoctorActive;
+  final bool? isSpecialtyActive;
 
   Examination({
     required this.id,
@@ -23,6 +25,8 @@ class Examination {
     this.doctorName, // Add this parameter
     this.specialtyId, // Add this parameter
     this.specialtyName, // Add this parameter
+    this.isDoctorActive,
+    this.isSpecialtyActive,
   });
 
   factory Examination.fromJson(Map<String, dynamic> json) {
@@ -39,6 +43,8 @@ class Examination {
       doctorName: json['TenBS']?.toString(), // Add this field mapping
       specialtyId: json['MaCK']?.toString(), // Add this field mapping
       specialtyName: json['TenCK']?.toString(), // Add this mapping
+      isDoctorActive: json['BACSI']?['TrangThai'] ?? false,
+      isSpecialtyActive: json['CHUYENKHOA']?['TrangThaiHD'] ?? false,
     );
   }
 

@@ -128,14 +128,15 @@ class _ExaminationDetailsScreenState extends State<ExaminationDetailsScreen>
                         [
                           _buildInfoRow('Bệnh nhân:',
                               widget.examination.patientName ?? 'N/A'),
-                          _buildInfoRow(
+                          _buildDoctorStatusRow(
                               'Bác sĩ khám:',
-                              widget.examination.doctorName ??
-                                  'Chưa phân công'),
-                          _buildInfoRow(
+                              widget.examination.doctorName ?? 'Chưa phân công',
+                              widget.examination.isDoctorActive ?? false),
+                          _buildSpecialtyStatusRow(
                               'Chuyên khoa:',
                               widget.examination.specialtyName ??
-                                  'Chưa chọn chuyên khoa'),
+                                  'Chưa chọn chuyên khoa',
+                              widget.examination.isSpecialtyActive ?? false),
                           _buildInfoRow(
                               'Ngày khám:',
                               dateFormat
@@ -255,6 +256,108 @@ class _ExaminationDetailsScreenState extends State<ExaminationDetailsScreen>
               color: Colors.black87,
               height: 1.3,
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDoctorStatusRow(String label, String value, bool isActive) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8.0),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8F9FF),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 14,
+              color: Colors.grey,
+              letterSpacing: 0.3,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: Colors.black87,
+                    height: 1.3,
+                  ),
+                ),
+              ),
+              Chip(
+                label: Text(
+                  isActive ? 'Đang hoạt động' : 'Ngừng hoạt động',
+                  style: TextStyle(
+                    color: isActive ? Colors.white : Colors.black54,
+                    fontSize: 12,
+                  ),
+                ),
+                backgroundColor: isActive ? Colors.green : Colors.grey[300],
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSpecialtyStatusRow(String label, String value, bool isActive) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8.0),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8F9FF),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 14,
+              color: Colors.grey,
+              letterSpacing: 0.3,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: Colors.black87,
+                    height: 1.3,
+                  ),
+                ),
+              ),
+              Chip(
+                label: Text(
+                  isActive ? 'Đang hoạt động' : 'Ngừng hoạt động',
+                  style: TextStyle(
+                    color: isActive ? Colors.white : Colors.black54,
+                    fontSize: 12,
+                  ),
+                ),
+                backgroundColor: isActive ? Colors.green : Colors.grey[300],
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+              ),
+            ],
           ),
         ],
       ),

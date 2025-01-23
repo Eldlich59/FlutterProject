@@ -269,7 +269,7 @@ class _DoctorFormState extends State<DoctorForm>
                                                         ? 1.0
                                                         : 0.5,
                                                     child: const Text(
-                                                      ' (Ngừng hoạt động)',
+                                                      ' (OFF)',
                                                       style: TextStyle(
                                                           color: Colors.red),
                                                     ),

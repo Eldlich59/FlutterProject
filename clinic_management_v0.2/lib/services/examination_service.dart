@@ -11,8 +11,8 @@ class ExaminationService {
       var query = _supabase.from('PHIEUKHAM').select('''
         *, 
         BENHNHAN!inner(TenBN), 
-        BACSI(TenBS),
-        CHUYENKHOA(MaCK, TenCK)
+        BACSI(TenBS, TrangThai),
+        CHUYENKHOA(MaCK, TenCK, TrangThaiHD)
       ''');
 
       if (patientId != null) {
@@ -28,6 +28,8 @@ class ExaminationService {
                 'TenBS': json['BACSI']?['TenBS'],
                 'MaCK': json['CHUYENKHOA']?['MaCK'],
                 'TenCK': json['CHUYENKHOA']?['TenCK'],
+                'BACSI': json['BACSI'],
+                'CHUYENKHOA': json['CHUYENKHOA'],
               }))
           .toList();
     } catch (e) {
