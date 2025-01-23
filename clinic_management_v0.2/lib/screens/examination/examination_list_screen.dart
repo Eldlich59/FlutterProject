@@ -60,8 +60,17 @@ class _ExaminationListScreenState extends State<ExaminationListScreen> {
     if (_searchQuery.isEmpty) return _examinations;
     return _examinations.where((exam) {
       final searchLower = _searchQuery.toLowerCase();
-      return exam.patientName?.toLowerCase().contains(searchLower) ??
-          false || exam.diagnosis.toLowerCase().contains(searchLower);
+      final examIdPrefix = exam.id.substring(0, 6).toLowerCase();
+
+      // Fix: Properly handle nullable strings
+      final patientNameMatch =
+          exam.patientName?.toLowerCase().contains(searchLower) ?? false;
+      final doctorNameMatch =
+          exam.doctorName?.toLowerCase().contains(searchLower) ?? false;
+      final diagnosisMatch = exam.diagnosis.toLowerCase().contains(searchLower);
+      final idMatch = examIdPrefix.contains(searchLower);
+
+      return patientNameMatch || diagnosisMatch || idMatch || doctorNameMatch;
     }).toList();
   }
 
@@ -73,18 +82,23 @@ class _ExaminationListScreenState extends State<ExaminationListScreen> {
           widget.patientId != null
               ? 'Lịch sử khám bệnh'
               : 'Danh sách phiếu khám',
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 22,
+            letterSpacing: 0.5,
+          ),
         ),
         flexibleSpace: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [Colors.blue.shade400, Colors.blue.shade700],
+              colors: [Colors.blue.shade500, Colors.blue.shade800],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
           ),
         ),
-        elevation: 0,
+        elevation: 2,
+        shadowColor: Colors.blue.withOpacity(0.3),
       ),
       body: Container(
         decoration: BoxDecoration(
@@ -92,6 +106,7 @@ class _ExaminationListScreenState extends State<ExaminationListScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [Colors.blue.shade50, Colors.white],
+            stops: const [0.0, 0.3],
           ),
         ),
         child: Column(
@@ -104,29 +119,46 @@ class _ExaminationListScreenState extends State<ExaminationListScreen> {
                   child: FadeInAnimation(
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
-                      child: TextField(
-                        decoration: InputDecoration(
-                          labelText: 'Tìm kiếm phiếu khám',
-                          prefixIcon: const Icon(Icons.search),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          filled: true,
-                          fillColor: Colors.white.withOpacity(0.9),
-                          contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 12),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: Colors.blue.shade200),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                                color: Colors.blue.shade400, width: 2),
-                          ),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(15),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.blue.withOpacity(0.1),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
                         ),
-                        onChanged: (value) =>
-                            setState(() => _searchQuery = value),
+                        child: TextField(
+                          decoration: InputDecoration(
+                            labelText: 'Tìm kiếm phiếu khám',
+                            labelStyle: TextStyle(color: Colors.blue.shade700),
+                            prefixIcon:
+                                Icon(Icons.search, color: Colors.blue.shade700),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(15),
+                            ),
+                            filled: true,
+                            fillColor: Colors.white,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 16,
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(15),
+                              borderSide:
+                                  BorderSide(color: Colors.blue.shade200),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(15),
+                              borderSide: BorderSide(
+                                  color: Colors.blue.shade400, width: 2),
+                            ),
+                          ),
+                          onChanged: (value) =>
+                              setState(() => _searchQuery = value),
+                        ),
                       ),
                     ),
                   ),
@@ -163,8 +195,14 @@ class _ExaminationListScreenState extends State<ExaminationListScreen> {
             child: FloatingActionButton.extended(
               onPressed: () => _navigateToExaminationForm(context),
               icon: const Icon(Icons.add, color: Colors.white),
-              label: const Text('Thêm phiếu khám',
-                  style: TextStyle(color: Colors.white)),
+              label: const Text(
+                'Thêm phiếu khám',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.5,
+                ),
+              ),
               backgroundColor: Colors.blue.shade600,
               elevation: 4,
             ),
@@ -180,14 +218,27 @@ class _ExaminationListScreenState extends State<ExaminationListScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.folder_open, size: 64, color: Colors.grey.shade400),
+            Icon(
+              Icons.medical_information_outlined,
+              size: 80,
+              color: Colors.blue.shade200,
+            ),
             const SizedBox(height: 16),
             Text(
               'Không có phiếu khám',
               style: TextStyle(
-                fontSize: 16,
+                fontSize: 18,
                 color: Colors.grey.shade600,
                 fontWeight: FontWeight.w500,
+                letterSpacing: 0.5,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Thêm phiếu khám mới bằng nút bên dưới',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey.shade500,
               ),
             ),
           ],
@@ -197,7 +248,7 @@ class _ExaminationListScreenState extends State<ExaminationListScreen> {
 
     return AnimationLimiter(
       child: ListView.builder(
-        padding: const EdgeInsets.all(8),
+        padding: const EdgeInsets.all(12),
         itemCount: _filteredExaminations.length,
         itemBuilder: (context, index) {
           final examination = _filteredExaminations[index];
@@ -209,126 +260,181 @@ class _ExaminationListScreenState extends State<ExaminationListScreen> {
               child: FadeInAnimation(
                 child: Card(
                   margin:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                  elevation: 3,
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                  elevation: 4,
                   shadowColor: Colors.blue.withOpacity(0.2),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(15),
                   ),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(12),
-                    onTap: () => _showExaminationDetails(examination),
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              const Icon(Icons.person, color: Colors.blue),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  examination.patientName ?? 'Bệnh nhân',
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(15),
+                      gradient: LinearGradient(
+                        colors: [Colors.white, Colors.blue.shade50],
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                      ),
+                    ),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(15),
+                      onTap: () => _showExaminationDetails(examination),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.blue.shade100,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Icon(
+                                    Icons.medical_services,
+                                    color: Colors.blue.shade700,
+                                    size: 24,
                                   ),
                                 ),
-                              ),
-                              PopupMenuButton<String>(
-                                onSelected: (value) {
-                                  switch (value) {
-                                    case 'details':
-                                      _showExaminationDetails(examination);
-                                      break;
-                                    case 'edit':
-                                      _navigateToExaminationForm(
-                                          context, examination);
-                                      break;
-                                    case 'delete':
-                                      _confirmDelete(examination);
-                                      break;
-                                    case 'prescription':
-                                      _navigateToPrescription(examination);
-                                      break;
-                                  }
-                                },
-                                itemBuilder: (BuildContext context) => [
-                                  const PopupMenuItem(
-                                    value: 'details',
-                                    child: Text('Xem chi tiết'),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Mã phiếu khám: ${examination.id.substring(0, 6)}...',
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          letterSpacing: 0.5,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                    ],
                                   ),
-                                  const PopupMenuItem(
-                                    value: 'edit',
-                                    child: Text('Sửa phiếu khám'),
+                                ),
+                                PopupMenuButton<String>(
+                                  onSelected: (value) {
+                                    switch (value) {
+                                      case 'details':
+                                        _showExaminationDetails(examination);
+                                        break;
+                                      case 'edit':
+                                        _navigateToExaminationForm(
+                                            context, examination);
+                                        break;
+                                      case 'delete':
+                                        _confirmDelete(examination);
+                                        break;
+                                      case 'prescription':
+                                        _navigateToPrescription(examination);
+                                        break;
+                                    }
+                                  },
+                                  itemBuilder: (BuildContext context) => [
+                                    const PopupMenuItem(
+                                      value: 'details',
+                                      child: Text('Xem chi tiết'),
+                                    ),
+                                    const PopupMenuItem(
+                                      value: 'edit',
+                                      child: Text('Sửa phiếu khám'),
+                                    ),
+                                    const PopupMenuItem(
+                                      value: 'prescription',
+                                      child: Text('Kê đơn thuốc'),
+                                    ),
+                                    const PopupMenuItem(
+                                      value: 'delete',
+                                      child: Text('Xóa'),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            const Divider(height: 24),
+                            Row(
+                              children: [
+                                const Icon(Icons.person,
+                                    size: 16, color: Colors.grey),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Bệnh nhân: ${examination.patientName ?? 'Chưa có'}',
+                                    style:
+                                        TextStyle(color: Colors.grey.shade700),
                                   ),
-                                  const PopupMenuItem(
-                                    value: 'prescription',
-                                    child: Text('Kê đơn thuốc'),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                const Icon(Icons.medical_services,
+                                    size: 16, color: Colors.grey),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Bác sĩ: ${examination.doctorName ?? 'Chưa có'}',
+                                    style:
+                                        TextStyle(color: Colors.grey.shade700),
                                   ),
-                                  const PopupMenuItem(
-                                    value: 'delete',
-                                    child: Text('Xóa'),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                          const Divider(height: 16),
-                          Row(
-                            children: [
-                              const Icon(Icons.medical_services,
-                                  size: 16, color: Colors.grey),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Bác sĩ khám: ${examination.doctorName ?? 'Chưa có'}',
-                                style: TextStyle(color: Colors.grey.shade700),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              const Icon(Icons.calendar_today,
-                                  size: 16, color: Colors.grey),
-                              const SizedBox(width: 8),
-                              Text(
-                                _dateFormat.format(examination.examinationDate),
-                                style: TextStyle(color: Colors.grey.shade700),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              const Icon(Icons.medical_information,
-                                  size: 16, color: Colors.grey),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  'Chẩn đoán: ${examination.diagnosis}',
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                const Icon(Icons.calendar_today,
+                                    size: 16, color: Colors.grey),
+                                const SizedBox(width: 8),
+                                Text(
+                                  _dateFormat
+                                      .format(examination.examinationDate),
                                   style: TextStyle(color: Colors.grey.shade700),
                                 ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                const Icon(Icons.medical_information,
+                                    size: 16, color: Colors.grey),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Chẩn đoán: ${examination.diagnosis}',
+                                    style:
+                                        TextStyle(color: Colors.grey.shade700),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
                               ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              const Icon(Icons.payments,
-                                  size: 16, color: Colors.grey),
-                              const SizedBox(width: 8),
-                              Text(
+                              decoration: BoxDecoration(
+                                color: Colors.green.shade50,
+                                borderRadius: BorderRadius.circular(8),
+                                border:
+                                    Border.all(color: Colors.green.shade200),
+                              ),
+                              child: Text(
                                 'Phí khám: ${_currencyFormat.format(examination.examinationFee)}',
                                 style: TextStyle(
                                   color: Colors.green.shade700,
-                                  fontWeight: FontWeight.w500,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
                                 ),
                               ),
-                            ],
-                          ),
-                        ],
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
