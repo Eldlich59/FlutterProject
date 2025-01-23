@@ -297,7 +297,7 @@ class _ExaminationDetailsScreenState extends State<ExaminationDetailsScreen>
               ),
               Chip(
                 label: Text(
-                  isActive ? 'Đang hoạt động' : 'Ngừng hoạt động',
+                  isActive ? 'ON' : 'OFF',
                   style: TextStyle(
                     color: isActive ? Colors.white : Colors.black54,
                     fontSize: 12,
@@ -348,7 +348,7 @@ class _ExaminationDetailsScreenState extends State<ExaminationDetailsScreen>
               ),
               Chip(
                 label: Text(
-                  isActive ? 'Đang hoạt động' : 'Ngừng hoạt động',
+                  isActive ? 'ON' : 'OFF',
                   style: TextStyle(
                     color: isActive ? Colors.white : Colors.black54,
                     fontSize: 12,
