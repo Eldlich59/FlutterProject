@@ -10,6 +10,7 @@ class Doctor {
   final DateTime? startDate;
   final bool isActive;
   final List<Specialty> specialties;
+  final String specialtyId; // Add this field
 
   Doctor({
     required this.id,
@@ -20,6 +21,7 @@ class Doctor {
     required this.dateOfBirth,
     this.startDate,
     required this.isActive,
+    required this.specialtyId, // Add this parameter
     this.specialties = const [],
   });
 
@@ -37,6 +39,7 @@ class Doctor {
           ? DateTime.parse(json['NgayVaoLam'])
           : null,
       isActive: json['TrangThai'] ?? true,
+      specialtyId: json['MaCK']?.toString() ?? '', // Add this mapping
       specialties: (json['specialties'] as List?)
               ?.map((s) => Specialty.fromJson(s))
               .toList() ??
@@ -54,6 +57,7 @@ class Doctor {
       'NgaySinh': dateOfBirth.toIso8601String(),
       'NgayVaoLam': startDate?.toIso8601String(),
       'TrangThai': isActive,
+      'MaCK': specialtyId, // Add this field
     };
   }
 }

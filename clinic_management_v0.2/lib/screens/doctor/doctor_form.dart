@@ -464,6 +464,7 @@ class _DoctorFormState extends State<DoctorForm>
         id: widget.doctor?.id ?? '',
         name: _nameController.text,
         specialty: selectedSpecialty.name, // Use selected specialty name
+        specialtyId: selectedSpecialty.id,
         phone: _phoneController.text,
         email: _emailController.text,
         dateOfBirth: _dateOfBirth,

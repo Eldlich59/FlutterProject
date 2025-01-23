@@ -1,3 +1,4 @@
+import 'package:clinic_management/models/specialty.dart';
 import 'package:flutter/material.dart';
 import 'package:clinic_management/models/examination.dart';
 import 'package:clinic_management/services/supabase_service.dart';
@@ -21,6 +22,7 @@ class _ExaminationFormScreenState extends State<ExaminationFormScreen>
   final _supabaseService1 = SupabaseService().patientService;
   final _supabaseService2 = SupabaseService().examinationService;
   final _supabaseService3 = SupabaseService().doctorService; // Add this line
+  final _supabaseService4 = SupabaseService().specialtyService; // Add this line
 
   late TextEditingController _symptomsController;
   late TextEditingController _diagnosisController;
@@ -30,9 +32,11 @@ class _ExaminationFormScreenState extends State<ExaminationFormScreen>
   final _dateFormat = DateFormat('dd/MM/yyyy HH:mm');
 
   Patient? _selectedPatient;
-  Doctor? _selectedDoctor; // Add this line
+  Doctor? _selectedDoctor;
+  Specialty? _selectedSpecialty; // Change type to Specialty
   List<Patient> _patients = [];
   List<Doctor> _doctors = []; // Add this line
+  List<Specialty> _specialties = []; // Change type to Specialty
   bool _isLoading = false;
 
   // Add custom colors
@@ -75,9 +79,6 @@ class _ExaminationFormScreenState extends State<ExaminationFormScreen>
     curve: const Interval(0.4, 1.0, curve: Curves.easeOut),
   ));
 
-  String? _selectedSpecialty;
-  List<String> _specialties = [];
-
   final _uuid = const Uuid();
 
   @override
@@ -96,6 +97,7 @@ class _ExaminationFormScreenState extends State<ExaminationFormScreen>
     );
     _loadPatients();
     _loadDoctors(); // Add this line
+    _loadSpecialties(); // Add this line
 
     _animationController.forward();
   }
@@ -121,12 +123,11 @@ class _ExaminationFormScreenState extends State<ExaminationFormScreen>
     try {
       final doctors = await _supabaseService3.getDoctor();
       setState(() => _doctors = doctors);
-      _updateSpecialties();
       if (widget.examination != null && widget.examination!.doctorId != null) {
         _selectedDoctor = _doctors.firstWhere(
           (d) => d.id == widget.examination!.doctorId,
         );
-        _selectedSpecialty = _selectedDoctor?.specialty;
+        _selectedSpecialty = _getSelectedSpecialty();
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -135,19 +136,23 @@ class _ExaminationFormScreenState extends State<ExaminationFormScreen>
     }
   }
 
-  // Add this method to get unique specialties
-  void _updateSpecialties() {
-    final specialties = _doctors.map((d) => d.specialty).toSet().toList();
-    specialties.sort();
-    setState(() {
-      _specialties = specialties;
-      // Reset selected specialty if it's not in the list
-      if (_selectedDoctor != null) {
-        _selectedSpecialty = _selectedDoctor!.specialty;
-      } else if (!specialties.contains(_selectedSpecialty)) {
-        _selectedSpecialty = null;
-      }
-    });
+  Future<void> _loadSpecialties() async {
+    try {
+      final specialties = await _supabaseService4.getSpecialties();
+      setState(() => _specialties = specialties);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lỗi: ${e.toString()}')),
+      );
+    }
+  }
+
+  // Replace _updateSpecialties() with this method
+  Specialty? _getSelectedSpecialty() {
+    return _specialties.firstWhere(
+      (s) => s.id == _selectedDoctor?.specialtyId,
+      orElse: () => _specialties.first,
+    );
   }
 
   Future<void> _selectDate(BuildContext context) async {
@@ -434,7 +439,7 @@ class _ExaminationFormScreenState extends State<ExaminationFormScreen>
           ),
           const SizedBox(height: 16),
           // Add specialty dropdown before doctor dropdown
-          DropdownButtonFormField<String>(
+          DropdownButtonFormField<Specialty>(
             value: _selectedSpecialty,
             decoration: InputDecoration(
               labelText: 'Chuyên khoa',
@@ -445,20 +450,17 @@ class _ExaminationFormScreenState extends State<ExaminationFormScreen>
             items: _specialties.map((specialty) {
               return DropdownMenuItem(
                 value: specialty,
-                child: Text(specialty),
+                child: Text(specialty.name),
               );
             }).toList(),
             onChanged: (value) {
               setState(() {
                 _selectedSpecialty = value;
-                // Reset selected doctor if their specialty doesn't match
-                if (_selectedDoctor?.specialty != value) {
-                  _selectedDoctor = null;
-                }
+                _selectedDoctor = null;
               });
             },
             validator: (value) {
-              if (value == null || value.isEmpty) {
+              if (value == null) {
                 return 'Vui lòng chọn chuyên khoa';
               }
               return null;
@@ -476,7 +478,7 @@ class _ExaminationFormScreenState extends State<ExaminationFormScreen>
               fillColor: Colors.white,
             ),
             items: _doctors
-                .where((d) => d.specialty == _selectedSpecialty)
+                .where((d) => d.specialtyId == _selectedSpecialty?.id)
                 .map((doctor) {
               return DropdownMenuItem<Doctor>(
                 value: doctor,
@@ -636,7 +638,6 @@ class _ExaminationFormScreenState extends State<ExaminationFormScreen>
     if (!_formKey.currentState!.validate() ||
         _selectedPatient == null ||
         _selectedDoctor == null) {
-      // Add doctor validation
       return;
     }
 
@@ -644,12 +645,11 @@ class _ExaminationFormScreenState extends State<ExaminationFormScreen>
 
     try {
       final examination = Examination(
-        id: widget.examination?.id ??
-            _uuid.v4(), // Generate UUID for new examinations
+        id: widget.examination?.id ?? _uuid.v4(),
         patientId: _selectedPatient!.id ?? '',
         patientName: _selectedPatient!.name,
-        doctorId: _selectedDoctor!.id, // Add this line
-        // Add this line
+        doctorId: _selectedDoctor!.id,
+        specialtyId: _selectedDoctor!.specialtyId, // Use doctor's specialtyId
         examinationDate: _selectedDate,
         symptoms: _symptomsController.text,
         diagnosis: _diagnosisController.text,

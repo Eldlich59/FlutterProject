@@ -8,6 +8,8 @@ class Examination {
   final double examinationFee;
   final String? patientName;
   final String? doctorName; // Add this field
+  final String? specialtyId; // Add this field
+  final String? specialtyName; // Add this field
 
   Examination({
     required this.id,
@@ -19,6 +21,8 @@ class Examination {
     required this.examinationFee,
     this.patientName,
     this.doctorName, // Add this parameter
+    this.specialtyId, // Add this parameter
+    this.specialtyName, // Add this parameter
   });
 
   factory Examination.fromJson(Map<String, dynamic> json) {
@@ -33,6 +37,8 @@ class Examination {
       examinationFee: double.tryParse(json['TienKham'].toString()) ?? 0.0,
       patientName: json['TenBN']?.toString(),
       doctorName: json['TenBS']?.toString(), // Add this field mapping
+      specialtyId: json['MaCK']?.toString(), // Add this field mapping
+      specialtyName: json['TenCK']?.toString(), // Add this mapping
     );
   }
 
@@ -45,6 +51,7 @@ class Examination {
       'TrieuChung': symptoms,
       'ChanDoan': diagnosis,
       'TienKham': examinationFee,
+      if (specialtyId != null) 'MaCK': specialtyId, // Add this field
     };
   }
 }
