@@ -200,205 +200,248 @@ class _DoctorListScreenState extends State<DoctorListScreen>
                     ),
                   );
                 },
-                child: ListView.builder(
-                  padding: const EdgeInsets.all(8),
-                  itemCount: filteredDoctors.length,
-                  itemBuilder: (context, index) {
-                    final doctor = filteredDoctors[index];
-                    return AnimatedBuilder(
-                      animation: _animationController,
-                      builder: (context, child) {
-                        final itemAnimation = CurvedAnimation(
-                          parent: _animationController,
-                          curve: Interval(
-                            (index / filteredDoctors.length) * 0.5,
-                            1.0,
-                            curve: Curves.easeOutQuart,
-                          ),
-                        );
-                        return Transform.translate(
-                          offset: Offset(
-                            0,
-                            30 * (1 - itemAnimation.value),
-                          ),
-                          child: Opacity(
-                            opacity: itemAnimation.value,
-                            child: child,
-                          ),
-                        );
-                      },
-                      child: TweenAnimationBuilder(
-                        duration: const Duration(milliseconds: 200),
-                        tween: Tween<double>(begin: 0.95, end: 1.0),
-                        builder: (context, double value, child) {
-                          return Transform.scale(
-                            scale: value,
-                            child: child,
-                          );
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 4),
-                          child: Card(
-                            elevation: 2,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(15),
+                child: filteredDoctors.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.person_off_rounded,
+                              size: 64,
+                              color: Colors.grey[400],
                             ),
-                            child: InkWell(
-                              borderRadius: BorderRadius.circular(15),
-                              onTap: () => _showDoctorDetails(doctor),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Không tìm thấy bác sĩ nào',
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Colors.grey[600],
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            if (_searchController.text.isNotEmpty)
+                              Text(
+                                'Thử tìm kiếm với từ khóa khác',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey[500],
+                                ),
+                              ),
+                          ],
+                        ),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.all(8),
+                        itemCount: filteredDoctors.length,
+                        itemBuilder: (context, index) {
+                          final doctor = filteredDoctors[index];
+                          return AnimatedBuilder(
+                            animation: _animationController,
+                            builder: (context, child) {
+                              final itemAnimation = CurvedAnimation(
+                                parent: _animationController,
+                                curve: Interval(
+                                  (index / filteredDoctors.length) * 0.5,
+                                  1.0,
+                                  curve: Curves.easeOutQuart,
+                                ),
+                              );
+                              return Transform.translate(
+                                offset: Offset(
+                                  0,
+                                  30 * (1 - itemAnimation.value),
+                                ),
+                                child: Opacity(
+                                  opacity: itemAnimation.value,
+                                  child: child,
+                                ),
+                              );
+                            },
+                            child: TweenAnimationBuilder(
+                              duration: const Duration(milliseconds: 200),
+                              tween: Tween<double>(begin: 0.95, end: 1.0),
+                              builder: (context, double value, child) {
+                                return Transform.scale(
+                                  scale: value,
+                                  child: child,
+                                );
+                              },
                               child: Padding(
-                                padding: const EdgeInsets.all(12),
-                                child: Row(
-                                  children: [
-                                    CircleAvatar(
-                                      radius: 30,
-                                      backgroundColor: Theme.of(context)
-                                          .primaryColor
-                                          .withOpacity(0.1),
-                                      child: Icon(
-                                        Icons.person,
-                                        size: 35,
-                                        color: Theme.of(context).primaryColor,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 16),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 4),
+                                child: Card(
+                                  elevation: 2,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(15),
+                                  ),
+                                  child: InkWell(
+                                    borderRadius: BorderRadius.circular(15),
+                                    onTap: () => _showDoctorDetails(doctor),
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(12),
+                                      child: Row(
                                         children: [
-                                          Row(
-                                            children: [
-                                              Expanded(
-                                                child: Text(
-                                                  doctor.name,
-                                                  style: const TextStyle(
-                                                    fontSize: 18,
-                                                    fontWeight: FontWeight.bold,
+                                          CircleAvatar(
+                                            radius: 30,
+                                            backgroundColor: Theme.of(context)
+                                                .primaryColor
+                                                .withOpacity(0.1),
+                                            child: Icon(
+                                              Icons.person,
+                                              size: 35,
+                                              color: Theme.of(context)
+                                                  .primaryColor,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 16),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Row(
+                                                  children: [
+                                                    Expanded(
+                                                      child: Text(
+                                                        doctor.name,
+                                                        style: const TextStyle(
+                                                          fontSize: 18,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    Container(
+                                                      padding: const EdgeInsets
+                                                          .symmetric(
+                                                        horizontal: 8,
+                                                        vertical: 4,
+                                                      ),
+                                                      decoration: BoxDecoration(
+                                                        color: doctor.isActive
+                                                            ? Colors.green
+                                                                .withOpacity(
+                                                                    0.1)
+                                                            : Colors.red
+                                                                .withOpacity(
+                                                                    0.1),
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(10),
+                                                      ),
+                                                      child: Text(
+                                                        doctor.isActive
+                                                            ? 'Đang hoạt động'
+                                                            : 'Ngừng hoạt động',
+                                                        style: TextStyle(
+                                                          color: doctor.isActive
+                                                              ? Colors.green
+                                                              : Colors.red,
+                                                          fontSize: 12,
+                                                          fontWeight:
+                                                              FontWeight.w500,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                const SizedBox(height: 4),
+                                                Container(
+                                                  padding: const EdgeInsets
+                                                      .symmetric(
+                                                    horizontal: 8,
+                                                    vertical: 4,
                                                   ),
+                                                  decoration: BoxDecoration(
+                                                    color: Theme.of(context)
+                                                        .primaryColor
+                                                        .withOpacity(0.1),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                  ),
+                                                  child: Text(
+                                                    doctor.specialty,
+                                                    style: TextStyle(
+                                                      color: Theme.of(context)
+                                                          .primaryColor,
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                    ),
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                  'Ngày bắt đầu: ${_formatDate(doctor.startDate)}',
+                                                  style: TextStyle(
+                                                    color: Colors.grey[600],
+                                                    fontSize: 12,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          PopupMenuButton(
+                                            icon: const Icon(Icons.more_vert),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(15),
+                                            ),
+                                            itemBuilder: (context) => [
+                                              PopupMenuItem(
+                                                value: 'details',
+                                                child: const ListTile(
+                                                  leading: Icon(Icons.info),
+                                                  title: Text('Chi tiết'),
+                                                  dense: true,
+                                                ),
+                                                onTap: () => Future.delayed(
+                                                  const Duration(seconds: 0),
+                                                  () => _showDoctorDetails(
+                                                      doctor),
                                                 ),
                                               ),
-                                              Container(
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                  horizontal: 8,
-                                                  vertical: 4,
+                                              PopupMenuItem(
+                                                value: 'edit',
+                                                child: const ListTile(
+                                                  leading: Icon(Icons.edit),
+                                                  title: Text('Sửa'),
+                                                  dense: true,
                                                 ),
-                                                decoration: BoxDecoration(
-                                                  color: doctor.isActive
-                                                      ? Colors.green
-                                                          .withOpacity(0.1)
-                                                      : Colors.red
-                                                          .withOpacity(0.1),
-                                                  borderRadius:
-                                                      BorderRadius.circular(10),
+                                                onTap: () => Future.delayed(
+                                                  const Duration(seconds: 0),
+                                                  () => _showDoctorForm(
+                                                      context, doctor),
                                                 ),
-                                                child: Text(
-                                                  doctor.isActive
-                                                      ? 'Đang hoạt động'
-                                                      : 'Ngừng hoạt động',
-                                                  style: TextStyle(
-                                                    color: doctor.isActive
-                                                        ? Colors.green
-                                                        : Colors.red,
-                                                    fontSize: 12,
-                                                    fontWeight: FontWeight.w500,
-                                                  ),
+                                              ),
+                                              PopupMenuItem(
+                                                value: 'delete',
+                                                child: const ListTile(
+                                                  leading: Icon(Icons.delete,
+                                                      color: Colors.red),
+                                                  title: Text('Xóa',
+                                                      style: TextStyle(
+                                                          color: Colors.red)),
+                                                  dense: true,
+                                                ),
+                                                onTap: () => Future.delayed(
+                                                  const Duration(seconds: 0),
+                                                  () => _deleteDoctor(doctor),
                                                 ),
                                               ),
                                             ],
                                           ),
-                                          const SizedBox(height: 4),
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 8,
-                                              vertical: 4,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: Theme.of(context)
-                                                  .primaryColor
-                                                  .withOpacity(0.1),
-                                              borderRadius:
-                                                  BorderRadius.circular(10),
-                                            ),
-                                            child: Text(
-                                              doctor.specialty,
-                                              style: TextStyle(
-                                                color: Theme.of(context)
-                                                    .primaryColor,
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                            ),
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            'Ngày bắt đầu: ${_formatDate(doctor.startDate)}',
-                                            style: TextStyle(
-                                              color: Colors.grey[600],
-                                              fontSize: 12,
-                                            ),
-                                          ),
                                         ],
                                       ),
                                     ),
-                                    PopupMenuButton(
-                                      icon: const Icon(Icons.more_vert),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(15),
-                                      ),
-                                      itemBuilder: (context) => [
-                                        PopupMenuItem(
-                                          value: 'details',
-                                          child: const ListTile(
-                                            leading: Icon(Icons.info),
-                                            title: Text('Chi tiết'),
-                                            dense: true,
-                                          ),
-                                          onTap: () => Future.delayed(
-                                            const Duration(seconds: 0),
-                                            () => _showDoctorDetails(doctor),
-                                          ),
-                                        ),
-                                        PopupMenuItem(
-                                          value: 'edit',
-                                          child: const ListTile(
-                                            leading: Icon(Icons.edit),
-                                            title: Text('Sửa'),
-                                            dense: true,
-                                          ),
-                                          onTap: () => Future.delayed(
-                                            const Duration(seconds: 0),
-                                            () => _showDoctorForm(
-                                                context, doctor),
-                                          ),
-                                        ),
-                                        PopupMenuItem(
-                                          value: 'delete',
-                                          child: const ListTile(
-                                            leading: Icon(Icons.delete,
-                                                color: Colors.red),
-                                            title: Text('Xóa',
-                                                style: TextStyle(
-                                                    color: Colors.red)),
-                                            dense: true,
-                                          ),
-                                          onTap: () => Future.delayed(
-                                            const Duration(seconds: 0),
-                                            () => _deleteDoctor(doctor),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                        ),
+                          );
+                        },
                       ),
-                    );
-                  },
-                ),
               ),
         floatingActionButton: ScaleTransition(
           scale: _fabScaleAnimation,

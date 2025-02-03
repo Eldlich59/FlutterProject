@@ -10,9 +10,9 @@ void main() async {
     print('Initializing Supabase...'); // Debug log
 
     await Supabase.initialize(
-      url: 'https://xrgjjueyvafbfizvshly.supabase.co',
+      url: 'https://cfznidhevnxqobcllsnt.supabase.co',
       anonKey:
-          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhyZ2pqdWV5dmFmYmZpenZzaGx5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzU2MTAzNzIsImV4cCI6MjA1MTE4NjM3Mn0.p1TrpL5TCqQTUHD6oiIALwsNx5iZ8ynCKeET9qXhtks',
+          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNmem5pZGhldm54cW9iY2xsc250Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzg1NTI5MzQsImV4cCI6MjA1NDEyODkzNH0.dWrSeHwSEDhc10-8_GElCDVYEvN0aAjhgj_-uHIs1Uw',
     );
 
     print('Supabase initialized successfully'); // Debug log

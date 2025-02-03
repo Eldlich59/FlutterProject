@@ -469,7 +469,8 @@ class _PatientFormScreenState extends State<PatientFormScreen>
               backgroundColor: Colors.green,
             ),
           );
-          Navigator.pop(context, true);
+          // Update here: pop back to patient list screen with result
+          Navigator.of(context).pop(true);
         }
       } else {
         await _supabaseService.updatePatient(patient);
@@ -477,11 +478,9 @@ class _PatientFormScreenState extends State<PatientFormScreen>
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Cập nhật bệnh nhân thành công')),
           );
+          // Update here: pop back to patient list screen with result
+          Navigator.of(context).pop(true);
         }
-      }
-
-      if (mounted) {
-        Navigator.pop(context, true);
       }
     } catch (e) {
       if (mounted) {

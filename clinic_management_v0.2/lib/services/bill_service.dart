@@ -7,7 +7,7 @@ class BillService {
   BillService(this._supabase);
 
   Future<List<Bill>> getBills() async {
-    final response = await _supabase.from('HOADONTHUOC').select('''
+    final response = await _supabase.from('HOADON').select('''
       *,
       bill_details:CHITIETHOADON(
         prescriptions:TOATHUOC(
@@ -35,7 +35,7 @@ class BillService {
     try {
       // Insert the main bill record
       final billResponse = await _supabase
-          .from('HOADONTHUOC')
+          .from('HOADON')
           .insert({
             'Ngaylap': saleDate.toIso8601String(),
             'TongTien': totalCost,
@@ -68,7 +68,7 @@ class BillService {
       final billId = int.parse(id);
 
       // Update main bill record
-      await _supabase.from('HOADONTHUOC').update({
+      await _supabase.from('HOADON').update({
         'Ngaylap': saleDate.toIso8601String(),
         'TongTien': totalCost,
       }).eq('MaHD', billId);
@@ -100,7 +100,7 @@ class BillService {
 
       // Then delete the parent record (HOADONTHUOC)
       final result = await _supabase
-          .from('HOADONTHUOC')
+          .from('HOADON')
           .delete()
           .eq('MaHD', id)
           .select()

@@ -148,204 +148,235 @@ class _SpecialtyListScreenState extends State<SpecialtyListScreen>
             child: isLoading
                 ? const Center(
                     child: CircularProgressIndicator(color: primaryColor))
-                : ListView.builder(
-                    padding: const EdgeInsets.only(top: 8),
-                    itemCount: specialties.length,
-                    itemBuilder: (context, index) {
-                      final specialty = specialties[index];
-                      return AnimatedBuilder(
-                        animation: _animationController,
-                        builder: (context, child) => SlideTransition(
-                          position: Tween<Offset>(
-                            begin: const Offset(1, 0),
-                            end: Offset.zero,
-                          ).animate(CurvedAnimation(
-                            parent: _animationController,
-                            curve: Interval(
-                              index / specialties.length,
-                              (index + 1) / specialties.length,
-                              curve: Curves.easeOut,
+                : specialties.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.medical_services_outlined,
+                              size: 64,
+                              color: primaryColor.withOpacity(0.5),
                             ),
-                          )),
-                          child: Card(
-                            elevation: 4,
-                            margin: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 8,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(16),
-                                gradient: LinearGradient(
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                  colors: [
-                                    Colors.white,
-                                    specialty.isActive
-                                        ? primaryColor.withOpacity(0.1)
-                                        : Colors.red.withOpacity(0.1),
-                                  ],
-                                ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Chưa có chuyên khoa nào',
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: primaryColor.withOpacity(0.8),
+                                fontWeight: FontWeight.w500,
                               ),
-                              child: ListTile(
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 20,
-                                  vertical: 12,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Hãy thêm chuyên khoa mới',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.only(top: 8),
+                        itemCount: specialties.length,
+                        itemBuilder: (context, index) {
+                          final specialty = specialties[index];
+                          return AnimatedBuilder(
+                            animation: _animationController,
+                            builder: (context, child) => SlideTransition(
+                              position: Tween<Offset>(
+                                begin: const Offset(1, 0),
+                                end: Offset.zero,
+                              ).animate(CurvedAnimation(
+                                parent: _animationController,
+                                curve: Interval(
+                                  index / specialties.length,
+                                  (index + 1) / specialties.length,
+                                  curve: Curves.easeOut,
                                 ),
-                                leading: Container(
-                                  width: 48,
-                                  height: 48,
+                              )),
+                              child: Card(
+                                elevation: 4,
+                                margin: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 8,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: Container(
                                   decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(16),
                                     gradient: LinearGradient(
                                       begin: Alignment.topLeft,
                                       end: Alignment.bottomRight,
                                       colors: [
+                                        Colors.white,
                                         specialty.isActive
-                                            ? primaryColor
-                                            : Colors.red,
-                                        specialty.isActive
-                                            ? secondaryColor
-                                            : Colors.red[300]!,
-                                      ],
-                                    ),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Icon(
-                                    specialty.isActive
-                                        ? Icons.check_circle
-                                        : Icons.cancel,
-                                    color: Colors.white,
-                                    size: 28,
-                                  ),
-                                ),
-                                title: Row(
-                                  children: [
-                                    Expanded(child: Text(specialty.name)),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 4,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: specialty.isActive
                                             ? primaryColor.withOpacity(0.1)
                                             : Colors.red.withOpacity(0.1),
+                                      ],
+                                    ),
+                                  ),
+                                  child: ListTile(
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 20,
+                                      vertical: 12,
+                                    ),
+                                    leading: Container(
+                                      width: 48,
+                                      height: 48,
+                                      decoration: BoxDecoration(
+                                        gradient: LinearGradient(
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                          colors: [
+                                            specialty.isActive
+                                                ? primaryColor
+                                                : Colors.red,
+                                            specialty.isActive
+                                                ? secondaryColor
+                                                : Colors.red[300]!,
+                                          ],
+                                        ),
                                         borderRadius: BorderRadius.circular(12),
                                       ),
-                                      child: Text(
+                                      child: Icon(
                                         specialty.isActive
-                                            ? 'Đang hoạt động'
-                                            : 'Ngừng hoạt động',
-                                        style: TextStyle(
-                                          color: specialty.isActive
-                                              ? primaryColor
-                                              : Colors.red,
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w500,
-                                        ),
+                                            ? Icons.check_circle
+                                            : Icons.cancel,
+                                        color: Colors.white,
+                                        size: 28,
                                       ),
                                     ),
-                                  ],
-                                ),
-                                subtitle: Text(
-                                  specialty.isSelfRegistration
-                                      ? 'Tự đăng kí'
-                                      : 'Hợp đồng hỗ trợ chuyên môn',
-                                  style: TextStyle(
-                                    color: primaryColor.withOpacity(0.8),
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                trailing: PopupMenuButton(
-                                  icon: const Icon(Icons.more_vert),
-                                  itemBuilder: (context) => [
-                                    PopupMenuItem(
-                                      child: ListTile(
-                                        leading: Icon(
-                                          specialty.isActive
-                                              ? Icons.toggle_on
-                                              : Icons.toggle_off,
-                                          color: specialty.isActive
-                                              ? primaryColor
-                                              : Colors.grey,
-                                        ),
-                                        title: Text(
-                                          specialty.isActive
-                                              ? 'Đang hoạt động'
-                                              : 'Ngừng hoạt động',
-                                          style: TextStyle(
+                                    title: Row(
+                                      children: [
+                                        Expanded(child: Text(specialty.name)),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 4,
+                                          ),
+                                          decoration: BoxDecoration(
                                             color: specialty.isActive
-                                                ? primaryColor
-                                                : Colors.grey,
+                                                ? primaryColor.withOpacity(0.1)
+                                                : Colors.red.withOpacity(0.1),
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                          ),
+                                          child: Text(
+                                            specialty.isActive
+                                                ? 'Đang hoạt động'
+                                                : 'Ngừng hoạt động',
+                                            style: TextStyle(
+                                              color: specialty.isActive
+                                                  ? primaryColor
+                                                  : Colors.red,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w500,
+                                            ),
                                           ),
                                         ),
-                                        dense: true,
-                                        onTap: () async {
-                                          Navigator.pop(context);
-                                          try {
-                                            await _supabaseService
-                                                .specialtyService
-                                                .updateSpecialty(
-                                              id: specialty.id,
-                                              name: specialty.name,
-                                              isActive: !specialty.isActive,
-                                              isSelfRegistration:
-                                                  specialty.isSelfRegistration,
-                                            );
-                                            _loadSpecialties();
-                                          } catch (e) {
-                                            if (mounted) {
-                                              ScaffoldMessenger.of(context)
-                                                  .showSnackBar(
-                                                SnackBar(
-                                                    content:
-                                                        Text(e.toString())),
-                                              );
-                                            }
-                                          }
-                                        },
+                                      ],
+                                    ),
+                                    subtitle: Text(
+                                      specialty.isSelfRegistration
+                                          ? 'Tự đăng kí'
+                                          : 'Hợp đồng hỗ trợ chuyên môn',
+                                      style: TextStyle(
+                                        color: primaryColor.withOpacity(0.8),
+                                        fontWeight: FontWeight.w500,
                                       ),
                                     ),
-                                    PopupMenuItem(
-                                      child: ListTile(
-                                        leading: const Icon(Icons.edit),
-                                        title: const Text('Sửa'),
-                                        dense: true,
-                                        onTap: () {
-                                          Navigator.pop(context);
-                                          _showSpecialtyDialog(
-                                              context, specialty);
-                                        },
-                                      ),
+                                    trailing: PopupMenuButton(
+                                      icon: const Icon(Icons.more_vert),
+                                      itemBuilder: (context) => [
+                                        PopupMenuItem(
+                                          child: ListTile(
+                                            leading: Icon(
+                                              specialty.isActive
+                                                  ? Icons.toggle_on
+                                                  : Icons.toggle_off,
+                                              color: specialty.isActive
+                                                  ? primaryColor
+                                                  : Colors.grey,
+                                            ),
+                                            title: Text(
+                                              specialty.isActive
+                                                  ? 'Đang hoạt động'
+                                                  : 'Ngừng hoạt động',
+                                              style: TextStyle(
+                                                color: specialty.isActive
+                                                    ? primaryColor
+                                                    : Colors.grey,
+                                              ),
+                                            ),
+                                            dense: true,
+                                            onTap: () async {
+                                              Navigator.pop(context);
+                                              try {
+                                                await _supabaseService
+                                                    .specialtyService
+                                                    .updateSpecialty(
+                                                  id: specialty.id,
+                                                  name: specialty.name,
+                                                  isActive: !specialty.isActive,
+                                                  isSelfRegistration: specialty
+                                                      .isSelfRegistration,
+                                                );
+                                                _loadSpecialties();
+                                              } catch (e) {
+                                                if (mounted) {
+                                                  ScaffoldMessenger.of(context)
+                                                      .showSnackBar(
+                                                    SnackBar(
+                                                        content:
+                                                            Text(e.toString())),
+                                                  );
+                                                }
+                                              }
+                                            },
+                                          ),
+                                        ),
+                                        PopupMenuItem(
+                                          child: ListTile(
+                                            leading: const Icon(Icons.edit),
+                                            title: const Text('Sửa'),
+                                            dense: true,
+                                            onTap: () {
+                                              Navigator.pop(context);
+                                              _showSpecialtyDialog(
+                                                  context, specialty);
+                                            },
+                                          ),
+                                        ),
+                                        PopupMenuItem(
+                                          child: ListTile(
+                                            leading: const Icon(Icons.delete,
+                                                color: Colors.red),
+                                            title: const Text('Xóa',
+                                                style: TextStyle(
+                                                    color: Colors.red)),
+                                            dense: true,
+                                            onTap: () {
+                                              Navigator.pop(context);
+                                              _deleteSpecialty(specialty);
+                                            },
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                    PopupMenuItem(
-                                      child: ListTile(
-                                        leading: const Icon(Icons.delete,
-                                            color: Colors.red),
-                                        title: const Text('Xóa',
-                                            style:
-                                                TextStyle(color: Colors.red)),
-                                        dense: true,
-                                        onTap: () {
-                                          Navigator.pop(context);
-                                          _deleteSpecialty(specialty);
-                                        },
-                                      ),
-                                    ),
-                                  ],
+                                    onTap: () => _showSpecialtyDialog(
+                                        context, specialty),
+                                  ),
                                 ),
-                                onTap: () =>
-                                    _showSpecialtyDialog(context, specialty),
                               ),
                             ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
+                          );
+                        },
+                      ),
           ),
         ],
       ),
