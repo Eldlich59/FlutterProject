@@ -1,5 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:clinic_management/models/medicine.dart' as med;
+import 'package:clinic_management/models/inventory/medicine.dart' as med;
 
 class MedicineService {
   final SupabaseClient _supabase;

@@ -1,3 +1,4 @@
+import 'package:clinic_management/services/inventory_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'patient_service.dart';
 import 'examination_service.dart';
@@ -15,6 +16,7 @@ class SupabaseService {
   final BillService billService;
   final DoctorService doctorService;
   final SpecialtyService specialtyService;
+  final InventoryService inventoryService;
 
   SupabaseService()
       : patientService = PatientService(Supabase.instance.client),
@@ -23,5 +25,6 @@ class SupabaseService {
         prescriptionService = PrescriptionService(Supabase.instance.client),
         billService = BillService(Supabase.instance.client),
         doctorService = DoctorService(Supabase.instance.client),
-        specialtyService = SpecialtyService(Supabase.instance.client);
+        specialtyService = SpecialtyService(Supabase.instance.client),
+        inventoryService = InventoryService(Supabase.instance.client);
 }

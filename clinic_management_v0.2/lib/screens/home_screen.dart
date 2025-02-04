@@ -9,6 +9,7 @@ import 'prescription/prescription_list_screen.dart';
 import 'bill/bill_list_screen.dart';
 import 'specialty/specialty_list_screen.dart';
 import 'auth/login_screen.dart';
+import 'inventory/inventory_management_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -28,6 +29,7 @@ class _HomeScreenState extends State<HomeScreen> {
     'Toa thuốc': Color(0xFFFBBC04), // Google Yellow
     'Hóa đơn': Color(0xFF00ACC1), // Cyan
     'Chuyên khoa': Color(0xFFFF5722), // Orange
+    'Quản lý kho': Color(0xFF4CAF50), // Add new color for inventory
   };
 
   // Track hover and pressed states
@@ -172,6 +174,17 @@ class _HomeScreenState extends State<HomeScreen> {
                 context,
                 MaterialPageRoute(
                     builder: (context) => const MedicineListScreen()),
+              ),
+            ),
+            _buildMenuCard(
+              context,
+              'Quản lý kho',
+              Icons.inventory,
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => InventoryManagementScreen(),
+                ),
               ),
             ),
             _buildMenuCard(

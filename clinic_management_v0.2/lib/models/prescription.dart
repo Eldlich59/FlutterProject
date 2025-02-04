@@ -1,4 +1,4 @@
-import 'package:clinic_management/models/medicine.dart';
+import 'package:clinic_management/models/inventory/medicine.dart';
 
 class Prescription {
   final String id;

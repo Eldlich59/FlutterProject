@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import '../../models/medicine.dart';
+import '../../models/inventory/medicine.dart';
 import '../../services/supabase_service.dart';
 import 'medicine_form_screen.dart';
 

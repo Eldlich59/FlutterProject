@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:clinic_management/models/prescription.dart';
-import 'package:clinic_management/models/medicine.dart';
+import 'package:clinic_management/models/inventory/medicine.dart';
 import 'package:clinic_management/services/supabase_service.dart';
 import 'package:clinic_management/screens/medicine/add_medicine_dialog.dart';
 import 'package:clinic_management/models/patient.dart';

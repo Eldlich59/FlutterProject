@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import '../../models/medicine.dart';
+import '../../models/inventory/medicine.dart';
 import '../../services/supabase_service.dart';
 
 // Change to Dialog instead of Screen
