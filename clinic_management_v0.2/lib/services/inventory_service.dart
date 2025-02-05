@@ -110,14 +110,14 @@ class InventoryService {
   }
 
   // Xuất kho
-  Future<void> createInventoryExport(
-      List<Map<String, dynamic>> items, String reason, String? notes) async {
+  Future<void> createInventoryExport(List<Map<String, dynamic>> items,
+      String reason, String? notes, DateTime exportDate) async {
     try {
-      // Create export record with current date
+      // Create export record with specified date
       final exportResponse = await supabase
           .from('XUATKHO')
           .insert({
-            'NgayXuat': DateTime.now().toIso8601String(),
+            'NgayXuat': exportDate.toIso8601String(),
             'LyDoXuat': reason,
             'GhiChu': notes,
           })
@@ -174,11 +174,13 @@ class InventoryService {
     List<Map<String, dynamic>> items,
     String reason,
     String notes,
+    DateTime exportDate, // Add export date parameter
   ) async {
     try {
       await supabase.from('XUATKHO').update({
         'LyDoXuat': reason,
         'GhiChu': notes,
+        'NgayXuat': exportDate.toIso8601String(), // Add export date
       }).eq('MaXuat', id);
 
       // Update export details

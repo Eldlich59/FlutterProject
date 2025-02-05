@@ -947,7 +947,7 @@ class _ImportInventoryScreenState extends State<ImportInventoryScreen> {
               ...selectedItems.asMap().entries.map((entry) {
                 return _buildMedicineItem(
                     entry.key, entry.value, setDialogState);
-              }).toList(),
+              }),
             ],
           ),
         ),
@@ -1122,9 +1122,16 @@ class _ImportInventoryScreenState extends State<ImportInventoryScreen> {
   bool _isFormValid() {
     return selectedSupplier != null &&
         selectedItems.isNotEmpty &&
-        selectedItems.every((item) =>
-            item['medicineId'] != null && (item['quantity'] as int) > 0) &&
-        selectedDate.isBefore(
-            DateTime.now().add(const Duration(days: 1))); // Add date validation
+        selectedItems.every((item) {
+          final quantity = item['quantity'];
+          // Check if quantity is not null and is a number greater than 0
+          return item['medicineId'] != null &&
+              quantity != null &&
+              (quantity is int || quantity is String) &&
+              (quantity is int
+                  ? quantity > 0
+                  : int.tryParse(quantity) != null && int.parse(quantity) > 0);
+        }) &&
+        !selectedDate.isAfter(DateTime.now()); // Simplified date validation
   }
 }
