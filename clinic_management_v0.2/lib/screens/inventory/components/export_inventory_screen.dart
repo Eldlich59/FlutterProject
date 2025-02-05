@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../models/inventory/inventory_receipt.dart';
-import '../../../services/prescription_service.dart';
 import '../../../services/inventory_service.dart';
 
 class ExportInventoryScreen extends StatefulWidget {
@@ -17,8 +16,6 @@ class _ExportInventoryScreenState extends State<ExportInventoryScreen> {
   final dateFormat = DateFormat('dd/MM/yyyy');
   List<InventoryReceipt>? exportReceipts;
   bool isLoading = true;
-  final PrescriptionService _prescriptionService =
-      PrescriptionService(Supabase.instance.client);
   final InventoryService _inventoryService =
       InventoryService(Supabase.instance.client);
 
@@ -819,8 +816,8 @@ class _ExportInventoryScreenState extends State<ExportInventoryScreen> {
                                   ),
                                   const Divider(height: 1),
                                   FutureBuilder<List<Map<String, dynamic>>>(
-                                    future: _prescriptionService
-                                        .getPrescriptionMedicines(receipt.id),
+                                    future: _inventoryService
+                                        .getExportReceiptDetails(receipt.id),
                                     builder: (context, snapshot) {
                                       if (snapshot.hasError) {
                                         return Padding(
@@ -841,8 +838,8 @@ class _ExportInventoryScreenState extends State<ExportInventoryScreen> {
                                         );
                                       }
                                       return Column(
-                                        children:
-                                            snapshot.data!.map((medicine) {
+                                        children: snapshot.data!.map((detail) {
+                                          final medicine = detail['THUOC'];
                                           return Container(
                                             padding: const EdgeInsets.symmetric(
                                               horizontal: 16,
@@ -864,13 +861,27 @@ class _ExportInventoryScreenState extends State<ExportInventoryScreen> {
                                                 ),
                                                 const SizedBox(width: 8),
                                                 Expanded(
-                                                  child: Text(
-                                                    medicine['thuoc']
-                                                        ['TenThuoc'],
-                                                    style: const TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.w500,
-                                                    ),
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                      Text(
+                                                        medicine['TenThuoc'],
+                                                        style: const TextStyle(
+                                                          fontWeight:
+                                                              FontWeight.w500,
+                                                        ),
+                                                      ),
+                                                      Text(
+                                                        'Đơn vị: ${medicine['DonVi'] ?? 'N/A'}',
+                                                        style: TextStyle(
+                                                          fontSize: 12,
+                                                          color:
+                                                              Colors.grey[600],
+                                                        ),
+                                                      ),
+                                                    ],
                                                   ),
                                                 ),
                                                 Container(
@@ -886,7 +897,7 @@ class _ExportInventoryScreenState extends State<ExportInventoryScreen> {
                                                             12),
                                                   ),
                                                   child: Text(
-                                                    'SL: ${medicine['Sluong']}',
+                                                    'SL: ${detail['SoLuong']}',
                                                     style: TextStyle(
                                                       color: Colors.blue[700],
                                                       fontWeight:
@@ -958,14 +969,22 @@ class _ExportInventoryScreenState extends State<ExportInventoryScreen> {
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Xuất kho thành công')),
+        const SnackBar(
+          content: Text('Đã xuất kho theo đơn thành công'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 2),
+        ),
       );
 
       // Refresh the list
       await _loadData();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Lỗi khi xuất kho: $e')),
+        SnackBar(
+          content: Text('Lỗi khi xuất theo đơn: $e'),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 3),
+        ),
       );
     }
   }
@@ -1272,16 +1291,8 @@ class _ExportInventoryScreenState extends State<ExportInventoryScreen> {
                       ElevatedButton(
                         onPressed: (selectedItems.isEmpty ||
                                 reasonController.text.isEmpty ||
-                                selectedItems.any((item) {
-                                  final medicine = medicines.firstWhere(
-                                    (m) => m['MaThuoc'] == item['medicineId'],
-                                  );
-                                  final quantity = int.tryParse(
-                                          item['quantity'].toString()) ??
-                                      0;
-                                  return quantity <= 0 ||
-                                      quantity > medicine['SoLuongTon'];
-                                }))
+                                !selectedItems
+                                    .every((item) => item['isValid'] == true))
                             ? null
                             : () async {
                                 try {

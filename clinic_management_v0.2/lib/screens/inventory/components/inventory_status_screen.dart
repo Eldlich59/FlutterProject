@@ -68,7 +68,7 @@ class _InventoryStatusScreenState extends State<InventoryStatusScreen> {
                     Colors.blue,
                   ),
                   _buildStatCard(
-                    'Sắp hết hàng',
+                    'Hết hàng',
                     medicines!.where((m) => m.stock < 10).length.toString(),
                     Icons.warning,
                     Colors.orange,
@@ -104,7 +104,7 @@ class _InventoryStatusScreenState extends State<InventoryStatusScreen> {
                       if (isLowStock) ...[
                         const SizedBox(width: 8),
                         Chip(
-                          label: const Text('Sắp hết'),
+                          label: const Text('Hết'),
                           backgroundColor: Colors.red[100],
                           labelStyle: TextStyle(color: Colors.red[900]),
                         ),

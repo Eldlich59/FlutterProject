@@ -198,6 +198,16 @@ class InventoryService {
     }
   }
 
+  Future<void> updateExportStatus(String exportId, String status) async {
+    try {
+      await supabase.from('PHIEUXUAT').update({
+        'GhiChu': status,
+      }).eq('MaXuat', exportId);
+    } catch (e) {
+      throw 'Không thể cập nhật trạng thái xuất kho: $e';
+    }
+  }
+
   // Quản lý nhà cung cấp
   Future<List<Map<String, dynamic>>> getSuppliers() async {
     final response = await supabase.from('NHACUNGCAP').select().order('TenNCC');
