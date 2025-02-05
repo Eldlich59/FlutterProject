@@ -210,8 +210,15 @@ class InventoryService {
 
   // Quản lý nhà cung cấp
   Future<List<Map<String, dynamic>>> getSuppliers() async {
-    final response = await supabase.from('NHACUNGCAP').select().order('TenNCC');
-    return List<Map<String, dynamic>>.from(response);
+    try {
+      final response =
+          await supabase.from('NHACUNGCAP').select().order('TenNCC');
+      print('Supplier response: $response'); // Debug log
+      return List<Map<String, dynamic>>.from(response);
+    } catch (e) {
+      print('Error fetching suppliers: $e'); // Debug log
+      rethrow;
+    }
   }
 
   Future<void> addSupplier(
@@ -232,6 +239,14 @@ class InventoryService {
       'SDT': phone,
       'Email': email,
     }).eq('MaNCC', id);
+  }
+
+  Future<void> deleteSupplier(String id) async {
+    try {
+      await supabase.from('NHACUNGCAP').delete().eq('MaNCC', id);
+    } catch (e) {
+      throw 'Lỗi khi xóa nhà cung cấp: $e';
+    }
   }
 
   // Xem lịch sử nhập kho

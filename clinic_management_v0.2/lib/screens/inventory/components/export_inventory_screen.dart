@@ -70,16 +70,11 @@ class _ExportInventoryScreenState extends State<ExportInventoryScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Colors.blue.withOpacity(0.1),
-              Colors.white,
-            ],
+            colors: [Colors.blue.withOpacity(0.1), Colors.white],
           ),
         ),
         child: isLoading
-            ? const Center(
-                child: CircularProgressIndicator(),
-              )
+            ? const Center(child: CircularProgressIndicator())
             : _buildReceiptList(),
       ),
       floatingActionButton: Row(
