@@ -24,6 +24,7 @@ class _ImportInventoryScreenState extends State<ImportInventoryScreen> {
   List<Medicine> medicines = [];
   final List<Map<String, dynamic>> selectedItems = [];
   final TextEditingController notesController = TextEditingController();
+  DateTime selectedDate = DateTime.now();
 
   @override
   void initState() {
@@ -94,50 +95,151 @@ class _ImportInventoryScreenState extends State<ImportInventoryScreen> {
     return id.length > 6 ? '${id.substring(0, 6)}...' : id;
   }
 
+  Future<void> _selectDate(
+      BuildContext context, StateSetter setDialogState) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: selectedDate,
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now(),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: Theme.of(context).primaryColor,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null && picked != selectedDate) {
+      setDialogState(() {
+        selectedDate = picked;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Nhập kho'),
+        elevation: 0,
       ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _buildReceiptList(),
-      floatingActionButton: FloatingActionButton(
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Theme.of(context).primaryColor.withOpacity(0.1),
+              Colors.white,
+            ],
+          ),
+        ),
+        child: isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : _buildReceiptList(),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: _showImportDialog,
-        child: const Icon(Icons.add),
+        icon: const Icon(Icons.add),
+        label: const Text('Tạo phiếu nhập'),
       ),
     );
   }
 
   Widget _buildReceiptList() {
     if (importReceipts == null || importReceipts!.isEmpty) {
-      return const Center(child: Text('Không có phiếu nhập kho'));
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.inventory_2_outlined, size: 64, color: Colors.grey[400]),
+            const SizedBox(height: 16),
+            Text(
+              'Không có phiếu nhập kho',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey[600],
+              ),
+            ),
+          ],
+        ),
+      );
     }
 
     return ListView.builder(
+      padding: const EdgeInsets.all(16),
       itemCount: importReceipts!.length,
       itemBuilder: (context, index) {
         final receipt = importReceipts![index];
         return Card(
-          child: ListTile(
-            title: Text('Phiếu nhập kho #${_formatId(receipt.id)}'),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Ngày nhập: ${dateFormat.format(receipt.importDate)}'),
-                if (receipt.supplierName != null)
-                  Text('Nhà cung cấp: ${receipt.supplierName}'),
-              ],
-            ),
-            trailing: Text(
-              currencyFormat.format(receipt.totalAmount),
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Colors.blue,
+          margin: const EdgeInsets.only(bottom: 12),
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: InkWell(
+            onTap: () => _showReceiptDetails(receipt),
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.receipt_long,
+                              color: Theme.of(context).primaryColor),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Phiếu #${_formatId(receipt.id)}',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Chip(
+                        label: Text(
+                          currencyFormat.format(receipt.totalAmount),
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                        backgroundColor: Theme.of(context).primaryColor,
+                      ),
+                    ],
+                  ),
+                  const Divider(height: 24),
+                  Row(
+                    children: [
+                      Icon(Icons.calendar_today,
+                          size: 16, color: Colors.grey[600]),
+                      const SizedBox(width: 8),
+                      Text(
+                        dateFormat.format(receipt.importDate),
+                        style: TextStyle(color: Colors.grey[600]),
+                      ),
+                      const SizedBox(width: 16),
+                      Icon(Icons.business, size: 16, color: Colors.grey[600]),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          receipt.supplierName ?? 'Không có NCC',
+                          style: TextStyle(color: Colors.grey[600]),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
-            onTap: () => _showReceiptDetails(receipt),
           ),
         );
       },
@@ -149,94 +251,280 @@ class _ImportInventoryScreenState extends State<ImportInventoryScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Chi tiết phiếu nhập #${_formatId(receipt.id)}'),
-        content: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
+        titlePadding: EdgeInsets.zero,
+        contentPadding: EdgeInsets.zero,
+        backgroundColor: Colors.grey[50],
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Theme.of(context).primaryColor,
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(16),
+              topRight: Radius.circular(16),
+            ),
+          ),
+          child: Row(
             children: [
-              Text('Ngày nhập: ${dateFormat.format(receipt.importDate)}'),
-              if (receipt.supplierName != null)
-                Text('Nhà cung cấp: ${receipt.supplierName}'),
-              const Divider(),
-              ...receipt.details.map((detail) => Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Text(detail.medicineName ?? 'Unknown'),
-                        ),
-                        Text(
-                            '${detail.quantity} x ${currencyFormat.format(detail.unitPrice)}'),
-                      ],
-                    ),
-                  )),
-              const Divider(),
-              Text(
-                'Tổng tiền: ${currencyFormat.format(receipt.totalAmount)}',
-                style: const TextStyle(fontWeight: FontWeight.bold),
+              const Icon(Icons.receipt_long, color: Colors.white),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Chi tiết phiếu nhập #${_formatId(receipt.id)}',
+                  style: const TextStyle(color: Colors.white),
+                ),
               ),
-              if (receipt.notes != null) Text('Ghi chú: ${receipt.notes}'),
+              IconButton(
+                onPressed: () => Navigator.of(context).pop(),
+                icon: const Icon(Icons.close, color: Colors.white),
+                tooltip: 'Đóng',
+              ),
             ],
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => _showEditDialog(receipt),
-            child: const Text('Sửa'),
+        content: Container(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.7,
           ),
-          TextButton(
-            onPressed: () async {
-              // Show confirmation dialog
-              final confirm = await showDialog<bool>(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: const Text('Xác nhận xóa'),
-                  content:
-                      const Text('Bạn có chắc chắn muốn xóa phiếu nhập này?'),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.of(context).pop(false),
-                      child: const Text('Hủy'),
-                    ),
-                    TextButton(
-                      onPressed: () => Navigator.of(context).pop(true),
-                      child: const Text('Xóa'),
-                      style: TextButton.styleFrom(foregroundColor: Colors.red),
-                    ),
-                  ],
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildInfoRow(
+                        Icons.calendar_today,
+                        'Ngày nhập',
+                        dateFormat.format(receipt.importDate),
+                      ),
+                      const SizedBox(height: 12),
+                      _buildInfoRow(
+                        Icons.business,
+                        'Nhà cung cấp',
+                        receipt.supplierName ?? 'Không có',
+                      ),
+                      if (receipt.notes?.isNotEmpty ?? false) ...[
+                        const SizedBox(height: 12),
+                        _buildInfoRow(
+                          Icons.note,
+                          'Ghi chú',
+                          receipt.notes!,
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
-              );
-
-              if (confirm == true) {
-                try {
-                  await _inventoryService.deleteInventoryReceipt(receipt.id);
-                  Navigator.of(context).pop(); // Close details dialog
-                  _loadData(); // Refresh the list
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Đã xóa phiếu nhập kho')),
-                    );
-                  }
-                } catch (e) {
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Lỗi khi xóa phiếu nhập: $e')),
-                    );
-                  }
-                }
-              }
-            },
-            child: const Text('Xóa'),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  color: Colors.white,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Danh sách thuốc',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      ...receipt.details.map((detail) => Card(
+                            margin: const EdgeInsets.symmetric(vertical: 4),
+                            child: ListTile(
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                              title: Text(
+                                detail.medicineName ?? 'Unknown',
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.w500),
+                              ),
+                              subtitle: Text(
+                                'Đơn giá: ${currencyFormat.format(detail.unitPrice)}',
+                                style: TextStyle(color: Colors.grey[600]),
+                              ),
+                              trailing: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    '× ${detail.quantity}',
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  Text(
+                                    currencyFormat.format(
+                                        detail.quantity * detail.unitPrice),
+                                    style: TextStyle(
+                                      color: Theme.of(context).primaryColor,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          )),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).primaryColor.withOpacity(0.1),
+                    border: Border(
+                      top: BorderSide(
+                        color: Theme.of(context).primaryColor.withOpacity(0.2),
+                      ),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Tổng tiền',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        currencyFormat.format(receipt.totalAmount),
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).primaryColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Đóng'),
+        ),
+        actions: [
+          Container(
+            decoration: BoxDecoration(
+              border: Border(
+                top: BorderSide(color: Colors.grey[300]!),
+              ),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                OutlinedButton.icon(
+                  onPressed: () => _showEditDialog(receipt),
+                  icon: const Icon(Icons.edit),
+                  label: const Text('Sửa'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.blue,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                ElevatedButton.icon(
+                  onPressed: () async {
+                    final currentContext = context;
+                    final confirm = await showDialog<bool>(
+                      context: currentContext,
+                      builder: (context) => AlertDialog(
+                        title: const Text('Xác nhận xóa'),
+                        content: const Text(
+                            'Bạn có chắc chắn muốn xóa phiếu nhập này?'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(false),
+                            child: const Text('Hủy'),
+                          ),
+                          ElevatedButton.icon(
+                            onPressed: () => Navigator.of(context).pop(true),
+                            icon: const Icon(Icons.delete),
+                            label: const Text('Xóa'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red,
+                              foregroundColor: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+
+                    if (confirm == true && mounted) {
+                      try {
+                        await _inventoryService
+                            .deleteInventoryReceipt(receipt.id);
+                        if (!mounted) return;
+                        Navigator.of(currentContext).pop();
+                        await _loadData();
+                        if (!mounted) return;
+                        ScaffoldMessenger.of(currentContext).showSnackBar(
+                          const SnackBar(
+                              content: Text('Đã xóa phiếu nhập kho')),
+                        );
+                      } catch (e) {
+                        if (!mounted) return;
+                        ScaffoldMessenger.of(currentContext).showSnackBar(
+                          SnackBar(content: Text('Lỗi khi xóa phiếu nhập: $e')),
+                        );
+                      }
+                    }
+                  },
+                  icon: const Icon(Icons.delete),
+                  label: const Text('Xóa'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildInfoRow(IconData icon, String label, String value) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 18, color: Colors.grey[600]),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                ),
+              ),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -250,6 +538,7 @@ class _ImportInventoryScreenState extends State<ImportInventoryScreen> {
       (s) => s.id == receipt.supplierId,
       orElse: () => suppliers.first,
     );
+    selectedDate = receipt.importDate; // Set date from receipt
 
     // Convert receipt details to selectedItems format
     for (var detail in receipt.details) {
@@ -287,6 +576,7 @@ class _ImportInventoryScreenState extends State<ImportInventoryScreen> {
                               selectedSupplier!.id,
                               selectedItems,
                               notesController.text.trim(),
+                              selectedDate, // Add selected date
                             );
                             if (!mounted) return;
                             Navigator.of(context).pop();
@@ -325,78 +615,99 @@ class _ImportInventoryScreenState extends State<ImportInventoryScreen> {
       orElse: () => medicines.first,
     );
 
-    return Card(
-      elevation: 2,
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Thuốc ${index + 1}',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey.withOpacity(0.3)),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Thuốc ${index + 1}',
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete, color: Colors.red),
+                onPressed: () =>
+                    setDialogState(() => selectedItems.removeAt(index)),
+                tooltip: 'Xóa thuốc này',
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          DropdownButtonFormField<Medicine>(
+            value: selectedMedicine,
+            decoration: InputDecoration(
+              labelText: 'Tên thuốc',
+              border:
+                  OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+              filled: true,
+              fillColor: Colors.grey[50],
+            ),
+            items: medicines.map((medicine) {
+              return DropdownMenuItem(
+                value: medicine,
+                child: Text(medicine.name),
+              );
+            }).toList(),
+            onChanged: (value) => setDialogState(() {
+              selectedItems[index]['medicineId'] = value?.id;
+              selectedItems[index]['unitPrice'] = value?.price ?? 0;
+            }),
+          ),
+          const SizedBox(height: 16),
+          TextFormField(
+            initialValue: item['quantity']?.toString(),
+            decoration: InputDecoration(
+              labelText: 'Số lượng',
+              border:
+                  OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+              suffixText: selectedMedicine.unit,
+              filled: true,
+              fillColor: Colors.grey[50],
+            ),
+            keyboardType: TextInputType.number,
+            onChanged: (value) => setDialogState(() {
+              selectedItems[index]['quantity'] = int.tryParse(value) ?? 0;
+            }),
+          ),
+          if (item['quantity'] != null) ...[
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Theme.of(context).primaryColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Thành tiền:',
+                    style: TextStyle(fontWeight: FontWeight.w500),
                   ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.red),
-                  onPressed: () =>
-                      setDialogState(() => selectedItems.removeAt(index)),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            DropdownButtonFormField<Medicine>(
-              value: selectedMedicine,
-              decoration: const InputDecoration(
-                labelText: 'Tên thuốc',
-                border: OutlineInputBorder(),
-                contentPadding:
-                    EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              ),
-              items: medicines.map((medicine) {
-                return DropdownMenuItem(
-                  value: medicine,
-                  child: Text(medicine.name),
-                );
-              }).toList(),
-              onChanged: (value) => setDialogState(() {
-                selectedItems[index]['medicineId'] = value?.id;
-                selectedItems[index]['unitPrice'] = value?.price ?? 0;
-              }),
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              initialValue: item['quantity']?.toString(),
-              decoration: InputDecoration(
-                labelText: 'Số lượng',
-                border: const OutlineInputBorder(),
-                suffixText: selectedMedicine.unit,
-                helperText: 'Nhập số lượng',
-              ),
-              keyboardType: TextInputType.number,
-              onChanged: (value) => setDialogState(() {
-                selectedItems[index]['quantity'] = int.tryParse(value) ?? 0;
-              }),
-            ),
-            if (item['quantity'] != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 8.0),
-                child: Text(
-                  'Thành tiền: ${currencyFormat.format((item['quantity'] as int) * selectedMedicine.price)}',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blue,
+                  Text(
+                    currencyFormat.format(
+                        (item['quantity'] as int) * selectedMedicine.price),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).primaryColor,
+                    ),
                   ),
-                ),
+                ],
               ),
+            ),
           ],
-        ),
+        ],
       ),
     );
   }
@@ -405,69 +716,339 @@ class _ImportInventoryScreenState extends State<ImportInventoryScreen> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: DropdownButtonFormField<Supplier>(
-              value: selectedSupplier,
-              hint: const Text('Chọn nhà cung cấp'),
-              isExpanded: true,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                labelText: 'Nhà cung cấp',
+        // Date Selection Card
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.1),
+                spreadRadius: 1,
+                blurRadius: 4,
+                offset: const Offset(0, 2),
               ),
-              items: suppliers.map((supplier) {
-                return DropdownMenuItem(
-                  value: supplier,
-                  child: Text(supplier.name),
-                );
+            ],
+          ),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Ngày nhập kho',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).primaryColor,
+                ),
+              ),
+              const SizedBox(height: 12),
+              InkWell(
+                onTap: () => _selectDate(context, setDialogState),
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: Theme.of(context).primaryColor.withOpacity(0.3),
+                    ),
+                    borderRadius: BorderRadius.circular(8),
+                    color: Colors.grey[50],
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.calendar_today,
+                        color: Theme.of(context).primaryColor,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        dateFormat.format(selectedDate),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const Spacer(),
+                      Icon(
+                        Icons.arrow_drop_down,
+                        color: Theme.of(context).primaryColor,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              if (selectedDate.isAfter(DateTime.now()))
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    'Ngày nhập không thể sau ngày hiện tại',
+                    style: TextStyle(
+                      color: Colors.red[700],
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+
+        // Supplier Selection Card
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.1),
+                spreadRadius: 1,
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Thông tin nhà cung cấp',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).primaryColor,
+                ),
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<Supplier>(
+                value: selectedSupplier,
+                hint: const Text('Chọn nhà cung cấp'),
+                isExpanded: true,
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(
+                      color: Theme.of(context).primaryColor.withOpacity(0.3),
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(
+                      color: Theme.of(context).primaryColor.withOpacity(0.3),
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(
+                      color: Theme.of(context).primaryColor,
+                      width: 2,
+                    ),
+                  ),
+                  filled: true,
+                  fillColor: Colors.grey[50],
+                  prefixIcon: Icon(
+                    Icons.business,
+                    color: Theme.of(context).primaryColor,
+                  ),
+                ),
+                items: suppliers.map((supplier) {
+                  return DropdownMenuItem(
+                    value: supplier,
+                    child: Text(supplier.name),
+                  );
+                }).toList(),
+                onChanged: (value) =>
+                    setDialogState(() => selectedSupplier = value),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+
+        // Medicines Section
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.1),
+                spreadRadius: 1,
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Danh sách thuốc',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                  ),
+                  ElevatedButton.icon(
+                    onPressed: () => setDialogState(() {
+                      selectedItems.add({
+                        'medicineId': medicines.first.id,
+                        'quantity': 0,
+                        'unitPrice': medicines.first.price,
+                      });
+                    }),
+                    icon: const Icon(Icons.add, size: 20),
+                    label: const Text('Thêm thuốc'),
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      backgroundColor: Theme.of(context).primaryColor,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      elevation: 0,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              if (selectedItems.isEmpty)
+                Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.medication_outlined,
+                          size: 48,
+                          color: Colors.grey[400],
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Chưa có thuốc nào được thêm',
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ...selectedItems.asMap().entries.map((entry) {
+                return _buildMedicineItem(
+                    entry.key, entry.value, setDialogState);
               }).toList(),
-              onChanged: (value) =>
-                  setDialogState(() => selectedSupplier = value),
-            ),
+            ],
           ),
         ),
-        const SizedBox(height: 16),
-        ...selectedItems.asMap().entries.map((entry) {
-          return _buildMedicineItem(entry.key, entry.value, setDialogState);
-        }).toList(),
-        const SizedBox(height: 8),
-        OutlinedButton.icon(
-          onPressed: () => setDialogState(() {
-            selectedItems.add({
-              'medicineId': medicines.first.id,
-              'quantity': 0,
-              'unitPrice': medicines.first.price,
-            });
-          }),
-          icon: const Icon(Icons.add),
-          label: const Text('Thêm thuốc'),
-        ),
-        const SizedBox(height: 16),
-        TextFormField(
-          controller: notesController,
-          decoration: const InputDecoration(
-            labelText: 'Ghi chú',
-            border: OutlineInputBorder(),
-            hintText: 'Nhập ghi chú nếu có',
-          ),
-          maxLines: 2,
-        ),
-        if (selectedItems.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(top: 16.0),
-            child: Text(
-              'Tổng tiền: ${currencyFormat.format(selectedItems.fold<double>(
-                0,
-                (sum, item) =>
-                    sum +
-                    (item['quantity'] as int) * (item['unitPrice'] as double),
-              ))}',
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.blue,
+        const SizedBox(height: 24),
+
+        // Notes Section
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.1),
+                spreadRadius: 1,
+                blurRadius: 4,
+                offset: const Offset(0, 2),
               ),
+            ],
+          ),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Ghi chú',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).primaryColor,
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: notesController,
+                decoration: InputDecoration(
+                  hintText: 'Nhập ghi chú nếu có...',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(
+                      color: Theme.of(context).primaryColor.withOpacity(0.3),
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(
+                      color: Theme.of(context).primaryColor.withOpacity(0.3),
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(
+                      color: Theme.of(context).primaryColor,
+                      width: 2,
+                    ),
+                  ),
+                  filled: true,
+                  fillColor: Colors.grey[50],
+                ),
+                maxLines: 3,
+              ),
+            ],
+          ),
+        ),
+
+        // Total Amount Section
+        if (selectedItems.isNotEmpty)
+          Container(
+            margin: const EdgeInsets.only(top: 24),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Theme.of(context).primaryColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Theme.of(context).primaryColor.withOpacity(0.2),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Tổng tiền:',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  currencyFormat.format(selectedItems.fold<double>(
+                    0,
+                    (sum, item) =>
+                        sum +
+                        (item['quantity'] as int) *
+                            (item['unitPrice'] as double),
+                  )),
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).primaryColor,
+                  ),
+                ),
+              ],
             ),
           ),
       ],
@@ -481,6 +1062,7 @@ class _ImportInventoryScreenState extends State<ImportInventoryScreen> {
     selectedItems.clear();
     notesController.clear();
     selectedSupplier = null;
+    selectedDate = DateTime.now(); // Reset date to current
 
     showDialog(
       context: dialogContext,
@@ -508,6 +1090,7 @@ class _ImportInventoryScreenState extends State<ImportInventoryScreen> {
                               selectedSupplier!.id,
                               selectedItems,
                               notesController.text.trim(),
+                              selectedDate, // Add selected date
                             );
                             if (!mounted) return;
                             Navigator.of(context).pop();
@@ -540,6 +1123,8 @@ class _ImportInventoryScreenState extends State<ImportInventoryScreen> {
     return selectedSupplier != null &&
         selectedItems.isNotEmpty &&
         selectedItems.every((item) =>
-            item['medicineId'] != null && (item['quantity'] as int) > 0);
+            item['medicineId'] != null && (item['quantity'] as int) > 0) &&
+        selectedDate.isBefore(
+            DateTime.now().add(const Duration(days: 1))); // Add date validation
   }
 }

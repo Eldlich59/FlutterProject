@@ -712,7 +712,8 @@ class _BillFormScreenState extends State<BillFormScreen>
           items: _availablePatients.map((patient) {
             return DropdownMenuItem(
               value: patient,
-              child: Text('${patient['TenBN']} - ${patient['SDT']}'),
+              child:
+                  Text('${patient['TenBN']}'), // Remove the phone number here
             );
           }).toList(),
           onChanged: (value) {

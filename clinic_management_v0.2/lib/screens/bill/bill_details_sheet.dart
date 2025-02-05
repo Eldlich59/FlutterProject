@@ -301,7 +301,7 @@ class _BillDetailsSheetState extends State<BillDetailsSheet>
           'Toa thuốc ${widget.bill.prescriptionIds.indexOf(prescriptionId) + 1}',
           [
             'Mã toa: ${prescriptionId.substring(0, 6)}...',
-            'Số lượng thuốc: ${prescriptionMedicines.length}',
+            'Số lượng loại thuốc: ${prescriptionMedicines.length}',
             'Danh sách thuốc:',
           ],
           Icons.medical_information,

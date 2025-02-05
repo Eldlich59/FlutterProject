@@ -50,17 +50,111 @@ class _InventoryStatusScreenState extends State<InventoryStatusScreen> {
       return const Center(child: Text('Không có dữ liệu tồn kho'));
     }
 
-    return ListView.builder(
-      itemCount: medicines!.length,
-      itemBuilder: (context, index) {
-        final medicine = medicines![index];
-        return Card(
-          child: ListTile(
-            title: Text(medicine.name),
-            subtitle: Text('Số lượng: ${medicine.stock} ${medicine.unit}'),
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: Card(
+            elevation: 4,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildStatCard(
+                    'Tổng sản phẩm',
+                    medicines!.length.toString(),
+                    Icons.medication,
+                    Colors.blue,
+                  ),
+                  _buildStatCard(
+                    'Sắp hết hàng',
+                    medicines!.where((m) => m.stock < 10).length.toString(),
+                    Icons.warning,
+                    Colors.orange,
+                  ),
+                ],
+              ),
+            ),
           ),
-        );
-      },
+        ),
+        Expanded(
+          child: ListView.builder(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: medicines!.length,
+            itemBuilder: (context, index) {
+              final medicine = medicines![index];
+              final isLowStock = medicine.stock < 10;
+
+              return Card(
+                margin: const EdgeInsets.only(bottom: 12),
+                elevation: 2,
+                child: ListTile(
+                  contentPadding: const EdgeInsets.all(16),
+                  title: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          medicine.name,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
+                      ),
+                      if (isLowStock) ...[
+                        const SizedBox(width: 8),
+                        Chip(
+                          label: const Text('Sắp hết'),
+                          backgroundColor: Colors.red[100],
+                          labelStyle: TextStyle(color: Colors.red[900]),
+                        ),
+                      ],
+                    ],
+                  ),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Icon(Icons.inventory_2,
+                              size: 16,
+                              color: isLowStock ? Colors.red : Colors.green),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Tồn kho: ${medicine.stock} ${medicine.unit}',
+                            style: TextStyle(
+                              color: isLowStock ? Colors.red : Colors.green,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatCard(
+      String title, String value, IconData icon, Color color) {
+    return Column(
+      children: [
+        Icon(icon, size: 32, color: color),
+        const SizedBox(height: 8),
+        Text(value,
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: color,
+            )),
+        Text(title, style: const TextStyle(color: Colors.grey)),
+      ],
     );
   }
 }
