@@ -38,6 +38,13 @@ class _InventoryStatusScreenState extends State<InventoryStatusScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Tồn kho'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _loadData,
+            tooltip: 'Tải lại dữ liệu',
+          ),
+        ],
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())

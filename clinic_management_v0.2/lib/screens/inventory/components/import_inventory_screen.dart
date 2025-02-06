@@ -126,6 +126,13 @@ class _ImportInventoryScreenState extends State<ImportInventoryScreen> {
       appBar: AppBar(
         title: const Text('Nhập kho'),
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _loadData,
+            tooltip: 'Tải lại dữ liệu',
+          ),
+        ],
       ),
       body: Container(
         decoration: BoxDecoration(

@@ -63,6 +63,13 @@ class _ExportInventoryScreenState extends State<ExportInventoryScreen> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.of(context).pop(),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _loadData,
+            tooltip: 'Tải lại dữ liệu',
+          ),
+        ],
         elevation: 2,
       ),
       body: Container(
