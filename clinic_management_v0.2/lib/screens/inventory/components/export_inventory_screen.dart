@@ -126,6 +126,18 @@ class _ExportInventoryScreenState extends State<ExportInventoryScreen> {
       itemCount: exportReceipts!.length,
       itemBuilder: (context, index) {
         final receipt = exportReceipts![index];
+        final notes = receipt.notes;
+        String displayNotes = notes ?? '';
+        if (displayNotes.startsWith('Lý do: Xuất theo toa thuốc')) {
+          // Extract and format prescription ID
+          final parts = displayNotes.split('\n');
+          if (parts.length > 1) {
+            final prescriptionId = parts[1].replaceAll('Toa thuốc: ', '');
+            displayNotes = 'Lý do: Xuất theo toa thuốc\n' +
+                'Toa thuốc: ${prescriptionId.substring(0, 6)}...';
+          }
+        }
+
         return Card(
           elevation: 2,
           margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
@@ -144,9 +156,9 @@ class _ExportInventoryScreenState extends State<ExportInventoryScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('Ngày xuất: ${dateFormat.format(receipt.importDate)}'),
-                if (receipt.notes?.isNotEmpty == true)
+                if (displayNotes.isNotEmpty)
                   Text(
-                    receipt.notes!,
+                    displayNotes,
                     style: const TextStyle(fontSize: 12, color: Colors.grey),
                   ),
               ],
@@ -577,7 +589,7 @@ class _ExportInventoryScreenState extends State<ExportInventoryScreen> {
                                 ],
                               ),
                             );
-                          }).toList(),
+                          }),
                           Center(
                             child: Padding(
                               padding: const EdgeInsets.symmetric(vertical: 16),
@@ -1269,7 +1281,7 @@ class _ExportInventoryScreenState extends State<ExportInventoryScreen> {
                                 ),
                               ),
                             );
-                          }).toList(),
+                          }),
                         ],
                       ),
                     ),

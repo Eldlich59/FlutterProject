@@ -303,41 +303,43 @@ class InventoryService {
   Future<void> exportMedicinesFromPrescription(
       String prescriptionId, List<Map<String, dynamic>> medicines) async {
     try {
-      // Create export receipt
-      final exportReceipt = {
-        'MaPhieuXuat': prescriptionId,
-        'NgayXuat': DateTime.now().toIso8601String(),
-        'MaToa': prescriptionId,
-        'LyDoXuat': 'Xuất theo toa',
-      };
+      // Create export receipt with prescription reference
+      final exportReceipt = await supabase
+          .from('XUATKHO')
+          .insert({
+            'NgayXuat': DateTime.now().toIso8601String(),
+            'LyDoXuat': 'Xuất theo toa thuốc',
+            'GhiChu': 'Toa thuốc: $prescriptionId',
+          })
+          .select()
+          .single();
 
-      await supabase.from('XUATKHO').insert(exportReceipt);
+      final exportId = exportReceipt['MaXuat'];
 
-      // Update medicine quantities
+      // Update medicine quantities and create export details
       for (final medicine in medicines) {
         final medicineId = medicine['MaThuoc'];
         final quantity = medicine['Sluong'] as int;
 
-        // Get current stock
-        final currentStock = await supabase
+        // Get current stock with locking
+        final currentMedicine = await supabase
             .from('THUOC')
-            .select('SoLuongTon')
+            .select()
             .eq('MaThuoc', medicineId)
             .single();
 
-        final newStock = (currentStock['SoLuongTon'] as int) - quantity;
-        if (newStock < 0) {
-          throw 'Không đủ số lượng thuốc ${medicine['thuoc']['TenThuoc']} trong kho';
+        final currentStock = currentMedicine['SoLuongTon'] as int;
+        if (currentStock < quantity) {
+          throw 'Không đủ số lượng thuốc ${medicine['THUOC']['TenThuoc']} trong kho';
         }
 
         // Update inventory
-        await supabase
-            .from('THUOC')
-            .update({'SoLuongTon': newStock}).eq('MaThuoc', medicineId);
+        await supabase.from('THUOC').update(
+            {'SoLuongTon': currentStock - quantity}).eq('MaThuoc', medicineId);
 
         // Add export details
         await supabase.from('CHITIETXUATKHO').insert({
-          'MaXuat': prescriptionId,
+          'MaXuat': exportId,
           'MaThuoc': medicineId,
           'SoLuong': quantity,
         });

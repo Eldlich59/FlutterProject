@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:clinic_management/models/bill.dart';
 import 'package:clinic_management/services/supabase_service.dart';
+import 'package:clinic_management/services/inventory_service.dart';
 
 class BillFormScreen extends StatefulWidget {
   final Bill? bill;
@@ -292,14 +294,27 @@ class _BillFormScreenState extends State<BillFormScreen>
 
       print('Creating bill with prescriptions: $prescriptionIds');
 
+      // Create bill
       await _supabaseService1.createBill(
         prescriptionIds: prescriptionIds,
         saleDate: _selectedDate,
         totalCost: _totalCost,
       );
 
+      // Create inventory export for each prescription
+      for (var prescription in _selectedPrescriptions) {
+        final medicines = await _supabaseService2
+            .getPrescriptionMedicines(prescription['MaToa'].toString());
+
+        // Create inventory export for medicines
+        await InventoryService(Supabase.instance.client)
+            .exportMedicinesFromPrescription(
+          prescription['MaToa'].toString(),
+          medicines,
+        );
+      }
+
       if (mounted) {
-        // Just pop with success result
         Navigator.of(context).pop(true);
       }
     } catch (e) {
@@ -307,7 +322,7 @@ class _BillFormScreenState extends State<BillFormScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Lỗi khi lưu hóa đơn'),
+            content: Text('Lỗi khi lưu hóa đơn: $e'),
             backgroundColor: Colors.red,
           ),
         );

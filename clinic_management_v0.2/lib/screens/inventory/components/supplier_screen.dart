@@ -195,14 +195,40 @@ class _SupplierScreenState extends State<SupplierScreen> {
                           ),
                         ),
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.edit, color: Colors.blue),
-                        onPressed: () => _showEditSupplierDialog(supplier),
-                      ),
-                      IconButton(
-                        icon:
-                            const Icon(Icons.delete_outline, color: Colors.red),
-                        onPressed: () => _showDeleteConfirmDialog(supplier),
+                      PopupMenuButton<String>(
+                        icon: const Icon(Icons.more_vert, color: Colors.grey),
+                        onSelected: (value) {
+                          switch (value) {
+                            case 'edit':
+                              _showEditSupplierDialog(supplier);
+                              break;
+                            case 'delete':
+                              _showDeleteConfirmDialog(supplier);
+                              break;
+                          }
+                        },
+                        itemBuilder: (context) => [
+                          const PopupMenuItem(
+                            value: 'edit',
+                            child: Row(
+                              children: [
+                                Icon(Icons.edit, color: Colors.blue, size: 20),
+                                SizedBox(width: 8),
+                                Text('Sửa'),
+                              ],
+                            ),
+                          ),
+                          const PopupMenuItem(
+                            value: 'delete',
+                            child: Row(
+                              children: [
+                                Icon(Icons.delete, color: Colors.red, size: 20),
+                                SizedBox(width: 8),
+                                Text('Xóa'),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
