@@ -98,15 +98,6 @@ class _ExportInventoryScreenState extends State<ExportInventoryScreen> {
             // Changed backgroundColor from blue to pink
             backgroundColor: Colors.pinkAccent,
           ),
-          const SizedBox(width: 16),
-          FloatingActionButton.extended(
-            onPressed: _showExportDialog,
-            heroTag: 'exportPrescription',
-            icon: const Icon(Icons.local_pharmacy),
-            label: const Text('Xuất theo đơn'),
-            // Changed backgroundColor from green to pink
-            backgroundColor: Colors.pinkAccent,
-          ),
         ],
       ),
     );
