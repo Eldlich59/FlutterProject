@@ -9,6 +9,12 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class ImportInventoryScreen extends StatefulWidget {
   const ImportInventoryScreen({super.key});
 
+  // Add color constants
+  static const primaryColor = Color(0xFF4CAF50); // Green
+  static const secondaryColor = Color(0xFF81C784); // Light Green
+  static const backgroundColor = Color(0xFFE8F5E9); // Very Light Green
+  static const accentColor = Color(0xFFA5D6A7); // Pale Green
+
   @override
   State<ImportInventoryScreen> createState() => _ImportInventoryScreenState();
 }
@@ -106,7 +112,7 @@ class _ImportInventoryScreenState extends State<ImportInventoryScreen> {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: ColorScheme.light(
-              primary: Theme.of(context).primaryColor,
+              primary: ImportInventoryScreen.primaryColor,
             ),
           ),
           child: child!,
@@ -126,6 +132,7 @@ class _ImportInventoryScreenState extends State<ImportInventoryScreen> {
       appBar: AppBar(
         title: const Text('Nhập kho'),
         elevation: 0,
+        backgroundColor: ImportInventoryScreen.primaryColor,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -140,7 +147,7 @@ class _ImportInventoryScreenState extends State<ImportInventoryScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Theme.of(context).primaryColor.withOpacity(0.1),
+              ImportInventoryScreen.primaryColor.withOpacity(0.1),
               Colors.white,
             ],
           ),
@@ -153,6 +160,7 @@ class _ImportInventoryScreenState extends State<ImportInventoryScreen> {
         onPressed: _showImportDialog,
         icon: const Icon(Icons.add),
         label: const Text('Tạo phiếu nhập'),
+        backgroundColor: ImportInventoryScreen.primaryColor,
       ),
     );
   }
@@ -202,7 +210,7 @@ class _ImportInventoryScreenState extends State<ImportInventoryScreen> {
                       Row(
                         children: [
                           Icon(Icons.receipt_long,
-                              color: Theme.of(context).primaryColor),
+                              color: ImportInventoryScreen.primaryColor),
                           const SizedBox(width: 8),
                           Text(
                             'Phiếu #${_formatId(receipt.id)}',
@@ -218,7 +226,7 @@ class _ImportInventoryScreenState extends State<ImportInventoryScreen> {
                           currencyFormat.format(receipt.totalAmount),
                           style: const TextStyle(color: Colors.white),
                         ),
-                        backgroundColor: Theme.of(context).primaryColor,
+                        backgroundColor: ImportInventoryScreen.primaryColor,
                       ),
                     ],
                   ),
@@ -267,7 +275,7 @@ class _ImportInventoryScreenState extends State<ImportInventoryScreen> {
         title: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Theme.of(context).primaryColor,
+            color: ImportInventoryScreen.primaryColor,
             borderRadius: const BorderRadius.only(
               topLeft: Radius.circular(16),
               topRight: Radius.circular(16),
@@ -372,7 +380,7 @@ class _ImportInventoryScreenState extends State<ImportInventoryScreen> {
                                     currencyFormat.format(
                                         detail.quantity * detail.unitPrice),
                                     style: TextStyle(
-                                      color: Theme.of(context).primaryColor,
+                                      color: ImportInventoryScreen.primaryColor,
                                       fontWeight: FontWeight.w500,
                                     ),
                                   ),
@@ -386,10 +394,11 @@ class _ImportInventoryScreenState extends State<ImportInventoryScreen> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor.withOpacity(0.1),
+                    color: ImportInventoryScreen.primaryColor.withOpacity(0.1),
                     border: Border(
                       top: BorderSide(
-                        color: Theme.of(context).primaryColor.withOpacity(0.2),
+                        color:
+                            ImportInventoryScreen.primaryColor.withOpacity(0.2),
                       ),
                     ),
                   ),
@@ -408,7 +417,7 @@ class _ImportInventoryScreenState extends State<ImportInventoryScreen> {
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: Theme.of(context).primaryColor,
+                          color: ImportInventoryScreen.primaryColor,
                         ),
                       ),
                     ],
@@ -692,7 +701,7 @@ class _ImportInventoryScreenState extends State<ImportInventoryScreen> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Theme.of(context).primaryColor.withOpacity(0.1),
+                color: ImportInventoryScreen.primaryColor.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Row(
@@ -707,7 +716,7 @@ class _ImportInventoryScreenState extends State<ImportInventoryScreen> {
                         (item['quantity'] as int) * selectedMedicine.price),
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: Theme.of(context).primaryColor,
+                      color: ImportInventoryScreen.primaryColor,
                     ),
                   ),
                 ],
@@ -773,7 +782,7 @@ class _ImportInventoryScreenState extends State<ImportInventoryScreen> {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: Theme.of(context).primaryColor,
+              color: ImportInventoryScreen.primaryColor,
             ),
           ),
           const SizedBox(height: 12),
@@ -791,7 +800,7 @@ class _ImportInventoryScreenState extends State<ImportInventoryScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
           border: Border.all(
-            color: Theme.of(context).primaryColor.withOpacity(0.3),
+            color: ImportInventoryScreen.primaryColor.withOpacity(0.3),
           ),
           borderRadius: BorderRadius.circular(8),
           color: Colors.grey[50],
@@ -800,7 +809,7 @@ class _ImportInventoryScreenState extends State<ImportInventoryScreen> {
           children: [
             Icon(
               Icons.calendar_today,
-              color: Theme.of(context).primaryColor,
+              color: ImportInventoryScreen.primaryColor,
               size: 20,
             ),
             const SizedBox(width: 12),
@@ -814,7 +823,7 @@ class _ImportInventoryScreenState extends State<ImportInventoryScreen> {
             const Spacer(),
             Icon(
               Icons.arrow_drop_down,
-              color: Theme.of(context).primaryColor,
+              color: ImportInventoryScreen.primaryColor,
             ),
           ],
         ),
@@ -831,19 +840,19 @@ class _ImportInventoryScreenState extends State<ImportInventoryScreen> {
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(
-            color: Theme.of(context).primaryColor.withOpacity(0.3),
+            color: ImportInventoryScreen.primaryColor.withOpacity(0.3),
           ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(
-            color: Theme.of(context).primaryColor.withOpacity(0.3),
+            color: ImportInventoryScreen.primaryColor.withOpacity(0.3),
           ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(
-            color: Theme.of(context).primaryColor,
+            color: ImportInventoryScreen.primaryColor,
             width: 2,
           ),
         ),
@@ -851,7 +860,7 @@ class _ImportInventoryScreenState extends State<ImportInventoryScreen> {
         fillColor: Colors.grey[50],
         prefixIcon: Icon(
           Icons.business,
-          color: Theme.of(context).primaryColor,
+          color: ImportInventoryScreen.primaryColor,
         ),
       ),
       items: suppliers.map((supplier) {
@@ -888,7 +897,7 @@ class _ImportInventoryScreenState extends State<ImportInventoryScreen> {
       label: const Text('Thêm thuốc'),
       style: ElevatedButton.styleFrom(
         foregroundColor: Colors.white,
-        backgroundColor: Theme.of(context).primaryColor,
+        backgroundColor: ImportInventoryScreen.primaryColor,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
@@ -931,19 +940,19 @@ class _ImportInventoryScreenState extends State<ImportInventoryScreen> {
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(
-            color: Theme.of(context).primaryColor.withOpacity(0.3),
+            color: ImportInventoryScreen.primaryColor.withOpacity(0.3),
           ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(
-            color: Theme.of(context).primaryColor.withOpacity(0.3),
+            color: ImportInventoryScreen.primaryColor.withOpacity(0.3),
           ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(
-            color: Theme.of(context).primaryColor,
+            color: ImportInventoryScreen.primaryColor,
             width: 2,
           ),
         ),
@@ -959,10 +968,10 @@ class _ImportInventoryScreenState extends State<ImportInventoryScreen> {
       margin: const EdgeInsets.only(top: 24),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).primaryColor.withOpacity(0.1),
+        color: ImportInventoryScreen.primaryColor.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Theme.of(context).primaryColor.withOpacity(0.2),
+          color: ImportInventoryScreen.primaryColor.withOpacity(0.2),
         ),
       ),
       child: Row(
@@ -985,7 +994,7 @@ class _ImportInventoryScreenState extends State<ImportInventoryScreen> {
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: Theme.of(context).primaryColor,
+              color: ImportInventoryScreen.primaryColor,
             ),
           ),
         ],

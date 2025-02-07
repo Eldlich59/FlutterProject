@@ -15,12 +15,13 @@ class _SpecialtyListScreenState extends State<SpecialtyListScreen>
   List<Specialty> specialties = [];
   bool isLoading = true;
 
-  // Enhanced color scheme
-  static const primaryColor = Color(0xFFFF5722);
-  static const secondaryColor = Color(0xFFFF8A65);
-  static const backgroundColor = Color(0xFFFBE9E7);
-  static const gradientStart = Color(0xFFFF7043);
-  static const gradientEnd = Color(0xFFFF5722);
+  // Enhanced color scheme with brown tones
+  static const primaryColor = Color(0xFF795548); // Brown
+  static const secondaryColor = Color(0xFF8D6E63); // Brown[400]
+  static const backgroundColor = Color(0xFFEFEBE9); // Brown[50]
+  static const gradientStart = Color(0xFF8D6E63); // Brown[400]
+  static const gradientEnd = Color(0xFF795548); // Brown
+  static const accentColor = Color(0xFFBCAAA4); // Brown[200]
 
   late AnimationController _animationController;
   Animation<double>? _fabAnimation;
@@ -122,12 +123,23 @@ class _SpecialtyListScreenState extends State<SpecialtyListScreen>
           ),
         ],
         flexibleSpace: Container(
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [gradientStart, gradientEnd],
+              colors: [
+                gradientStart,
+                gradientEnd,
+              ],
+              stops: const [0.0, 1.0],
             ),
+            boxShadow: [
+              BoxShadow(
+                color: gradientEnd.withOpacity(0.3),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
         ),
         elevation: 0,
@@ -136,11 +148,12 @@ class _SpecialtyListScreenState extends State<SpecialtyListScreen>
         children: [
           Container(
             height: 20,
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [gradientEnd, backgroundColor],
+                stops: const [0.0, 1.0],
               ),
             ),
           ),
@@ -198,7 +211,8 @@ class _SpecialtyListScreenState extends State<SpecialtyListScreen>
                                 ),
                               )),
                               child: Card(
-                                elevation: 4,
+                                elevation: 3,
+                                shadowColor: primaryColor.withOpacity(0.3),
                                 margin: const EdgeInsets.symmetric(
                                   horizontal: 16,
                                   vertical: 8,
@@ -215,7 +229,7 @@ class _SpecialtyListScreenState extends State<SpecialtyListScreen>
                                       colors: [
                                         Colors.white,
                                         specialty.isActive
-                                            ? primaryColor.withOpacity(0.1)
+                                            ? accentColor.withOpacity(0.1)
                                             : Colors.red.withOpacity(0.1),
                                       ],
                                     ),
@@ -387,6 +401,11 @@ class _SpecialtyListScreenState extends State<SpecialtyListScreen>
           child: FloatingActionButton.extended(
             onPressed: () => _showSpecialtyDialog(context),
             backgroundColor: primaryColor,
+            elevation: 4,
+            highlightElevation: 8,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
             icon: const Icon(Icons.add, color: Colors.white),
             label: const Text(
               'Thêm chuyên khoa',
@@ -425,10 +444,13 @@ class _SpecialtyListScreenState extends State<SpecialtyListScreen>
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(20),
-                  gradient: const LinearGradient(
+                  gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [Colors.white, backgroundColor],
+                    colors: [
+                      Colors.white,
+                      accentColor.withOpacity(0.1),
+                    ],
                   ),
                 ),
                 child: Column(
@@ -449,19 +471,39 @@ class _SpecialtyListScreenState extends State<SpecialtyListScreen>
                       controller: nameController,
                       decoration: InputDecoration(
                         labelText: 'Tên chuyên khoa',
-                        border: const OutlineInputBorder(),
-                        focusedBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: primaryColor),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        labelStyle: TextStyle(color: primaryColor),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide:
+                              const BorderSide(color: primaryColor, width: 2),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide:
+                              BorderSide(color: primaryColor.withOpacity(0.5)),
+                        ),
+                        filled: true,
+                        fillColor: Colors.white,
+                        labelStyle: const TextStyle(color: primaryColor),
                       ),
                     ),
                     const SizedBox(height: 16),
                     DropdownButtonFormField<bool>(
                       value: isSelfRegistration,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: 'Hình thức cấp phép',
-                        border: OutlineInputBorder(),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide:
+                              BorderSide(color: primaryColor.withOpacity(0.5)),
+                        ),
+                        filled: true,
+                        fillColor: Colors.white,
                       ),
                       items: const [
                         DropdownMenuItem(

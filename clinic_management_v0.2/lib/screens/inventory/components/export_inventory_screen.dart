@@ -71,13 +71,16 @@ class _ExportInventoryScreenState extends State<ExportInventoryScreen> {
           ),
         ],
         elevation: 2,
+        // Changed backgroundColor from blue to pink
+        backgroundColor: Colors.pinkAccent,
       ),
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Colors.blue.withOpacity(0.1), Colors.white],
+            // Changed gradient color (blue -> pink)
+            colors: [Colors.pinkAccent.withOpacity(0.1), Colors.white],
           ),
         ),
         child: isLoading
@@ -92,7 +95,8 @@ class _ExportInventoryScreenState extends State<ExportInventoryScreen> {
             heroTag: 'createExport',
             icon: const Icon(Icons.add),
             label: const Text('Tạo phiếu xuất'),
-            backgroundColor: Colors.blue,
+            // Changed backgroundColor from blue to pink
+            backgroundColor: Colors.pinkAccent,
           ),
           const SizedBox(width: 16),
           FloatingActionButton.extended(
@@ -100,7 +104,8 @@ class _ExportInventoryScreenState extends State<ExportInventoryScreen> {
             heroTag: 'exportPrescription',
             icon: const Icon(Icons.local_pharmacy),
             label: const Text('Xuất theo đơn'),
-            backgroundColor: Colors.green,
+            // Changed backgroundColor from green to pink
+            backgroundColor: Colors.pinkAccent,
           ),
         ],
       ),
@@ -140,8 +145,7 @@ class _ExportInventoryScreenState extends State<ExportInventoryScreen> {
           final parts = displayNotes.split('\n');
           if (parts.length > 1) {
             final prescriptionId = parts[1].replaceAll('Toa thuốc: ', '');
-            displayNotes = 'Lý do: Xuất theo toa thuốc\n' +
-                'Toa thuốc: ${prescriptionId.substring(0, 6)}...';
+            displayNotes = 'Lý do: Xuất theo toa thuốc\n' 'Toa thuốc: ${prescriptionId.substring(0, 6)}...';
           }
         }
 
@@ -154,9 +158,10 @@ class _ExportInventoryScreenState extends State<ExportInventoryScreen> {
           child: ExpansionTile(
             title: Text(
               'Phiếu xuất kho #${receipt.id.substring(0, 6)}...',
+              // Changed title text color from blue to pink
               style: const TextStyle(
                 fontWeight: FontWeight.bold,
-                color: Colors.blue,
+                color: Colors.pinkAccent,
               ),
             ),
             subtitle: Column(
@@ -187,7 +192,8 @@ class _ExportInventoryScreenState extends State<ExportInventoryScreen> {
                   value: 'edit',
                   child: Row(
                     children: [
-                      Icon(Icons.edit, color: Colors.blue),
+                      // Changed icon color from blue to pink
+                      Icon(Icons.edit, color: Colors.pinkAccent),
                       SizedBox(width: 8),
                       Text('Sửa'),
                     ],
@@ -235,7 +241,7 @@ class _ExportInventoryScreenState extends State<ExportInventoryScreen> {
                             children: [
                               const Icon(
                                 Icons.medication_outlined,
-                                color: Colors.blue,
+                                color: Colors.pinkAccent,
                                 size: 24,
                               ),
                               const SizedBox(width: 8),
@@ -389,7 +395,8 @@ class _ExportInventoryScreenState extends State<ExportInventoryScreen> {
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.edit_note, color: Colors.blue, size: 28),
+                      // Changed icon color from blue to pink
+                      const Icon(Icons.edit_note, color: Colors.pinkAccent, size: 28),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
@@ -754,7 +761,7 @@ class _ExportInventoryScreenState extends State<ExportInventoryScreen> {
                   children: [
                     const Icon(
                       Icons.inventory_2_outlined,
-                      color: Colors.blue,
+                      color: Colors.pinkAccent,
                       size: 24,
                     ),
                     const SizedBox(width: 8),
@@ -789,7 +796,7 @@ class _ExportInventoryScreenState extends State<ExportInventoryScreen> {
                             'Phiếu xuất kho #${receipt.id.substring(0, 6)}...',
                             style: const TextStyle(
                               fontWeight: FontWeight.w600,
-                              color: Colors.blue,
+                              color: Colors.pinkAccent,
                             ),
                           ),
                           subtitle: Row(
@@ -937,7 +944,7 @@ class _ExportInventoryScreenState extends State<ExportInventoryScreen> {
                                 icon: const Icon(Icons.check_circle_outline),
                                 label: const Text('Chọn xuất kho'),
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.blue,
+                                  backgroundColor: Colors.pinkAccent,
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 24,
                                     vertical: 12,
@@ -1029,9 +1036,10 @@ class _ExportInventoryScreenState extends State<ExportInventoryScreen> {
                 children: [
                   Row(
                     children: [
+                      // Changed icon color from blue to pink
                       const Icon(
                         Icons.add_box_outlined,
-                        color: Colors.blue,
+                        color: Colors.pinkAccent,
                         size: 24,
                       ),
                       const SizedBox(width: 12),
@@ -1169,7 +1177,7 @@ class _ExportInventoryScreenState extends State<ExportInventoryScreen> {
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.blue,
+                                  color: Colors.pinkAccent,
                                 ),
                               ),
                               TextButton.icon(
@@ -1180,7 +1188,7 @@ class _ExportInventoryScreenState extends State<ExportInventoryScreen> {
                                     'isValid': false,
                                   });
                                 }),
-                                icon: const Icon(Icons.add),
+                                icon: const Icon(Icons.add, color: Colors.pinkAccent),
                                 label: const Text('Thêm thuốc'),
                               ),
                             ],
@@ -1331,11 +1339,15 @@ class _ExportInventoryScreenState extends State<ExportInventoryScreen> {
                                 }
                               },
                         style: ElevatedButton.styleFrom(
+                          // Changed backgroundColor from blue to pink
+                          backgroundColor: Colors.pinkAccent,
                           padding: const EdgeInsets.symmetric(
                             horizontal: 24,
                             vertical: 12,
                           ),
-                          backgroundColor: Colors.blue,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                         ),
                         child: const Text('Lưu'),
                       ),

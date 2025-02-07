@@ -6,6 +6,20 @@ class InventoryManagementScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const InventoryHomeScreen();
+    return Theme(
+      data: Theme.of(context).copyWith(
+        primaryColor: InventoryHomeScreen.primaryColor,
+        scaffoldBackgroundColor: InventoryHomeScreen.backgroundColor,
+        appBarTheme: AppBarTheme(
+          backgroundColor: InventoryHomeScreen.primaryColor,
+          elevation: 0,
+        ),
+        colorScheme: ColorScheme.fromSwatch().copyWith(
+          primary: InventoryHomeScreen.primaryColor,
+          secondary: InventoryHomeScreen.secondaryColor,
+        ),
+      ),
+      child: const InventoryHomeScreen(),
+    );
   }
 }
