@@ -27,28 +27,28 @@ class _BillFormScreenState extends State<BillFormScreen>
   late double _totalCost; // Add this
   bool _isLoading = false;
 
-  final Color _turquoiseColor =
-      const Color(0xFF40E0D0).withOpacity(0.85); // Turquoise color
+  // Update color constants with stronger shades
+  final Color _turquoiseColor = const Color(0xFF4FD1C5).withOpacity(0.9);
 
   final BoxDecoration _cardDecoration = BoxDecoration(
     borderRadius: BorderRadius.circular(20),
-    color: Colors.white.withOpacity(0.95),
+    color: Colors.white,
     boxShadow: [
       BoxShadow(
-        color: Colors.grey.withOpacity(0.1),
-        spreadRadius: 3,
-        blurRadius: 15,
-        offset: const Offset(0, 5),
-      ),
-      BoxShadow(
-        color: const Color(0xFF40E0D0).withOpacity(0.08),
+        color: Colors.grey.withOpacity(0.08),
         spreadRadius: 2,
         blurRadius: 12,
-        offset: const Offset(0, 3),
+        offset: const Offset(0, 4),
+      ),
+      BoxShadow(
+        color: const Color(0xFF4FD1C5).withOpacity(0.06),
+        spreadRadius: 1,
+        blurRadius: 8,
+        offset: const Offset(0, 2),
       ),
     ],
     border: Border.all(
-      color: const Color(0xFF40E0D0).withOpacity(0.2),
+      color: const Color(0xFF4FD1C5).withOpacity(0.15),
       width: 1.5,
     ),
   );

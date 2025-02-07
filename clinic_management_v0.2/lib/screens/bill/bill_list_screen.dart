@@ -24,11 +24,11 @@ class _BillListScreenState extends State<BillListScreen>
   late Animation<double> _fabScaleAnimation;
   late Animation<double> _fabOpacityAnimation;
 
-  // Update color constants
-  final Color primaryColor = const Color(0xFF2B5876);
-  final Color secondaryColor = const Color(0xFFE7F0F7);
-  final Color accentColor = const Color(0xFF4E4376);
-  final Color textColor = const Color(0xFF2D3436);
+  // Update color constants with stronger shades
+  final Color primaryColor = const Color(0xFF4FD1C5).withOpacity(0.9); // Stronger turquoise
+  final Color secondaryColor = const Color(0xFFE6F7F5).withOpacity(0.7); // Clearer background
+  final Color accentColor = const Color(0xFF38B2AC).withOpacity(0.95); // Deeper turquoise
+  final Color textColor = const Color(0xFF2D3436).withOpacity(0.9);
 
   @override
   void initState() {

@@ -167,21 +167,33 @@ class _ImportInventoryScreenState extends State<ImportInventoryScreen> {
 
   Widget _buildReceiptList() {
     if (importReceipts == null || importReceipts!.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.inventory_2_outlined, size: 64, color: Colors.grey[400]),
-            const SizedBox(height: 16),
-            Text(
-              'Không có phiếu nhập kho',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey[600],
+      return TweenAnimationBuilder<double>(
+        duration: const Duration(milliseconds: 800),
+        tween: Tween<double>(begin: 0, end: 1),
+        builder: (context, value, child) {
+          return Opacity(
+            opacity: value,
+            child: Transform.translate(
+              offset: Offset(0, 20 * (1 - value)),
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.inventory_2_outlined, size: 64, color: Colors.grey[400]),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Không có phiếu nhập kho',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ],
-        ),
+          );
+        },
       );
     }
 
@@ -190,69 +202,82 @@ class _ImportInventoryScreenState extends State<ImportInventoryScreen> {
       itemCount: importReceipts!.length,
       itemBuilder: (context, index) {
         final receipt = importReceipts![index];
-        return Card(
-          margin: const EdgeInsets.only(bottom: 12),
-          elevation: 2,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: InkWell(
-            onTap: () => _showReceiptDetails(receipt),
-            borderRadius: BorderRadius.circular(12),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(Icons.receipt_long,
-                              color: ImportInventoryScreen.primaryColor),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Phiếu #${_formatId(receipt.id)}',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
+        return TweenAnimationBuilder<double>(
+          duration: Duration(milliseconds: 400 + (index * 100)),
+          tween: Tween<double>(begin: 0, end: 1),
+          builder: (context, value, child) {
+            return Opacity(
+              opacity: value,
+              child: Transform.translate(
+                offset: Offset(0, 50 * (1 - value)),
+                child: child,
+              ),
+            );
+          },
+          child: Card(
+            margin: const EdgeInsets.only(bottom: 12),
+            elevation: 2,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: InkWell(
+              onTap: () => _showReceiptDetails(receipt),
+              borderRadius: BorderRadius.circular(12),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.receipt_long,
+                                color: ImportInventoryScreen.primaryColor),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Phiếu #${_formatId(receipt.id)}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
                             ),
+                          ],
+                        ),
+                        Chip(
+                          label: Text(
+                            currencyFormat.format(receipt.totalAmount),
+                            style: const TextStyle(color: Colors.white),
                           ),
-                        ],
-                      ),
-                      Chip(
-                        label: Text(
-                          currencyFormat.format(receipt.totalAmount),
-                          style: const TextStyle(color: Colors.white),
+                          backgroundColor: ImportInventoryScreen.primaryColor,
                         ),
-                        backgroundColor: ImportInventoryScreen.primaryColor,
-                      ),
-                    ],
-                  ),
-                  const Divider(height: 24),
-                  Row(
-                    children: [
-                      Icon(Icons.calendar_today,
-                          size: 16, color: Colors.grey[600]),
-                      const SizedBox(width: 8),
-                      Text(
-                        dateFormat.format(receipt.importDate),
-                        style: TextStyle(color: Colors.grey[600]),
-                      ),
-                      const SizedBox(width: 16),
-                      Icon(Icons.business, size: 16, color: Colors.grey[600]),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          receipt.supplierName ?? 'Không có NCC',
+                      ],
+                    ),
+                    const Divider(height: 24),
+                    Row(
+                      children: [
+                        Icon(Icons.calendar_today,
+                            size: 16, color: Colors.grey[600]),
+                        const SizedBox(width: 8),
+                        Text(
+                          dateFormat.format(receipt.importDate),
                           style: TextStyle(color: Colors.grey[600]),
-                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                    ],
-                  ),
-                ],
+                        const SizedBox(width: 16),
+                        Icon(Icons.business, size: 16, color: Colors.grey[600]),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            receipt.supplierName ?? 'Không có NCC',
+                            style: TextStyle(color: Colors.grey[600]),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

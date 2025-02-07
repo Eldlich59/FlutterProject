@@ -84,163 +84,229 @@ class _SupplierScreenState extends State<SupplierScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: const Text(
-          'Quản lý nhà cung cấp',
-          style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.blue),
-            onPressed: _loadData,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Colors.amber[50]!, Colors.orange[50]!],
           ),
-        ],
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Tìm kiếm nhà cung cấp...',
-                prefixIcon: const Icon(Icons.search, color: Colors.blue),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(30),
-                  borderSide: BorderSide(color: Colors.blue.shade100),
+        ),
+        child: Column(
+          children: [
+            AppBar(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              title: const Text(
+                'Quản lý nhà cung cấp',
+                style: TextStyle(
+                  color: Colors.black87,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 24,
                 ),
-                filled: true,
-                fillColor: Colors.blue.shade50,
+              ),
+              actions: [
+                IconButton(
+                  icon: Icon(Icons.refresh, color: Colors.orange[700]),
+                  onPressed: _loadData,
+                ),
+              ],
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  hintText: 'Tìm kiếm nhà cung cấp...',
+                  prefixIcon: Icon(Icons.search, color: Colors.orange[700]),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(30),
+                    borderSide: BorderSide.none,
+                  ),
+                  filled: true,
+                  fillColor: Colors.white.withOpacity(0.9),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(30),
+                    borderSide: BorderSide.none,
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(30),
+                    borderSide: BorderSide(color: Colors.orange[300]!, width: 2),
+                  ),
+                ),
               ),
             ),
-          ),
-          Expanded(
-            child: isLoading
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const CircularProgressIndicator(),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Đang tải dữ liệu...',
-                          style: TextStyle(color: Colors.grey[600]),
-                        ),
-                      ],
-                    ),
-                  )
-                : _buildSupplierList(),
-          ),
-        ],
+            Expanded(
+              child: isLoading
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const CircularProgressIndicator(),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Đang tải dữ liệu...',
+                            style: TextStyle(color: Colors.grey[600]),
+                          ),
+                        ],
+                      ),
+                    )
+                  : _buildSupplierList(),
+            ),
+          ],
+        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _showAddSupplierDialog,
         icon: const Icon(Icons.add),
         label: const Text('Thêm nhà cung cấp'),
-        backgroundColor: Colors.blue,
+        backgroundColor: Colors.orange[700],
+        elevation: 4,
       ),
     );
   }
 
   Widget _buildSupplierList() {
     final displayedSuppliers = _filteredSuppliers ?? suppliers;
-    print('Displaying suppliers: ${displayedSuppliers?.length}'); // Debug log
 
     if (displayedSuppliers == null || displayedSuppliers.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.inventory_2_outlined, size: 64, color: Colors.grey[400]),
-            const SizedBox(height: 16),
-            Text(
-              'Chưa có nhà cung cấp nào',
-              style: TextStyle(color: Colors.grey[600], fontSize: 16),
+      return TweenAnimationBuilder<double>(
+        duration: const Duration(milliseconds: 800),
+        tween: Tween<double>(begin: 0, end: 1),
+        builder: (context, value, child) {
+          return Opacity(
+            opacity: value,
+            child: Transform.translate(
+              offset: Offset(0, 20 * (1 - value)),
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.inventory_2_outlined, size: 80, color: Colors.orange[200]),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Chưa có nhà cung cấp nào',
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 18,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ],
-        ),
+          );
+        },
       );
     }
 
     return ListView.builder(
-      // Thay thế AnimatedList bằng ListView.builder
       itemCount: displayedSuppliers.length,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       itemBuilder: (context, index) {
         final supplier = displayedSuppliers[index];
-        return Card(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          elevation: 2,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(12),
-            onTap: () => _showEditSupplierDialog(supplier),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+        return TweenAnimationBuilder<double>(
+          duration: Duration(milliseconds: 400 + (index * 100)),
+          tween: Tween<double>(begin: 0, end: 1),
+          builder: (context, value, child) {
+            return Opacity(
+              opacity: value,
+              child: Transform.translate(
+                offset: Offset(50 * (1 - value), 0),
+                child: child,
+              ),
+            );
+          },
+          child: Card(
+            margin: const EdgeInsets.only(bottom: 12),
+            elevation: 2,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Colors.white, Colors.orange[50] ?? Colors.orange],
+                ),
+              ),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(16),
+                onTap: () => _showEditSupplierDialog(supplier),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.business, color: Colors.blue),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          supplier.name,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.orange[100],
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Icon(Icons.business, color: Colors.orange[700]),
                           ),
-                        ),
-                      ),
-                      PopupMenuButton<String>(
-                        icon: const Icon(Icons.more_vert, color: Colors.grey),
-                        onSelected: (value) {
-                          switch (value) {
-                            case 'edit':
-                              _showEditSupplierDialog(supplier);
-                              break;
-                            case 'delete':
-                              _showDeleteConfirmDialog(supplier);
-                              break;
-                          }
-                        },
-                        itemBuilder: (context) => [
-                          const PopupMenuItem(
-                            value: 'edit',
-                            child: Row(
-                              children: [
-                                Icon(Icons.edit, color: Colors.blue, size: 20),
-                                SizedBox(width: 8),
-                                Text('Sửa'),
-                              ],
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              supplier.name,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
-                          const PopupMenuItem(
-                            value: 'delete',
-                            child: Row(
-                              children: [
-                                Icon(Icons.delete, color: Colors.red, size: 20),
-                                SizedBox(width: 8),
-                                Text('Xóa'),
-                              ],
-                            ),
+                          PopupMenuButton<String>(
+                            icon: const Icon(Icons.more_vert, color: Colors.grey),
+                            onSelected: (value) {
+                              switch (value) {
+                                case 'edit':
+                                  _showEditSupplierDialog(supplier);
+                                  break;
+                                case 'delete':
+                                  _showDeleteConfirmDialog(supplier);
+                                  break;
+                              }
+                            },
+                            itemBuilder: (context) => [
+                              const PopupMenuItem(
+                                value: 'edit',
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.edit, color: Colors.orange, size: 20),
+                                    SizedBox(width: 8),
+                                    Text('Sửa'),
+                                  ],
+                                ),
+                              ),
+                              const PopupMenuItem(
+                                value: 'delete',
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.delete, color: Colors.red, size: 20),
+                                    SizedBox(width: 8),
+                                    Text('Xóa'),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
+                      const Divider(height: 24),
+                      if (supplier.address != null && supplier.address!.isNotEmpty)
+                        _buildInfoRow(Icons.location_on_outlined, supplier.address!, Colors.orange[700]!),
+                      if (supplier.phone != null && supplier.phone!.isNotEmpty)
+                        _buildInfoRow(Icons.phone_outlined, supplier.phone!, Colors.orange[700]!),
+                      if (supplier.email != null && supplier.email!.isNotEmpty)
+                        _buildInfoRow(Icons.email_outlined, supplier.email!, Colors.orange[700]!),
                     ],
                   ),
-                  const Divider(),
-                  if (supplier.address != null && supplier.address!.isNotEmpty)
-                    _buildInfoRow(
-                        Icons.location_on_outlined, supplier.address!),
-                  if (supplier.phone != null && supplier.phone!.isNotEmpty)
-                    _buildInfoRow(Icons.phone_outlined, supplier.phone!),
-                  if (supplier.email != null && supplier.email!.isNotEmpty)
-                    _buildInfoRow(Icons.email_outlined, supplier.email!),
-                ],
+                ),
               ),
             ),
           ),
@@ -249,19 +315,14 @@ class _SupplierScreenState extends State<SupplierScreen> {
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String text) {
+  Widget _buildInfoRow(IconData icon, String text, Color iconColor) {
     return Padding(
       padding: const EdgeInsets.only(top: 8),
       child: Row(
         children: [
-          Icon(icon, size: 16, color: Colors.grey[600]),
+          Icon(icon, size: 16, color: iconColor),
           const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              text,
-              style: TextStyle(color: Colors.grey[600]),
-            ),
-          ),
+          Text(text, style: const TextStyle(fontSize: 14)),
         ],
       ),
     );
@@ -293,7 +354,7 @@ class _SupplierScreenState extends State<SupplierScreen> {
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.add_business, color: Colors.blue.shade700),
+                        Icon(Icons.add_business, color: Colors.orange.shade700),
                         const SizedBox(width: 16),
                         const Text(
                           'Thêm nhà cung cấp mới',
@@ -391,7 +452,7 @@ class _SupplierScreenState extends State<SupplierScreen> {
                           icon: const Icon(Icons.add_circle_outline),
                           label: const Text('Thêm mới'),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue,
+                            backgroundColor: Colors.orange,
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(
                               horizontal: 24,
@@ -441,7 +502,7 @@ class _SupplierScreenState extends State<SupplierScreen> {
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.edit_note, color: Colors.blue.shade700),
+                        Icon(Icons.edit_note, color: Colors.orange.shade700),
                         const SizedBox(width: 16),
                         Expanded(
                           child: Text(
@@ -545,7 +606,7 @@ class _SupplierScreenState extends State<SupplierScreen> {
                           icon: const Icon(Icons.save),
                           label: const Text('Lưu thay đổi'),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue,
+                            backgroundColor: Colors.orange,
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(
                               horizontal: 24,
@@ -642,7 +703,7 @@ class _SupplierScreenState extends State<SupplierScreen> {
         keyboardType: keyboardType,
         decoration: InputDecoration(
           labelText: required ? '$label *' : label,
-          prefixIcon: Icon(icon, color: Colors.blue.shade700, size: 22),
+          prefixIcon: Icon(icon, color: Colors.orange.shade700, size: 22),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide(color: Colors.grey.shade300),
@@ -653,7 +714,7 @@ class _SupplierScreenState extends State<SupplierScreen> {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.blue.shade400, width: 2),
+            borderSide: BorderSide(color: Colors.orange.shade400, width: 2),
           ),
           filled: true,
           fillColor: Colors.grey.shade50,

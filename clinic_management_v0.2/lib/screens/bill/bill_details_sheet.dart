@@ -131,156 +131,171 @@ class _BillDetailsSheetState extends State<BillDetailsSheet>
 
   @override
   Widget build(BuildContext context) {
-    final lightTurquoise = Color(0xFFE0F7F5); // Màu lục bích nhạt
-    final darkTurquoise = Color(0xFF20B2AA); // Màu lục bích đậm
-
+    final lightTurquoise = Color(0xFFE6F7F5).withOpacity(0.8); // Clearer
+    final darkTurquoise = Color(0xFF38B2AC).withOpacity(0.95); // Stronger
+   
     return Hero(
       tag: 'bill-${widget.bill.id}',
-      child: Scaffold(
-        // Changed to Scaffold
-        body: AnimatedBuilder(
-          animation: _animationController,
-          builder: (context, child) {
-            return Transform.translate(
-              offset: Offset(0, _slideAnimation.value),
-              child: Opacity(
-                opacity: _fadeAnimation.value,
-                child: Container(
-                  padding: EdgeInsets.only(
-                    top: MediaQuery.of(context).padding.top +
-                        20, // Add safe area padding
-                    left: 20,
-                    right: 20,
-                    bottom: 20,
-                  ),
-                  height:
-                      MediaQuery.of(context).size.height, // Full screen height
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    // Remove border radius for full screen
-                  ),
-                  child: _isLoading
-                      ? Center(
-                          child:
-                              CircularProgressIndicator(color: darkTurquoise))
-                      : AnimatedOpacity(
-                          opacity: _isVisible ? 1.0 : 0.0,
-                          duration: Duration(milliseconds: 500),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    'Chi tiết hóa đơn',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .headlineSmall
-                                        ?.copyWith(
-                                          fontWeight: FontWeight.bold,
-                                          color: darkTurquoise,
-                                        ),
-                                  ),
-                                  IconButton(
-                                    icon: Icon(Icons.close,
-                                        color: Colors.grey.shade600),
-                                    onPressed: () => Navigator.pop(context),
-                                  ),
-                                ],
-                              ),
-                              Divider(color: lightTurquoise, thickness: 2),
-                              Expanded(
-                                child: ListView(
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              lightTurquoise,
+              Colors.white,
+            ],
+            stops: const [0.0, 0.3],
+          ),
+        ),
+        child: Scaffold(
+          // Changed to Scaffold
+          body: AnimatedBuilder(
+            animation: _animationController,
+            builder: (context, child) {
+              return Transform.translate(
+                offset: Offset(0, _slideAnimation.value),
+                child: Opacity(
+                  opacity: _fadeAnimation.value,
+                  child: Container(
+                    padding: EdgeInsets.only(
+                      top: MediaQuery.of(context).padding.top +
+                          20, // Add safe area padding
+                      left: 20,
+                      right: 20,
+                      bottom: 20,
+                    ),
+                    height:
+                        MediaQuery.of(context).size.height, // Full screen height
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      // Remove border radius for full screen
+                    ),
+                    child: _isLoading
+                        ? Center(
+                            child:
+                                CircularProgressIndicator(color: darkTurquoise))
+                        : AnimatedOpacity(
+                            opacity: _isVisible ? 1.0 : 0.0,
+                            duration: Duration(milliseconds: 500),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
-                                    _buildInfoSection(
-                                      'Thông tin hóa đơn',
-                                      [
-                                        'Tên bệnh nhân: ${widget.bill.patientName}',
-                                        'Mã hóa đơn: ${widget.bill.id.substring(0, 6)}...',
-                                        'Ngày tạo hóa đơn: ${DateFormat('dd/MM/yyyy HH:mm').format(widget.bill.saleDate)}',
-                                        'Tiền thuốc: ${NumberFormat.currency(locale: 'vi_VN', symbol: 'đ').format(widget.bill.medicineCost)}',
-                                        if (widget.bill.examinationCost != null)
-                                          'Tiền khám: ${NumberFormat.currency(locale: 'vi_VN', symbol: 'đ').format(widget.bill.examinationCost)}',
-                                        'Tổng thanh toán: ${NumberFormat.currency(locale: 'vi_VN', symbol: 'đ').format(widget.bill.totalCost)}',
-                                      ],
-                                      Icons.receipt_long,
+                                    Text(
+                                      'Chi tiết hóa đơn',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .headlineSmall
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.bold,
+                                            color: darkTurquoise,
+                                          ),
                                     ),
-                                    if (_prescriptionDetails != null) ...[
-                                      const SizedBox(height: 20),
-                                      // Show selected prescriptions as chips
-                                      if (_selectedPrescriptionIds.isNotEmpty)
-                                        Wrap(
-                                          spacing: 8,
-                                          runSpacing: 8,
-                                          children: _selectedPrescriptionIds
-                                              .map((id) {
-                                            return Chip(
-                                              backgroundColor:
-                                                  Color(0xFFE0F7F5),
-                                              label: Text(
-                                                  'Toa ${widget.bill.prescriptionIds.indexOf(id) + 1}'),
-                                              deleteIcon:
-                                                  Icon(Icons.close, size: 18),
-                                              onDeleted: () {
-                                                setState(() {
-                                                  _selectedPrescriptionIds
-                                                      .remove(id);
-                                                });
-                                              },
-                                            );
-                                          }).toList(),
-                                        ),
-                                      const SizedBox(height: 12),
-                                      // Only show dropdown if there are unselected prescriptions
-                                      if (_selectedPrescriptionIds.length <
-                                          widget.bill.prescriptionIds.length)
-                                        DropdownButton<String>(
-                                          hint: Text('Chọn toa thuốc'),
-                                          value: null,
-                                          onChanged: (String? newValue) {
-                                            if (newValue != null) {
-                                              setState(() {
-                                                _selectedPrescriptionIds
-                                                    .add(newValue);
-                                              });
-                                            }
-                                          },
-                                          items: widget.bill.prescriptionIds
-                                              .where((id) =>
-                                                  !_selectedPrescriptionIds
-                                                      .contains(id))
-                                              .map<DropdownMenuItem<String>>(
-                                                  (String value) {
-                                            return DropdownMenuItem<String>(
-                                              value: value,
-                                              child: Text(
-                                                  'Toa thuốc ${widget.bill.prescriptionIds.indexOf(value) + 1}'),
-                                            );
-                                          }).toList(),
-                                        ),
-                                      if (_selectedPrescriptionIds
-                                          .isNotEmpty) ...[
-                                        const SizedBox(height: 20),
-                                        ..._selectedPrescriptionIds
-                                            .map((prescriptionId) {
-                                          return _buildPrescriptionDetails(
-                                              prescriptionId);
-                                        }),
-                                      ],
-                                    ],
+                                    IconButton(
+                                      icon: Icon(Icons.close,
+                                          color: Colors.grey.shade600),
+                                      onPressed: () => Navigator.pop(context),
+                                    ),
                                   ],
                                 ),
-                              ),
-                            ],
+                                Divider(color: lightTurquoise, thickness: 2),
+                                Expanded(
+                                  child: ListView(
+                                    children: [
+                                      _buildInfoSection(
+                                        'Thông tin hóa đơn',
+                                        [
+                                          'Tên bệnh nhân: ${widget.bill.patientName}',
+                                          'Mã hóa đơn: ${widget.bill.id.substring(0, 6)}...',
+                                          'Ngày tạo hóa đơn: ${DateFormat('dd/MM/yyyy HH:mm').format(widget.bill.saleDate)}',
+                                          'Tiền thuốc: ${NumberFormat.currency(locale: 'vi_VN', symbol: 'đ').format(widget.bill.medicineCost)}',
+                                          if (widget.bill.examinationCost !=
+                                              null)
+                                            'Tiền khám: ${NumberFormat.currency(locale: 'vi_VN', symbol: 'đ').format(widget.bill.examinationCost)}',
+                                          'Tổng thanh toán: ${NumberFormat.currency(locale: 'vi_VN', symbol: 'đ').format(widget.bill.totalCost)}',
+                                        ],
+                                        Icons.receipt_long,
+                                      ),
+                                      if (_prescriptionDetails != null) ...[
+                                        const SizedBox(height: 20),
+                                        // Show selected prescriptions as chips
+                                        if (_selectedPrescriptionIds
+                                            .isNotEmpty)
+                                          Wrap(
+                                            spacing: 8,
+                                            runSpacing: 8,
+                                            children: _selectedPrescriptionIds
+                                                .map((id) {
+                                              return Chip(
+                                                backgroundColor:
+                                                    Color(0xFFE0F7F5),
+                                                label: Text(
+                                                    'Toa ${widget.bill.prescriptionIds.indexOf(id) + 1}'),
+                                                deleteIcon:
+                                                    Icon(Icons.close, size: 18),
+                                                onDeleted: () {
+                                                  setState(() {
+                                                    _selectedPrescriptionIds
+                                                        .remove(id);
+                                                  });
+                                                },
+                                              );
+                                            }).toList(),
+                                          ),
+                                        const SizedBox(height: 12),
+                                        // Only show dropdown if there are unselected prescriptions
+                                        if (_selectedPrescriptionIds.length <
+                                            widget.bill.prescriptionIds.length)
+                                          DropdownButton<String>(
+                                            hint: Text('Chọn toa thuốc'),
+                                            value: null,
+                                            onChanged: (String? newValue) {
+                                              if (newValue != null) {
+                                                setState(() {
+                                                  _selectedPrescriptionIds
+                                                      .add(newValue);
+                                                });
+                                              }
+                                            },
+                                            items: widget.bill.prescriptionIds
+                                                .where((id) =>
+                                                    !_selectedPrescriptionIds
+                                                        .contains(id))
+                                                .map<DropdownMenuItem<String>>(
+                                                    (String value) {
+                                              return DropdownMenuItem<String>(
+                                                value: value,
+                                                child: Text(
+                                                    'Toa thuốc ${widget.bill.prescriptionIds.indexOf(value) + 1}'),
+                                              );
+                                            }).toList(),
+                                          ),
+                                        if (_selectedPrescriptionIds
+                                            .isNotEmpty) ...[
+                                          const SizedBox(height: 20),
+                                          ..._selectedPrescriptionIds
+                                              .map((prescriptionId) {
+                                            return _buildPrescriptionDetails(
+                                                prescriptionId);
+                                          }),
+                                        ],
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
+                  ),
                 ),
-              ),
-            );
-          },
+              );
+            },
+          ),
         ),
       ),
     );
@@ -363,16 +378,22 @@ class _BillDetailsSheetState extends State<BillDetailsSheet>
 
   Widget _buildInfoSection(String title, List<String> details, IconData icon,
       {Widget? additionalContent}) {
-    final turquoiseColor = Color(0xFF40E0D0);
-    final lightTurquoise = Color(0xFFE0F7F5);
-    final darkTurquoise = Color(0xFF20B2AA);
-
+    final darkTurquoise = Color(0xFF38B2AC).withOpacity(0.95);
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: lightTurquoise,
+        color: const Color(0xFFE6F7F5).withOpacity(0.6), // Clearer background
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: turquoiseColor.withOpacity(0.3)),
+        border: Border.all(
+          color: const Color(0xFF4FD1C5).withOpacity(0.2), // Stronger border
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF4FD1C5).withOpacity(0.06),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
