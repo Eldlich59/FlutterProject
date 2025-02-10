@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'patient/patient_list_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'price_packages_screen.dart';
 import 'examination/examination_list_screen.dart';
 import 'medicine/medicine_list_screen.dart';
 import 'prescription/prescription_list_screen.dart';
@@ -184,6 +185,16 @@ class _HomeScreenState extends State<HomeScreen> {
                   context,
                   MaterialPageRoute(
                       builder: (context) => const DoctorListScreen()),
+                ),
+              ),
+              _buildMenuCard(
+                context,
+                'Bảng giá khám bệnh',
+                Icons.price_change,
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const PricePackagesScreen()),
                 ),
               ),
               _buildMenuCard(
