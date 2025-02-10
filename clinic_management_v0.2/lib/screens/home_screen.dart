@@ -29,6 +29,7 @@ class _HomeScreenState extends State<HomeScreen> {
     'Hóa đơn': Color(0xFF009688), // Material Teal
     'Chuyên khoa': Color(0xFF795548), // Material Brown
     'Quản lý kho': Color(0xFF607D8B), // Material Blue Grey
+    'Bảng giá khám bệnh': Color(0xFFE91E63), // Material Pink
   };
 
   // Track hover and pressed states

@@ -64,28 +64,55 @@ class _PricePackagesScreenState extends State<PricePackagesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Bảng Giá Dịch Vụ'),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.add),
-            onPressed: () => _showAddPackageDialog(),
-          ),
-        ],
+        title: const Text('Bảng Giá Dịch Vụ',
+            style: TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.pink.shade50,
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _showAddPackageDialog(),
+        icon: const Icon(Icons.add),
+        label: const Text('Thêm Bảng Mới'),
+        backgroundColor: Colors.pink,
+        foregroundColor: Colors.white,
+        elevation: 4,
       ),
       body: Column(
         children: [
-          Padding(
-            padding: EdgeInsets.all(8.0),
+          Container(
+            padding: const EdgeInsets.all(16.0),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.1),
+                  spreadRadius: 1,
+                  blurRadius: 3,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
             child: DropdownButtonFormField<String>(
               decoration: InputDecoration(
-                labelText: 'Chọn Chuyên Khoa Hiển Thị',
-                border: OutlineInputBorder(),
+                labelText: 'Chọn Chuyên Khoa',
+                labelStyle: TextStyle(color: Colors.pink.shade700),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: Colors.pink.shade200),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: Colors.pink.shade200),
+                ),
+                filled: true,
+                fillColor: Colors.pink.shade50,
+                prefixIcon: const Icon(Icons.local_hospital),
               ),
               value: selectedSpecialtyId,
               items: [
                 DropdownMenuItem<String>(
                   value: null,
-                  child: Text('Tất cả chuyên khoa'),
+                  child: Text('Tất cả chuyên khoa',
+                      style: TextStyle(color: Colors.pink.shade700)),
                 ),
                 ...specialties.map((specialty) {
                   return DropdownMenuItem<String>(
@@ -104,31 +131,59 @@ class _PricePackagesScreenState extends State<PricePackagesScreen> {
           ),
           Expanded(
             child: ListView.builder(
+              padding: const EdgeInsets.all(8.0),
               itemCount: packages.length,
               itemBuilder: (context, index) {
                 final package = packages[index];
                 return Card(
-                  margin: EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                  elevation: 3,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: BorderSide(
+                      color: package.isActive
+                          ? Colors.green.shade200
+                          : Colors.grey.shade300,
+                      width: 1,
+                    ),
+                  ),
                   child: ListTile(
-                    title: Text(package.name),
+                    contentPadding: const EdgeInsets.all(16),
+                    title: Text(
+                      package.name,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'Giá: ${package.price.toStringAsFixed(0)} VNĐ',
-                          style: TextStyle(
-                            color: Colors.green,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                        const SizedBox(height: 8),
                         Row(
                           children: [
-                            Text('Trạng thái:'),
+                            Icon(Icons.monetization_on,
+                                color: Colors.green.shade700, size: 20),
+                            const SizedBox(width: 8),
+                            Text(
+                              '${package.price.toStringAsFixed(0)} VNĐ',
+                              style: TextStyle(
+                                color: Colors.green.shade700,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            const Text('Trạng thái:'),
                             Switch(
                               value: package.isActive,
                               onChanged: (bool value) =>
                                   _togglePackageStatus(package, value),
                               activeColor: Colors.green,
+                              activeTrackColor: Colors.green.shade100,
                             ),
                             Text(
                               package.isActive
@@ -146,7 +201,35 @@ class _PricePackagesScreenState extends State<PricePackagesScreen> {
                       ],
                     ),
                     trailing: PopupMenuButton<String>(
-                      icon: Icon(Icons.more_vert),
+                      icon: const Icon(Icons.more_vert),
+                      itemBuilder: (context) => [
+                        PopupMenuItem(
+                          value: 'details',
+                          child: ListTile(
+                            leading: const Icon(Icons.info_outline, size: 20),
+                            title: const Text('Chi tiết'),
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                        ),
+                        PopupMenuItem(
+                          value: 'edit',
+                          child: ListTile(
+                            leading: const Icon(Icons.edit, size: 20),
+                            title: const Text('Chỉnh sửa'),
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                        ),
+                        PopupMenuItem(
+                          value: 'delete',
+                          child: ListTile(
+                            leading: const Icon(Icons.delete,
+                                color: Colors.red, size: 20),
+                            title: const Text('Xóa',
+                                style: TextStyle(color: Colors.red)),
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                        ),
+                      ],
                       onSelected: (value) {
                         switch (value) {
                           case 'edit':
@@ -160,38 +243,6 @@ class _PricePackagesScreenState extends State<PricePackagesScreen> {
                             break;
                         }
                       },
-                      itemBuilder: (context) => [
-                        PopupMenuItem(
-                          value: 'details',
-                          child: Row(
-                            children: [
-                              Icon(Icons.info_outline, size: 20),
-                              SizedBox(width: 8),
-                              Text('Chi tiết'),
-                            ],
-                          ),
-                        ),
-                        PopupMenuItem(
-                          value: 'edit',
-                          child: Row(
-                            children: [
-                              Icon(Icons.edit, size: 20),
-                              SizedBox(width: 8),
-                              Text('Chỉnh sửa'),
-                            ],
-                          ),
-                        ),
-                        PopupMenuItem(
-                          value: 'delete',
-                          child: Row(
-                            children: [
-                              Icon(Icons.delete, color: Colors.red, size: 20),
-                              SizedBox(width: 8),
-                              Text('Xóa', style: TextStyle(color: Colors.red)),
-                            ],
-                          ),
-                        ),
-                      ],
                     ),
                     onTap: () => _showPackageDetails(package),
                   ),
@@ -215,108 +266,84 @@ class _PricePackagesScreenState extends State<PricePackagesScreen> {
     final descriptionController = TextEditingController();
     final servicesController = TextEditingController();
     String? dialogSpecialtyId = selectedSpecialtyId;
+    DateTime selectedDate = DateTime.now();
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Thêm Gói Dịch Vụ Mới'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              DropdownButtonFormField<String>(
-                decoration: InputDecoration(
-                  labelText: 'Chuyên Khoa',
-                  border: OutlineInputBorder(),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: Text('Thêm Gói Dịch Vụ Mới'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                DropdownButtonFormField<String>(
+                  decoration: InputDecoration(
+                    labelText: 'Chuyên Khoa',
+                    border: OutlineInputBorder(),
+                  ),
+                  value: dialogSpecialtyId,
+                  items: specialties.map((specialty) {
+                    return DropdownMenuItem(
+                      value: specialty.id,
+                      child: Text(specialty.name),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    dialogSpecialtyId = value;
+                  },
                 ),
-                value: dialogSpecialtyId,
-                items: specialties.map((specialty) {
-                  return DropdownMenuItem(
-                    value: specialty.id,
-                    child: Text(specialty.name),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  dialogSpecialtyId = value;
-                },
-              ),
-              SizedBox(height: 8),
-              TextField(
-                controller: nameController,
-                decoration: InputDecoration(
-                  labelText: 'Tên Gói Dịch Vụ',
-                  border: OutlineInputBorder(),
+                SizedBox(height: 8),
+                TextField(
+                  controller: nameController,
+                  decoration: InputDecoration(
+                    labelText: 'Tên Gói Dịch Vụ',
+                    border: OutlineInputBorder(),
+                  ),
                 ),
-              ),
-              SizedBox(height: 8),
-              TextField(
-                controller: priceController,
-                decoration: InputDecoration(
-                  labelText: 'Giá (VNĐ)',
-                  border: OutlineInputBorder(),
+                SizedBox(height: 8),
+                TextField(
+                  controller: priceController,
+                  decoration: InputDecoration(
+                    labelText: 'Giá (VNĐ)',
+                    border: OutlineInputBorder(),
+                  ),
+                  keyboardType: TextInputType.number,
                 ),
-                keyboardType: TextInputType.number,
-              ),
-              SizedBox(height: 8),
-              TextField(
-                controller: descriptionController,
-                decoration: InputDecoration(
-                  labelText: 'Mô tả',
-                  border: OutlineInputBorder(),
+                SizedBox(height: 8),
+                TextField(
+                  controller: descriptionController,
+                  decoration: InputDecoration(
+                    labelText: 'Mô tả',
+                    border: OutlineInputBorder(),
+                  ),
+                  maxLines: 3,
                 ),
-                maxLines: 3,
-              ),
-              SizedBox(height: 8),
-              TextField(
-                controller: servicesController,
-                decoration: InputDecoration(
-                  labelText: 'Dịch vụ bao gồm (phân cách bằng dấu phẩy)',
-                  border: OutlineInputBorder(),
+                SizedBox(height: 8),
+                TextField(
+                  controller: servicesController,
+                  decoration: InputDecoration(
+                    labelText: 'Dịch vụ bao gồm (phân cách bằng dấu phẩy)',
+                    border: OutlineInputBorder(),
+                  ),
+                  maxLines: 2,
                 ),
-                maxLines: 2,
-              ),
-            ],
+                SizedBox(height: 8),
+                ListTile(
+                  title: Text('Ngày tạo:'),
+                  subtitle: Text(_formatDate(selectedDate)),
+                  trailing: IconButton(
+                    icon: Icon(Icons.calendar_today),
+                    onPressed: () => _selectDate(
+                      selectedDate,
+                      (date) => setState(() => selectedDate = date),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Hủy'),
-          ),
-          TextButton(
-            onPressed: () async {
-              if (dialogSpecialtyId == null ||
-                  nameController.text.isEmpty ||
-                  priceController.text.isEmpty) {
-                _showError('Vui lòng điền đầy đủ thông tin bắt buộc');
-                return;
-              }
-
-              try {
-                final newPackage = PricePackage(
-                  id: '', // Let the database generate the ID
-                  name: nameController.text,
-                  chuyenKhoaId: dialogSpecialtyId!,
-                  price: double.parse(priceController.text),
-                  description: descriptionController.text,
-                  includedServices: servicesController.text
-                      .split(',')
-                      .map((e) => e.trim())
-                      .where((e) => e.isNotEmpty)
-                      .toList(),
-                  createdAt: DateTime.now(),
-                );
-                await _packageService.createPackage(newPackage);
-                if (!mounted) return;
-                Navigator.pop(context);
-                _loadPackages();
-              } catch (e) {
-                _showError('Lỗi khi tạo gói dịch vụ: $e');
-              }
-            },
-            child: Text('Lưu'),
-          ),
-        ],
       ),
     );
   }
@@ -330,110 +357,126 @@ class _PricePackagesScreenState extends State<PricePackagesScreen> {
     final servicesController =
         TextEditingController(text: package.includedServices.join(', '));
     String? dialogSpecialtyId = package.chuyenKhoaId;
+    DateTime selectedDate = package.createdAt;
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Chỉnh Sửa Gói Dịch Vụ'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              DropdownButtonFormField<String>(
-                decoration: InputDecoration(
-                  labelText: 'Chuyên Khoa',
-                  border: OutlineInputBorder(),
+      builder: (context) => StatefulBuilder(
+        // Added StatefulBuilder to update date in dialog
+        builder: (context, setState) => AlertDialog(
+          title: Text('Chỉnh Sửa Gói Dịch Vụ'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                DropdownButtonFormField<String>(
+                  decoration: InputDecoration(
+                    labelText: 'Chuyên Khoa',
+                    border: OutlineInputBorder(),
+                  ),
+                  value: dialogSpecialtyId,
+                  items: specialties.map((specialty) {
+                    return DropdownMenuItem(
+                      value: specialty.id,
+                      child: Text(specialty.name),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    dialogSpecialtyId = value;
+                  },
                 ),
-                value: dialogSpecialtyId,
-                items: specialties.map((specialty) {
-                  return DropdownMenuItem(
-                    value: specialty.id,
-                    child: Text(specialty.name),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  dialogSpecialtyId = value;
-                },
-              ),
-              SizedBox(height: 8),
-              TextField(
-                controller: nameController,
-                decoration: InputDecoration(
-                  labelText: 'Tên Gói Dịch Vụ',
-                  border: OutlineInputBorder(),
+                SizedBox(height: 8),
+                TextField(
+                  controller: nameController,
+                  decoration: InputDecoration(
+                    labelText: 'Tên Gói Dịch Vụ',
+                    border: OutlineInputBorder(),
+                  ),
                 ),
-              ),
-              SizedBox(height: 8),
-              TextField(
-                controller: priceController,
-                decoration: InputDecoration(
-                  labelText: 'Giá (VNĐ)',
-                  border: OutlineInputBorder(),
+                SizedBox(height: 8),
+                TextField(
+                  controller: priceController,
+                  decoration: InputDecoration(
+                    labelText: 'Giá (VNĐ)',
+                    border: OutlineInputBorder(),
+                  ),
+                  keyboardType: TextInputType.number,
                 ),
-                keyboardType: TextInputType.number,
-              ),
-              SizedBox(height: 8),
-              TextField(
-                controller: descriptionController,
-                decoration: InputDecoration(
-                  labelText: 'Mô tả',
-                  border: OutlineInputBorder(),
+                SizedBox(height: 8),
+                TextField(
+                  controller: descriptionController,
+                  decoration: InputDecoration(
+                    labelText: 'Mô tả',
+                    border: OutlineInputBorder(),
+                  ),
+                  maxLines: 3,
                 ),
-                maxLines: 3,
-              ),
-              SizedBox(height: 8),
-              TextField(
-                controller: servicesController,
-                decoration: InputDecoration(
-                  labelText: 'Dịch vụ bao gồm (phân cách bằng dấu phẩy)',
-                  border: OutlineInputBorder(),
+                SizedBox(height: 8),
+                TextField(
+                  controller: servicesController,
+                  decoration: InputDecoration(
+                    labelText: 'Dịch vụ bao gồm (phân cách bằng dấu phẩy)',
+                    border: OutlineInputBorder(),
+                  ),
+                  maxLines: 2,
                 ),
-                maxLines: 2,
-              ),
-            ],
+                SizedBox(height: 8),
+                ListTile(
+                  title: Text('Ngày tạo:'),
+                  subtitle: Text(_formatDate(selectedDate)),
+                  trailing: IconButton(
+                    icon: Icon(Icons.calendar_today),
+                    onPressed: () => _selectDate(
+                      selectedDate,
+                      (date) => setState(() => selectedDate = date),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Hủy'),
-          ),
-          TextButton(
-            onPressed: () async {
-              if (dialogSpecialtyId == null ||
-                  nameController.text.isEmpty ||
-                  priceController.text.isEmpty) {
-                _showError('Vui lòng điền đầy đủ thông tin bắt buộc');
-                return;
-              }
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('Hủy'),
+            ),
+            TextButton(
+              onPressed: () async {
+                if (dialogSpecialtyId == null ||
+                    nameController.text.isEmpty ||
+                    priceController.text.isEmpty) {
+                  _showError('Vui lòng điền đầy đủ thông tin bắt buộc');
+                  return;
+                }
 
-              try {
-                final updatedPackage = PricePackage(
-                  id: package.id,
-                  name: nameController.text,
-                  chuyenKhoaId: dialogSpecialtyId!,
-                  price: double.parse(priceController.text),
-                  description: descriptionController.text,
-                  includedServices: servicesController.text
-                      .split(',')
-                      .map((e) => e.trim())
-                      .where((e) => e.isNotEmpty)
-                      .toList(),
-                  isActive: package.isActive,
-                  createdAt: package.createdAt,
-                  updatedAt: DateTime.now(),
-                );
-                await _packageService.updatePackage(updatedPackage);
-                if (!mounted) return;
-                Navigator.pop(context);
-                _loadPackages();
-              } catch (e) {
-                _showError('Lỗi khi cập nhật gói dịch vụ: $e');
-              }
-            },
-            child: Text('Cập nhật'),
-          ),
-        ],
+                try {
+                  final updatedPackage = PricePackage(
+                    id: package.id,
+                    name: nameController.text,
+                    chuyenKhoaId: dialogSpecialtyId!,
+                    price: double.parse(priceController.text),
+                    description: descriptionController.text,
+                    includedServices: servicesController.text
+                        .split(',')
+                        .map((e) => e.trim())
+                        .where((e) => e.isNotEmpty)
+                        .toList(),
+                    isActive: package.isActive,
+                    createdAt: selectedDate, // Use selected date
+                    updatedAt: DateTime.now(),
+                  );
+                  await _packageService.updatePackage(updatedPackage);
+                  if (!mounted) return;
+                  Navigator.pop(context);
+                  _loadPackages();
+                } catch (e) {
+                  _showError('Lỗi khi cập nhật gói dịch vụ: $e');
+                }
+              },
+              child: Text('Cập nhật'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -473,27 +516,92 @@ class _PricePackagesScreenState extends State<PricePackagesScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(package.name),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+        title: Row(
           children: [
-            Text('Giá: ${package.price.toStringAsFixed(0)} VNĐ',
-                style: TextStyle(fontWeight: FontWeight.bold)),
-            SizedBox(height: 8),
-            Text('Mô tả: ${package.description}'),
-            SizedBox(height: 8),
-            Text('Dịch vụ bao gồm:'),
-            ...package.includedServices.map((service) => Padding(
-                  padding: EdgeInsets.only(left: 16, top: 4),
-                  child: Text('• $service'),
-                )),
+            Icon(Icons.medical_services, color: Colors.pink.shade700),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(package.name,
+                  style: const TextStyle(fontWeight: FontWeight.bold)),
+            ),
           ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Card(
+                color: Colors.green.shade50,
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.monetization_on, color: Colors.green),
+                      const SizedBox(width: 8),
+                      Text(
+                        '${package.price.toStringAsFixed(0)} VNĐ',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                          color: Colors.green,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text('Mô tả:',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+              Card(
+                color: Colors.grey.shade50,
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Text(package.description),
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text('Dịch vụ bao gồm:',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+              ...package.includedServices.map((service) => Padding(
+                    padding: const EdgeInsets.only(left: 16, top: 8),
+                    child: Row(
+                      children: [
+                        Icon(Icons.check_circle,
+                            size: 16, color: Colors.green.shade700),
+                        const SizedBox(width: 8),
+                        Expanded(child: Text(service)),
+                      ],
+                    ),
+                  )),
+              const SizedBox(height: 16),
+              const Divider(),
+              const Text(
+                'Thông tin thời gian:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              _buildTimeInfoRow(
+                Icons.calendar_today,
+                'Ngày tạo:',
+                _formatDate(package.createdAt),
+              ),
+              if (package.updatedAt != null) ...[
+                const SizedBox(height: 4),
+                _buildTimeInfoRow(
+                  Icons.update,
+                  'Cập nhật lần cuối:',
+                  _formatDate(package.updatedAt!),
+                ),
+              ],
+            ],
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Đóng'),
+            child: const Text('Đóng'),
           ),
         ],
       ),
@@ -509,5 +617,42 @@ class _PricePackagesScreenState extends State<PricePackagesScreen> {
     } catch (e) {
       _showError('Lỗi khi thay đổi trạng thái: $e');
     }
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.day}/${date.month}/${date.year}';
+  }
+
+  Future<void> _selectDate(
+      DateTime initialDate, Function(DateTime) onSelect) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2101),
+    );
+    if (picked != null) {
+      // Preserve the original time when updating the date
+      final newDate = DateTime(
+        picked.year,
+        picked.month,
+        picked.day,
+        initialDate.hour,
+        initialDate.minute,
+      );
+      onSelect(newDate);
+    }
+  }
+
+  Widget _buildTimeInfoRow(IconData icon, String label, String value) {
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: Colors.grey),
+        const SizedBox(width: 8),
+        Text(label),
+        const SizedBox(width: 4),
+        Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
+      ],
+    );
   }
 }
