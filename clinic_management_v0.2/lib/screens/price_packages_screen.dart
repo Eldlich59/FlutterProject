@@ -425,10 +425,12 @@ class _PricePackagesScreenState extends State<PricePackagesScreen> {
                             icon: Icons.monetization_on,
                             keyboardType: TextInputType.number,
                             validator: (value) {
-                              if (value?.isEmpty == true)
+                              if (value?.isEmpty == true) {
                                 return 'Vui lòng nhập giá';
-                              if (double.tryParse(value!) == null)
+                              }
+                              if (double.tryParse(value!) == null) {
                                 return 'Giá không hợp lệ';
+                              }
                               return null;
                             },
                           ),
@@ -702,10 +704,12 @@ class _PricePackagesScreenState extends State<PricePackagesScreen> {
                             icon: Icons.monetization_on,
                             keyboardType: TextInputType.number,
                             validator: (value) {
-                              if (value?.isEmpty == true)
+                              if (value?.isEmpty == true) {
                                 return 'Vui lòng nhập giá';
-                              if (double.tryParse(value!) == null)
+                              }
+                              if (double.tryParse(value!) == null) {
                                 return 'Giá không hợp lệ';
+                              }
                               return null;
                             },
                           ),
