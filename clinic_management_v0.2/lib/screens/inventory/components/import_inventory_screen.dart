@@ -31,6 +31,8 @@ class _ImportInventoryScreenState extends State<ImportInventoryScreen> {
   final List<Map<String, dynamic>> selectedItems = [];
   final TextEditingController notesController = TextEditingController();
   DateTime selectedDate = DateTime.now();
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
 
   @override
   void initState() {
@@ -38,6 +40,13 @@ class _ImportInventoryScreenState extends State<ImportInventoryScreen> {
     _loadData();
     _loadSuppliers();
     _loadMedicines();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    notesController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadData() async {
@@ -126,6 +135,13 @@ class _ImportInventoryScreenState extends State<ImportInventoryScreen> {
     }
   }
 
+  List<InventoryReceipt> _getFilteredReceipts() {
+    if (_searchQuery.isEmpty) return importReceipts ?? [];
+    return (importReceipts ?? []).where((receipt) {
+      return receipt.id.toLowerCase().contains(_searchQuery.toLowerCase());
+    }).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -133,6 +149,37 @@ class _ImportInventoryScreenState extends State<ImportInventoryScreen> {
         title: const Text('Nhập kho'),
         elevation: 0,
         backgroundColor: ImportInventoryScreen.primaryColor,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(60),
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Tìm kiếm theo mã phiếu...',
+                prefixIcon: const Icon(Icons.search, color: Colors.white),
+                suffixIcon: _searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear, color: Colors.white),
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() => _searchQuery = '');
+                        },
+                      )
+                    : null,
+                filled: true,
+                fillColor: Colors.white.withOpacity(0.2),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(30),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+              ),
+              style: const TextStyle(color: Colors.white),
+              onChanged: (value) => setState(() => _searchQuery = value),
+            ),
+          ),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -166,30 +213,32 @@ class _ImportInventoryScreenState extends State<ImportInventoryScreen> {
   }
 
   Widget _buildReceiptList() {
-    if (importReceipts == null || importReceipts!.isEmpty) {
+    final filteredReceipts = _getFilteredReceipts();
+
+    if (filteredReceipts.isEmpty) {
       return TweenAnimationBuilder<double>(
         duration: const Duration(milliseconds: 800),
         tween: Tween<double>(begin: 0, end: 1),
         builder: (context, value, child) {
           return Opacity(
             opacity: value,
-            child: Transform.translate(
-              offset: Offset(0, 20 * (1 - value)),
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.inventory_2_outlined, size: 64, color: Colors.grey[400]),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Không có phiếu nhập kho',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.grey[600],
-                      ),
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.inventory_2_outlined,
+                      size: 64, color: Colors.grey[400]),
+                  const SizedBox(height: 16),
+                  Text(
+                    _searchQuery.isEmpty
+                        ? 'Không có phiếu nhập kho'
+                        : 'Không tìm thấy phiếu nhập kho phù hợp',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey[600],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           );
@@ -199,9 +248,9 @@ class _ImportInventoryScreenState extends State<ImportInventoryScreen> {
 
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: importReceipts!.length,
+      itemCount: filteredReceipts.length,
       itemBuilder: (context, index) {
-        final receipt = importReceipts![index];
+        final receipt = filteredReceipts[index];
         return TweenAnimationBuilder<double>(
           duration: Duration(milliseconds: 400 + (index * 100)),
           tween: Tween<double>(begin: 0, end: 1),

@@ -14,12 +14,33 @@ class InventoryStatusScreen extends StatefulWidget {
 class _InventoryStatusScreenState extends State<InventoryStatusScreen> {
   final currencyFormat = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ');
   List<Medicine>? medicines;
+  List<Medicine>? filteredMedicines;
   bool isLoading = true;
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _loadData();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _filterMedicines(String query) {
+    setState(() {
+      if (query.isEmpty) {
+        filteredMedicines = medicines;
+      } else {
+        filteredMedicines = medicines
+            ?.where((medicine) =>
+                medicine.name.toLowerCase().contains(query.toLowerCase()))
+            .toList();
+      }
+    });
   }
 
   Future<void> _loadData() async {
@@ -28,6 +49,7 @@ class _InventoryStatusScreenState extends State<InventoryStatusScreen> {
       final service = InventoryService(Supabase.instance.client);
       final response = await service.getInventoryStatus();
       medicines = response.map((data) => Medicine.fromJson(data)).toList();
+      filteredMedicines = medicines; // Initialize filtered list
     } finally {
       setState(() => isLoading = false);
     }
@@ -65,6 +87,27 @@ class _InventoryStatusScreenState extends State<InventoryStatusScreen> {
                 ),
               ],
             ),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: TextField(
+                controller: _searchController,
+                onChanged: _filterMedicines,
+                decoration: InputDecoration(
+                  hintText: 'Tìm kiếm thuốc...',
+                  prefixIcon: const Icon(Icons.search),
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(30),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 16,
+                  ),
+                ),
+              ),
+            ),
             Expanded(
               child: isLoading
                   ? const Center(child: CircularProgressIndicator())
@@ -77,7 +120,7 @@ class _InventoryStatusScreenState extends State<InventoryStatusScreen> {
   }
 
   Widget _buildMedicineList() {
-    if (medicines == null || medicines!.isEmpty) {
+    if (filteredMedicines == null || filteredMedicines!.isEmpty) {
       return TweenAnimationBuilder<double>(
         duration: const Duration(milliseconds: 800),
         tween: Tween<double>(begin: 0, end: 1),
@@ -86,7 +129,9 @@ class _InventoryStatusScreenState extends State<InventoryStatusScreen> {
             opacity: value,
             child: Transform.translate(
               offset: Offset(0, 20 * (1 - value)),
-              child: const Center(child: Text('Không có dữ liệu tồn kho')),
+              child: const Center(
+                child: Text('Không tìm thấy thuốc'),
+              ),
             ),
           );
         },
@@ -132,7 +177,7 @@ class _InventoryStatusScreenState extends State<InventoryStatusScreen> {
                   children: [
                     _buildStatCard(
                       'Tổng sản phẩm',
-                      medicines!.length.toString(),
+                      filteredMedicines!.length.toString(),
                       Icons.medication,
                       Colors.white,
                     ),
@@ -143,7 +188,10 @@ class _InventoryStatusScreenState extends State<InventoryStatusScreen> {
                     ),
                     _buildStatCard(
                       'Hết hàng',
-                      medicines!.where((m) => m.stock < 10).length.toString(),
+                      filteredMedicines!
+                          .where((m) => m.stock < 10)
+                          .length
+                          .toString(),
                       Icons.warning,
                       Colors.white,
                     ),
@@ -156,9 +204,9 @@ class _InventoryStatusScreenState extends State<InventoryStatusScreen> {
         Expanded(
           child: ListView.builder(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: medicines!.length,
+            itemCount: filteredMedicines!.length,
             itemBuilder: (context, index) {
-              final medicine = medicines![index];
+              final medicine = filteredMedicines![index];
               final isLowStock = medicine.stock < 10;
 
               return TweenAnimationBuilder<double>(
@@ -189,7 +237,8 @@ class _InventoryStatusScreenState extends State<InventoryStatusScreen> {
                   child: ListTile(
                     contentPadding: const EdgeInsets.all(16),
                     leading: CircleAvatar(
-                      backgroundColor: isLowStock ? Colors.red[100] : Colors.blue[100],
+                      backgroundColor:
+                          isLowStock ? Colors.red[100] : Colors.blue[100],
                       child: Icon(
                         Icons.medication,
                         color: isLowStock ? Colors.red : Colors.blue,
@@ -248,7 +297,8 @@ class _InventoryStatusScreenState extends State<InventoryStatusScreen> {
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
+  Widget _buildStatCard(
+      String title, String value, IconData icon, Color color) {
     return Column(
       children: [
         Icon(icon, size: 32, color: color),

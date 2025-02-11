@@ -25,10 +25,17 @@ class _BillListScreenState extends State<BillListScreen>
   late Animation<double> _fabOpacityAnimation;
 
   // Update color constants with stronger shades
-  final Color primaryColor = const Color(0xFF4FD1C5).withOpacity(0.9); // Stronger turquoise
-  final Color secondaryColor = const Color(0xFFE6F7F5).withOpacity(0.7); // Clearer background
-  final Color accentColor = const Color(0xFF38B2AC).withOpacity(0.95); // Deeper turquoise
+  final Color primaryColor =
+      const Color(0xFF4FD1C5).withOpacity(0.9); // Stronger turquoise
+  final Color secondaryColor =
+      const Color(0xFFE6F7F5).withOpacity(0.7); // Clearer background
+  final Color accentColor =
+      const Color(0xFF38B2AC).withOpacity(0.95); // Deeper turquoise
   final Color textColor = const Color(0xFF2D3436).withOpacity(0.9);
+
+  final TextEditingController _searchController = TextEditingController();
+  List<Bill> _filteredBills = [];
+  bool _isSearching = false;
 
   @override
   void initState() {
@@ -73,12 +80,14 @@ class _BillListScreenState extends State<BillListScreen>
       }
     });
     _loadBills();
+    _searchController.addListener(_onSearchChanged);
   }
 
   @override
   void dispose() {
     _animationController.dispose();
     _fabAnimationController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -114,6 +123,67 @@ class _BillListScreenState extends State<BillListScreen>
 
   String _formatBillId(String id) {
     return id.length > 6 ? '${id.substring(0, 6)}...' : id;
+  }
+
+  void _onSearchChanged() {
+    final searchText = _searchController.text.toLowerCase();
+    setState(() {
+      if (searchText.isEmpty) {
+        _filteredBills = _bills;
+      } else {
+        _filteredBills = _bills.where((bill) {
+          final billId = bill.id.toLowerCase();
+          final patientName = bill.patientName.toLowerCase();
+
+          // Check if search text matches either bill ID or patient name
+          return billId.contains(searchText) ||
+              patientName.contains(searchText);
+        }).toList();
+      }
+    });
+  }
+
+  Widget _buildSearchBar() {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.2),
+            spreadRadius: 2,
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: TextField(
+        controller: _searchController,
+        decoration: InputDecoration(
+          hintText: 'Tìm theo Mã HĐ hoặc Tên bệnh nhân...',
+          hintStyle: TextStyle(
+            color: Colors.grey.withOpacity(0.5), // Make hint text more faded
+          ),
+          prefixIcon: Icon(Icons.search, color: primaryColor),
+          suffixIcon: _searchController.text.isNotEmpty
+              ? IconButton(
+                  icon: const Icon(Icons.clear),
+                  onPressed: () {
+                    _searchController.clear();
+                    FocusScope.of(context).unfocus();
+                  },
+                )
+              : null,
+          border: InputBorder.none,
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        ),
+        onChanged: (value) {
+          setState(() => _isSearching = value.isNotEmpty);
+        },
+      ),
+    );
   }
 
   @override
@@ -205,13 +275,22 @@ class _BillListScreenState extends State<BillListScreen>
             stops: const [0.0, 0.4],
           ),
         ),
-        child: _isLoading
-            ? _buildShimmerLoading()
-            : RefreshIndicator(
-                color: primaryColor,
-                onRefresh: _loadBills,
-                child: _bills.isEmpty ? _buildEmptyState() : _buildBillsList(),
-              ),
+        child: Column(
+          children: [
+            _buildSearchBar(),
+            Expanded(
+              child: _isLoading
+                  ? _buildShimmerLoading()
+                  : RefreshIndicator(
+                      color: primaryColor,
+                      onRefresh: _loadBills,
+                      child: _bills.isEmpty
+                          ? _buildEmptyState()
+                          : _buildBillsList(),
+                    ),
+            ),
+          ],
+        ),
       ),
       floatingActionButton: _buildFAB(),
     );
@@ -280,11 +359,36 @@ class _BillListScreenState extends State<BillListScreen>
   }
 
   Widget _buildBillsList() {
+    final bills = _isSearching ? _filteredBills : _bills;
+
+    if (_isSearching && bills.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.search_off_rounded,
+              size: 64,
+              color: primaryColor.withOpacity(0.5),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Không tìm thấy hóa đơn nào',
+              style: TextStyle(
+                fontSize: 18,
+                color: textColor.withOpacity(0.7),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: _bills.length,
+      itemCount: bills.length,
       itemBuilder: (context, index) {
-        final bill = _bills[index];
+        final bill = bills[index];
         return _buildAnimatedBillCard(bill, index);
       },
     );

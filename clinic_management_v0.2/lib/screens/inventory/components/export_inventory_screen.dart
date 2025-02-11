@@ -19,6 +19,12 @@ class _ExportInventoryScreenState extends State<ExportInventoryScreen> {
   final InventoryService _inventoryService =
       InventoryService(Supabase.instance.client);
 
+  // Add new state variables
+  final TextEditingController _searchController = TextEditingController();
+  DateTime? _startDate;
+  DateTime? _endDate;
+  List<InventoryReceipt>? _allExportReceipts;
+
   @override
   void initState() {
     super.initState();
@@ -30,7 +36,7 @@ class _ExportInventoryScreenState extends State<ExportInventoryScreen> {
     try {
       final exports = await _inventoryService.getInventoryExports();
 
-      exportReceipts = exports.map((data) {
+      _allExportReceipts = exports.map((data) {
         final exportDate = data['NgayXuat'] != null
             ? DateTime.parse(data['NgayXuat'])
             : DateTime.now();
@@ -46,10 +52,84 @@ class _ExportInventoryScreenState extends State<ExportInventoryScreen> {
           details: [],
         );
       }).toList();
+
+      _filterExportReceipts(); // Apply filters initially
     } catch (e) {
       debugPrint('Error loading export receipts: $e');
     } finally {
       setState(() => isLoading = false);
+    }
+  }
+
+  // Add new method for filtering receipts
+  void _filterExportReceipts() {
+    if (_allExportReceipts == null) {
+      exportReceipts = null;
+      return;
+    }
+
+    List<InventoryReceipt> filtered = List.from(_allExportReceipts!);
+
+    // Filter by ID
+    if (_searchController.text.isNotEmpty) {
+      filtered = filtered
+          .where((receipt) => receipt.id
+              .toLowerCase()
+              .contains(_searchController.text.toLowerCase()))
+          .toList();
+    }
+
+    // Filter by date range
+    if (_startDate != null) {
+      filtered = filtered
+          .where((receipt) =>
+              receipt.importDate.isAtSameMomentAs(_startDate!) ||
+              receipt.importDate.isAfter(_startDate!))
+          .toList();
+    }
+    if (_endDate != null) {
+      filtered = filtered
+          .where((receipt) =>
+              receipt.importDate.isAtSameMomentAs(_endDate!) ||
+              receipt.importDate.isBefore(_endDate!))
+          .toList();
+    }
+
+    setState(() {
+      exportReceipts = filtered;
+    });
+  }
+
+  // Add method to show date range picker
+  Future<void> _showDateRangePicker() async {
+    final DateTimeRange? picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now(),
+      initialDateRange: _startDate != null && _endDate != null
+          ? DateTimeRange(start: _startDate!, end: _endDate!)
+          : null,
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: Colors.pinkAccent,
+              onPrimary: Colors.white,
+              surface: Colors.white,
+              onSurface: Colors.black,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null) {
+      setState(() {
+        _startDate = picked.start;
+        _endDate = picked.end;
+        _filterExportReceipts();
+      });
     }
   }
 
@@ -74,18 +154,116 @@ class _ExportInventoryScreenState extends State<ExportInventoryScreen> {
         // Changed backgroundColor from blue to pink
         backgroundColor: Colors.pinkAccent,
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            // Changed gradient color (blue -> pink)
-            colors: [Colors.pinkAccent.withOpacity(0.1), Colors.white],
+      body: Column(
+        children: [
+          // Add search bar and date filter
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.1),
+                  spreadRadius: 1,
+                  blurRadius: 2,
+                  offset: const Offset(0, 1),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: 'Tìm theo mã phiếu xuất...',
+                      prefixIcon:
+                          const Icon(Icons.search, color: Colors.pinkAccent),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide(color: Colors.grey.shade300),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide(color: Colors.grey.shade300),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(color: Colors.pinkAccent),
+                      ),
+                      contentPadding:
+                          const EdgeInsets.symmetric(horizontal: 16),
+                    ),
+                    onChanged: (value) => _filterExportReceipts(),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: InkWell(
+                    onTap: _showDateRangePicker,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 14),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey.shade300),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.calendar_today,
+                              size: 20, color: Colors.pinkAccent),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _startDate != null && _endDate != null
+                                  ? '${dateFormat.format(_startDate!)} - ${dateFormat.format(_endDate!)}'
+                                  : 'Chọn ngày',
+                              style: TextStyle(
+                                color: _startDate != null
+                                    ? Colors.black
+                                    : Colors.grey[600],
+                                fontSize: 14,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (_startDate != null)
+                            InkWell(
+                              onTap: () {
+                                setState(() {
+                                  _startDate = null;
+                                  _endDate = null;
+                                  _filterExportReceipts();
+                                });
+                              },
+                              child: const Icon(Icons.clear,
+                                  size: 20, color: Colors.grey),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-        child: isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : _buildReceiptList(),
+          // Existing body content
+          Expanded(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Colors.pinkAccent.withOpacity(0.1), Colors.white],
+                ),
+              ),
+              child: isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _buildReceiptList(),
+            ),
+          ),
+        ],
       ),
       floatingActionButton: Row(
         mainAxisAlignment: MainAxisAlignment.end,
@@ -117,7 +295,8 @@ class _ExportInventoryScreenState extends State<ExportInventoryScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.inventory_2_outlined, size: 64, color: Colors.grey[400]),
+                    Icon(Icons.inventory_2_outlined,
+                        size: 64, color: Colors.grey[400]),
                     const SizedBox(height: 16),
                     Text(
                       'Không có phiếu xuất kho',
@@ -148,7 +327,8 @@ class _ExportInventoryScreenState extends State<ExportInventoryScreen> {
           final parts = displayNotes.split('\n');
           if (parts.length > 1) {
             final prescriptionId = parts[1].replaceAll('Toa thuốc: ', '');
-            displayNotes = 'Lý do: Xuất theo toa thuốc\n' 'Toa thuốc: ${prescriptionId.substring(0, 6)}...';
+            displayNotes = 'Lý do: Xuất theo toa thuốc\n'
+                'Toa thuốc: ${prescriptionId.substring(0, 6)}...';
           }
         }
 
@@ -412,7 +592,8 @@ class _ExportInventoryScreenState extends State<ExportInventoryScreen> {
                   Row(
                     children: [
                       // Changed icon color from blue to pink
-                      const Icon(Icons.edit_note, color: Colors.pinkAccent, size: 28),
+                      const Icon(Icons.edit_note,
+                          color: Colors.pinkAccent, size: 28),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
@@ -847,10 +1028,12 @@ class _ExportInventoryScreenState extends State<ExportInventoryScreen> {
                                 decoration: BoxDecoration(
                                   color: Colors.grey[50],
                                   borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(color: Colors.grey.shade200),
+                                  border:
+                                      Border.all(color: Colors.grey.shade200),
                                 ),
                                 child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
                                   children: [
                                     Padding(
                                       padding: const EdgeInsets.all(8),
@@ -882,15 +1065,18 @@ class _ExportInventoryScreenState extends State<ExportInventoryScreen> {
                                           return const Center(
                                             child: Padding(
                                               padding: EdgeInsets.all(16),
-                                              child: CircularProgressIndicator(),
+                                              child:
+                                                  CircularProgressIndicator(),
                                             ),
                                           );
                                         }
                                         return Column(
-                                          children: snapshot.data!.map((detail) {
+                                          children:
+                                              snapshot.data!.map((detail) {
                                             final medicine = detail['THUOC'];
                                             return Container(
-                                              padding: const EdgeInsets.symmetric(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
                                                 horizontal: 16,
                                                 vertical: 8,
                                               ),
@@ -917,7 +1103,8 @@ class _ExportInventoryScreenState extends State<ExportInventoryScreen> {
                                                       children: [
                                                         Text(
                                                           medicine['TenThuoc'],
-                                                          style: const TextStyle(
+                                                          style:
+                                                              const TextStyle(
                                                             fontWeight:
                                                                 FontWeight.w500,
                                                           ),
@@ -926,8 +1113,8 @@ class _ExportInventoryScreenState extends State<ExportInventoryScreen> {
                                                           'Đơn vị: ${medicine['DonVi'] ?? 'N/A'}',
                                                           style: TextStyle(
                                                             fontSize: 12,
-                                                            color:
-                                                                Colors.grey[600],
+                                                            color: Colors
+                                                                .grey[600],
                                                           ),
                                                         ),
                                                       ],
@@ -1145,7 +1332,8 @@ class _ExportInventoryScreenState extends State<ExportInventoryScreen> {
                                         decoration: BoxDecoration(
                                           border: Border.all(
                                               color: Colors.grey.shade300),
-                                          borderRadius: BorderRadius.circular(8),
+                                          borderRadius:
+                                              BorderRadius.circular(8),
                                         ),
                                         child: Row(
                                           children: [
@@ -1165,7 +1353,8 @@ class _ExportInventoryScreenState extends State<ExportInventoryScreen> {
                                                   ),
                                                 ),
                                                 Text(
-                                                  dateFormat.format(selectedDate),
+                                                  dateFormat
+                                                      .format(selectedDate),
                                                   style: const TextStyle(
                                                     fontWeight: FontWeight.w500,
                                                   ),
@@ -1182,9 +1371,11 @@ class _ExportInventoryScreenState extends State<ExportInventoryScreen> {
                                       decoration: InputDecoration(
                                         labelText: 'Lý do xuất kho',
                                         hintText: 'Nhập lý do xuất kho',
-                                        prefixIcon: const Icon(Icons.description),
+                                        prefixIcon:
+                                            const Icon(Icons.description),
                                         border: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(8),
+                                          borderRadius:
+                                              BorderRadius.circular(8),
                                         ),
                                         filled: true,
                                         fillColor: Colors.white,
@@ -1199,7 +1390,8 @@ class _ExportInventoryScreenState extends State<ExportInventoryScreen> {
                                         hintText: 'Nhập ghi chú (nếu có)',
                                         prefixIcon: const Icon(Icons.note),
                                         border: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(8),
+                                          borderRadius:
+                                              BorderRadius.circular(8),
                                         ),
                                         filled: true,
                                         fillColor: Colors.white,
@@ -1229,7 +1421,8 @@ class _ExportInventoryScreenState extends State<ExportInventoryScreen> {
                                       'isValid': false,
                                     });
                                   }),
-                                  icon: const Icon(Icons.add, color: Colors.pinkAccent),
+                                  icon: const Icon(Icons.add,
+                                      color: Colors.pinkAccent),
                                   label: const Text('Thêm thuốc'),
                                 ),
                               ],
@@ -1267,17 +1460,19 @@ class _ExportInventoryScreenState extends State<ExportInventoryScreen> {
                                                     overflow: TextOverflow
                                                         .ellipsis, // Add this
                                                     style: const TextStyle(
-                                                        fontSize: 14), // Add this
+                                                        fontSize:
+                                                            14), // Add this
                                                   ),
                                                 );
                                               }).toList(),
-                                              onChanged: (value) => setState(() {
+                                              onChanged: (value) =>
+                                                  setState(() {
                                                 selectedItems[index]
                                                     ['medicineId'] = value;
-                                                selectedItems[index]['quantity'] =
-                                                    0;
-                                                selectedItems[index]['isValid'] =
-                                                    false;
+                                                selectedItems[index]
+                                                    ['quantity'] = 0;
+                                                selectedItems[index]
+                                                    ['isValid'] = false;
                                               }),
                                               decoration: InputDecoration(
                                                 labelText: 'Chọn thuốc',
@@ -1296,8 +1491,8 @@ class _ExportInventoryScreenState extends State<ExportInventoryScreen> {
                                           ),
                                           const SizedBox(width: 8),
                                           IconButton(
-                                            icon:
-                                                const Icon(Icons.delete_outline),
+                                            icon: const Icon(
+                                                Icons.delete_outline),
                                             color: Colors.red,
                                             onPressed: () => setState(() {
                                               selectedItems.removeAt(index);
@@ -1359,7 +1554,8 @@ class _ExportInventoryScreenState extends State<ExportInventoryScreen> {
                               ? null
                               : () async {
                                   try {
-                                    await _inventoryService.createInventoryExport(
+                                    await _inventoryService
+                                        .createInventoryExport(
                                       selectedItems,
                                       reasonController.text.trim(),
                                       notesController.text.trim(),
@@ -1369,8 +1565,8 @@ class _ExportInventoryScreenState extends State<ExportInventoryScreen> {
                                     Navigator.of(context).pop();
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
-                                          content:
-                                              Text('Tạo phiếu xuất thành công')),
+                                          content: Text(
+                                              'Tạo phiếu xuất thành công')),
                                     );
                                     _loadData();
                                   } catch (e) {
@@ -1406,5 +1602,11 @@ class _ExportInventoryScreenState extends State<ExportInventoryScreen> {
         SnackBar(content: Text('Lỗi: $e')),
       );
     }
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 }

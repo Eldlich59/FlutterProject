@@ -12,7 +12,8 @@ class PricePackagesScreen extends StatefulWidget {
   State<PricePackagesScreen> createState() => _PricePackagesScreenState();
 }
 
-class _PricePackagesScreenState extends State<PricePackagesScreen> {
+class _PricePackagesScreenState extends State<PricePackagesScreen>
+    with SingleTickerProviderStateMixin {
   final SpecialtyService _specialtyService =
       SpecialtyService(Supabase.instance.client);
   final PricePackageService _packageService =
@@ -24,17 +25,65 @@ class _PricePackagesScreenState extends State<PricePackagesScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchText = '';
   List<PricePackage> _filteredPackages = [];
+  bool _isLoading = false;
+
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+  late Animation<double> _searchBarAnimation;
+  late Animation<double> _dropdownAnimation;
 
   @override
   void initState() {
     super.initState();
-    _loadSpecialties();
-    _loadPackages();
-    _searchController.addListener(_filterPackages);
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800), // Increased duration
+    );
+
+    // Initialize animations
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.0, 0.5, curve: Curves.easeOut),
+      ),
+    );
+
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.3, 0.8, curve: Curves.easeOut),
+      ),
+    );
+
+    _searchBarAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.2, 0.7, curve: Curves.easeOut),
+      ),
+    );
+
+    _dropdownAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.4, 0.9, curve: Curves.easeOut),
+      ),
+    );
+
+    _loadInitialData();
+  }
+
+  Future<void> _loadInitialData() async {
+    await _refreshData();
+    _animationController.forward();
   }
 
   @override
   void dispose() {
+    _animationController.dispose();
     _searchController.dispose();
     super.dispose();
   }
@@ -83,269 +132,502 @@ class _PricePackagesScreenState extends State<PricePackagesScreen> {
     );
   }
 
+  Future<void> _refreshData() async {
+    setState(() {
+      _isLoading = true;
+    });
+    try {
+      await Future.wait([
+        _loadSpecialties(),
+        _loadPackages(),
+      ]);
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Bảng Giá Dịch Vụ',
-            style: TextStyle(fontWeight: FontWeight.bold)),
+        leading: IconButton(
+          icon: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white.withOpacity(0.8),
+            ),
+            child: Icon(
+              Icons.arrow_back_ios_new_rounded,
+              color: Colors.pink.shade700,
+              size: 20,
+            ),
+          ),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: const Text(
+          'Bảng Giá Dịch Vụ',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 24,
+          ),
+        ),
+        centerTitle: true,
         backgroundColor: Colors.pink.shade50,
+        elevation: 0,
+        actions: [
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.8),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: IconButton(
+              icon: Icon(
+                Icons.refresh_rounded,
+                color: Colors.pink.shade700,
+                size: 24,
+              ),
+              tooltip: 'Làm mới',
+              onPressed: _refreshData, // Simplified - removed the SnackBar
+            ),
+          ),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(60),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-            child: TextField(
-              controller: _searchController,
-              style: const TextStyle(color: Colors.white),
-              decoration: InputDecoration(
-                hintText: 'Tìm kiếm gói dịch vụ...',
-                hintStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
-                prefixIcon: const Icon(Icons.search, color: Colors.white),
-                suffixIcon: _searchText.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear, color: Colors.white),
-                        onPressed: () {
-                          _searchController.clear();
-                          FocusScope.of(context).unfocus();
-                        },
-                      )
-                    : null,
-                filled: true,
-                fillColor: Colors.white.withOpacity(0.2),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
+          child: FadeTransition(
+            opacity: _searchBarAnimation,
+            child: SlideTransition(
+              position: _slideAnimation,
+              child: Container(
+                margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(15),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.pink.shade100.withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
                 ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
+                child: TextField(
+                  controller: _searchController,
+                  style: TextStyle(color: Colors.grey.shade800, fontSize: 16),
+                  decoration: InputDecoration(
+                    hintText: 'Tìm kiếm gói dịch vụ...',
+                    hintStyle: TextStyle(color: Colors.grey.shade400),
+                    prefixIcon: Icon(Icons.search, color: Colors.pink.shade300),
+                    suffixIcon: _searchText.isNotEmpty
+                        ? IconButton(
+                            icon:
+                                Icon(Icons.clear, color: Colors.grey.shade600),
+                            onPressed: () {
+                              _searchController.clear();
+                              FocusScope.of(context).unfocus();
+                            },
+                          )
+                        : null,
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 15,
+                    ),
+                  ),
                 ),
               ),
             ),
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showAddPackageDialog(),
-        icon: const Icon(Icons.add),
-        label: const Text('Thêm Bảng Mới'),
-        backgroundColor: Colors.pink,
-        foregroundColor: Colors.white,
-        elevation: 4,
-      ),
-      body: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(16.0),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.1),
-                  spreadRadius: 1,
-                  blurRadius: 3,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: DropdownButtonFormField<String>(
-              decoration: InputDecoration(
-                labelText: 'Chọn Chuyên Khoa',
-                labelStyle: TextStyle(color: Colors.pink.shade700),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: Colors.pink.shade200),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: Colors.pink.shade200),
-                ),
-                filled: true,
-                fillColor: Colors.pink.shade50,
-                prefixIcon: const Icon(Icons.local_hospital),
-              ),
-              value: selectedSpecialtyId,
-              items: [
-                DropdownMenuItem<String>(
-                  value: null,
-                  child: Text('Tất cả chuyên khoa',
-                      style: TextStyle(color: Colors.pink.shade700)),
-                ),
-                ...specialties.map((specialty) {
-                  return DropdownMenuItem<String>(
-                    value: specialty.id,
-                    child: Text(specialty.name),
-                  );
-                }),
-              ],
-              onChanged: (value) {
-                setState(() {
-                  selectedSpecialtyId = value;
-                  _loadPackages();
-                });
-              },
-            ),
+      floatingActionButton: FadeTransition(
+        opacity: _fadeAnimation,
+        child: ScaleTransition(
+          scale: _fadeAnimation,
+          child: FloatingActionButton.extended(
+            onPressed: () => _showAddPackageDialog(),
+            icon: const Icon(Icons.add),
+            label: const Text('Thêm Bảng Mới'),
+            backgroundColor: Colors.pink.shade400,
+            foregroundColor: Colors.white,
+            elevation: 4,
           ),
-          Expanded(
-            child: _filteredPackages.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          _searchText.isEmpty
-                              ? Icons.medical_services_outlined
-                              : Icons.search_off_rounded,
-                          size: 64,
-                          color: Colors.pink.shade200,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          _searchText.isEmpty
-                              ? 'Chưa có gói dịch vụ nào'
-                              : 'Không tìm thấy gói dịch vụ',
-                          style: TextStyle(
-                            fontSize: 18,
+        ),
+      ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Colors.pink.shade50,
+              Colors.white,
+            ],
+          ),
+        ),
+        child: RefreshIndicator(
+          onRefresh: _refreshData,
+          color: Colors.pink.shade400,
+          child: Column(
+            children: [
+              // Specialty Dropdown
+              FadeTransition(
+                opacity: _dropdownAnimation,
+                child: SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(0, -0.3),
+                    end: Offset.zero,
+                  ).animate(_animationController),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(15),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.1),
+                            spreadRadius: 1,
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: DropdownButtonFormField<String>(
+                        decoration: InputDecoration(
+                          labelText: 'Chọn Chuyên Khoa',
+                          labelStyle: TextStyle(
                             color: Colors.pink.shade700,
                             fontWeight: FontWeight.w500,
                           ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(15),
+                            borderSide: BorderSide(color: Colors.pink.shade200),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(15),
+                            borderSide: BorderSide(color: Colors.pink.shade200),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(15),
+                            borderSide: BorderSide(
+                                color: Colors.pink.shade400, width: 2),
+                          ),
+                          filled: true,
+                          fillColor: Colors.white,
+                          prefixIcon: Icon(Icons.local_hospital,
+                              color: Colors.pink.shade400),
+                        ),
+                        value: selectedSpecialtyId,
+                        items: [
+                          DropdownMenuItem<String>(
+                            value: null,
+                            child: Text('Tất cả chuyên khoa',
+                                style: TextStyle(color: Colors.pink.shade700)),
+                          ),
+                          ...specialties.map((specialty) {
+                            return DropdownMenuItem<String>(
+                              value: specialty.id,
+                              child: Text(specialty.name),
+                            );
+                          }),
+                        ],
+                        onChanged: (value) {
+                          setState(() {
+                            selectedSpecialtyId = value;
+                            _loadPackages();
+                          });
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+
+              // Package List
+              Expanded(
+                child: FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: SlideTransition(
+                    position: _slideAnimation,
+                    child: Stack(
+                      children: [
+                        _filteredPackages.isEmpty
+                            ? _buildEmptyState()
+                            : _buildPackageList(),
+                        if (_isLoading) _buildLoadingOverlay(),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return FadeTransition(
+      opacity: _fadeAnimation,
+      child: SlideTransition(
+        position: _slideAnimation,
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                _searchText.isEmpty
+                    ? Icons.medical_services_outlined
+                    : Icons.search_off_rounded,
+                size: 80,
+                color: Colors.pink.shade200,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                _searchText.isEmpty
+                    ? 'Chưa có gói dịch vụ nào'
+                    : 'Không tìm thấy gói dịch vụ',
+                style: TextStyle(
+                  fontSize: 20,
+                  color: Colors.pink.shade700,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                _searchText.isEmpty
+                    ? 'Hãy thêm gói dịch vụ mới'
+                    : 'Thử tìm kiếm với từ khóa khác',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey[600],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPackageList() {
+    return ListView.builder(
+      padding: const EdgeInsets.all(8.0),
+      itemCount: _filteredPackages.length,
+      itemBuilder: (context, index) {
+        final package = _filteredPackages[index];
+        return AnimatedBuilder(
+          animation: _animationController,
+          builder: (context, child) {
+            final itemAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+              CurvedAnimation(
+                parent: _animationController,
+                curve: Interval(
+                  0.1 * (index % 10), // Stagger items
+                  0.6 + 0.1 * (index % 10),
+                  curve: Curves.easeOut,
+                ),
+              ),
+            );
+            return FadeTransition(
+              opacity: itemAnimation,
+              child: SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(0.3, 0),
+                  end: Offset.zero,
+                ).animate(itemAnimation),
+                child: child!,
+              ),
+            );
+          },
+          child: Hero(
+            tag: 'package-${package.id}',
+            child: Card(
+              elevation: 4,
+              margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15),
+                side: BorderSide(
+                  color: package.isActive
+                      ? Colors.green.shade200
+                      : Colors.grey.shade300,
+                  width: 1,
+                ),
+              ),
+              child: InkWell(
+                onTap: () => _showPackageDetails(package),
+                borderRadius: BorderRadius.circular(15),
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(15),
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Colors.white,
+                        package.isActive
+                            ? Colors.green.shade50
+                            : Colors.grey.shade50,
+                      ],
+                    ),
+                  ),
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.all(16),
+                    title: Text(
+                      package.name,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
+                    ),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Icon(Icons.monetization_on,
+                                color: Colors.green.shade700, size: 20),
+                            const SizedBox(width: 8),
+                            Text(
+                              '${package.price.toStringAsFixed(0)} VNĐ',
+                              style: TextStyle(
+                                color: Colors.green.shade700,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 8),
-                        Text(
-                          _searchText.isEmpty
-                              ? 'Hãy thêm gói dịch vụ mới'
-                              : 'Thử tìm kiếm với từ khóa khác',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[600],
-                          ),
+                        Row(
+                          children: [
+                            const Text('Trạng thái:'),
+                            Switch(
+                              value: package.isActive,
+                              onChanged: (bool value) =>
+                                  _togglePackageStatus(package, value),
+                              activeColor: Colors.green,
+                              activeTrackColor: Colors.green.shade100,
+                            ),
+                            Text(
+                              package.isActive
+                                  ? "Đang hoạt động"
+                                  : "Ngưng hoạt động",
+                              style: TextStyle(
+                                color: package.isActive
+                                    ? Colors.green
+                                    : Colors.red,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.all(8.0),
-                    itemCount: _filteredPackages.length,
-                    itemBuilder: (context, index) {
-                      final package = _filteredPackages[index];
-                      return Card(
-                        elevation: 3,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          side: BorderSide(
-                            color: package.isActive
-                                ? Colors.green.shade200
-                                : Colors.grey.shade300,
-                            width: 1,
+                    trailing: PopupMenuButton<String>(
+                      icon: Icon(Icons.more_vert, color: Colors.grey.shade700),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      itemBuilder: (context) => [
+                        PopupMenuItem(
+                          value: 'details',
+                          child: ListTile(
+                            leading: const Icon(Icons.info_outline, size: 20),
+                            title: const Text('Chi tiết'),
+                            contentPadding: EdgeInsets.zero,
                           ),
                         ),
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.all(16),
-                          title: Text(
-                            package.name,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
+                        PopupMenuItem(
+                          value: 'edit',
+                          child: ListTile(
+                            leading: const Icon(Icons.edit, size: 20),
+                            title: const Text('Chỉnh sửa'),
+                            contentPadding: EdgeInsets.zero,
                           ),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const SizedBox(height: 8),
-                              Row(
-                                children: [
-                                  Icon(Icons.monetization_on,
-                                      color: Colors.green.shade700, size: 20),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    '${package.price.toStringAsFixed(0)} VNĐ',
-                                    style: TextStyle(
-                                      color: Colors.green.shade700,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 15,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              Row(
-                                children: [
-                                  const Text('Trạng thái:'),
-                                  Switch(
-                                    value: package.isActive,
-                                    onChanged: (bool value) =>
-                                        _togglePackageStatus(package, value),
-                                    activeColor: Colors.green,
-                                    activeTrackColor: Colors.green.shade100,
-                                  ),
-                                  Text(
-                                    package.isActive
-                                        ? "Đang hoạt động"
-                                        : "Ngưng hoạt động",
-                                    style: TextStyle(
-                                      color: package.isActive
-                                          ? Colors.green
-                                          : Colors.red,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                          trailing: PopupMenuButton<String>(
-                            icon: const Icon(Icons.more_vert),
-                            itemBuilder: (context) => [
-                              PopupMenuItem(
-                                value: 'details',
-                                child: ListTile(
-                                  leading:
-                                      const Icon(Icons.info_outline, size: 20),
-                                  title: const Text('Chi tiết'),
-                                  contentPadding: EdgeInsets.zero,
-                                ),
-                              ),
-                              PopupMenuItem(
-                                value: 'edit',
-                                child: ListTile(
-                                  leading: const Icon(Icons.edit, size: 20),
-                                  title: const Text('Chỉnh sửa'),
-                                  contentPadding: EdgeInsets.zero,
-                                ),
-                              ),
-                              PopupMenuItem(
-                                value: 'delete',
-                                child: ListTile(
-                                  leading: const Icon(Icons.delete,
-                                      color: Colors.red, size: 20),
-                                  title: const Text('Xóa',
-                                      style: TextStyle(color: Colors.red)),
-                                  contentPadding: EdgeInsets.zero,
-                                ),
-                              ),
-                            ],
-                            onSelected: (value) {
-                              switch (value) {
-                                case 'edit':
-                                  _showEditPackageDialog(package);
-                                  break;
-                                case 'delete':
-                                  _confirmDelete(package);
-                                  break;
-                                case 'details':
-                                  _showPackageDetails(package);
-                                  break;
-                              }
-                            },
-                          ),
-                          onTap: () => _showPackageDetails(package),
                         ),
-                      );
-                    },
+                        PopupMenuItem(
+                          value: 'delete',
+                          child: ListTile(
+                            leading: const Icon(Icons.delete,
+                                color: Colors.red, size: 20),
+                            title: const Text('Xóa',
+                                style: TextStyle(color: Colors.red)),
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                        ),
+                      ],
+                      onSelected: (value) {
+                        switch (value) {
+                          case 'edit':
+                            _showEditPackageDialog(package);
+                            break;
+                          case 'delete':
+                            _confirmDelete(package);
+                            break;
+                          case 'details':
+                            _showPackageDetails(package);
+                            break;
+                        }
+                      },
+                    ),
                   ),
+                ),
+              ),
+            ),
           ),
-        ],
-      ),
+        );
+      },
+    );
+  }
+
+  Widget _buildLoadingOverlay() {
+    return AnimatedBuilder(
+      animation: _animationController,
+      builder: (context, child) {
+        return FadeTransition(
+          opacity:
+              Tween<double>(begin: 0.0, end: 0.7).animate(_animationController),
+          child: Container(
+            color: Colors.white.withOpacity(0.7),
+            child: Center(
+              child: Card(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                elevation: 4,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircularProgressIndicator(
+                        valueColor:
+                            AlwaysStoppedAnimation<Color>(Colors.pink.shade400),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Đang tải...',
+                        style: TextStyle(
+                          color: Colors.pink.shade700,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
