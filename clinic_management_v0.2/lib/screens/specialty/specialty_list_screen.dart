@@ -26,6 +26,10 @@ class _SpecialtyListScreenState extends State<SpecialtyListScreen>
   late AnimationController _animationController;
   Animation<double>? _fabAnimation;
 
+  final TextEditingController _searchController = TextEditingController();
+  String _searchText = '';
+  List<Specialty> _filteredSpecialties = [];
+
   @override
   void initState() {
     super.initState();
@@ -44,12 +48,14 @@ class _SpecialtyListScreenState extends State<SpecialtyListScreen>
       ),
     );
 
+    _searchController.addListener(_filterSpecialties);
     _loadSpecialties();
   }
 
   @override
   void dispose() {
     _animationController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -59,6 +65,7 @@ class _SpecialtyListScreenState extends State<SpecialtyListScreen>
           await _supabaseService.specialtyService.getSpecialties();
       setState(() {
         specialties = loadedSpecialties;
+        _filterSpecialties(); // Update filtered list when loading new data
         isLoading = false;
       });
       // Add this line to start the animation after loading
@@ -75,6 +82,15 @@ class _SpecialtyListScreenState extends State<SpecialtyListScreen>
   void _resetAnimation() {
     _animationController.reset();
     _animationController.forward();
+  }
+
+  void _filterSpecialties() {
+    setState(() {
+      _searchText = _searchController.text.toLowerCase();
+      _filteredSpecialties = specialties.where((specialty) {
+        return specialty.name.toLowerCase().contains(_searchText);
+      }).toList();
+    });
   }
 
   @override
@@ -122,6 +138,40 @@ class _SpecialtyListScreenState extends State<SpecialtyListScreen>
             ),
           ),
         ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(60),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+            child: TextField(
+              controller: _searchController,
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                hintText: 'Tìm kiếm chuyên khoa...',
+                hintStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
+                prefixIcon: const Icon(Icons.search, color: Colors.white),
+                suffixIcon: _searchText.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear, color: Colors.white),
+                        onPressed: () {
+                          _searchController.clear();
+                          FocusScope.of(context).unfocus();
+                        },
+                      )
+                    : null,
+                filled: true,
+                fillColor: Colors.white.withOpacity(0.2),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+              ),
+            ),
+          ),
+        ),
         flexibleSpace: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -161,19 +211,23 @@ class _SpecialtyListScreenState extends State<SpecialtyListScreen>
             child: isLoading
                 ? const Center(
                     child: CircularProgressIndicator(color: primaryColor))
-                : specialties.isEmpty
+                : _filteredSpecialties.isEmpty
                     ? Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(
-                              Icons.medical_services_outlined,
+                              _searchText.isEmpty
+                                  ? Icons.medical_services_outlined
+                                  : Icons.search_off_rounded,
                               size: 64,
                               color: primaryColor.withOpacity(0.5),
                             ),
                             const SizedBox(height: 16),
                             Text(
-                              'Chưa có chuyên khoa nào',
+                              _searchText.isEmpty
+                                  ? 'Chưa có chuyên khoa nào'
+                                  : 'Không tìm thấy chuyên khoa',
                               style: TextStyle(
                                 fontSize: 18,
                                 color: primaryColor.withOpacity(0.8),
@@ -182,7 +236,9 @@ class _SpecialtyListScreenState extends State<SpecialtyListScreen>
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              'Hãy thêm chuyên khoa mới',
+                              _searchText.isEmpty
+                                  ? 'Hãy thêm chuyên khoa mới'
+                                  : 'Thử tìm kiếm với từ khóa khác',
                               style: TextStyle(
                                 fontSize: 14,
                                 color: Colors.grey[600],
@@ -193,9 +249,9 @@ class _SpecialtyListScreenState extends State<SpecialtyListScreen>
                       )
                     : ListView.builder(
                         padding: const EdgeInsets.only(top: 8),
-                        itemCount: specialties.length,
+                        itemCount: _filteredSpecialties.length,
                         itemBuilder: (context, index) {
-                          final specialty = specialties[index];
+                          final specialty = _filteredSpecialties[index];
                           return AnimatedBuilder(
                             animation: _animationController,
                             builder: (context, child) => SlideTransition(
@@ -205,8 +261,8 @@ class _SpecialtyListScreenState extends State<SpecialtyListScreen>
                               ).animate(CurvedAnimation(
                                 parent: _animationController,
                                 curve: Interval(
-                                  index / specialties.length,
-                                  (index + 1) / specialties.length,
+                                  index / _filteredSpecialties.length,
+                                  (index + 1) / _filteredSpecialties.length,
                                   curve: Curves.easeOut,
                                 ),
                               )),
