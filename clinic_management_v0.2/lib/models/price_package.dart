@@ -34,18 +34,25 @@ class PricePackage {
       };
 
   factory PricePackage.fromJson(Map<String, dynamic> json) {
-    return PricePackage(
-      id: json['id'],
-      name: json['name'],
-      chuyenKhoaId: json['chuyen_khoa_id'],
-      price: json['price'].toDouble(),
-      description: json['description'],
-      includedServices: List<String>.from(json['included_services']),
-      isActive: json['is_active'],
-      createdAt: DateTime.parse(json['created_at']),
-      updatedAt: json['updated_at'] != null
-          ? DateTime.parse(json['updated_at'])
-          : null,
-    );
+    try {
+      return PricePackage(
+        id: json['id']?.toString() ?? '',
+        name: json['name']?.toString() ?? '',
+        chuyenKhoaId: json['chuyen_khoa_id']?.toString() ?? '',
+        price: (json['price'] ?? 0).toDouble(),
+        description: json['description']?.toString() ?? '',
+        includedServices: List<String>.from(json['included_services'] ?? []),
+        isActive: json['is_active'] ?? true,
+        createdAt:
+            DateTime.tryParse(json['created_at'] ?? '') ?? DateTime.now(),
+        updatedAt: json['updated_at'] != null
+            ? DateTime.tryParse(json['updated_at'])
+            : null,
+      );
+    } catch (e) {
+      print('Error parsing price package: $e');
+      print('JSON data: $json');
+      rethrow;
+    }
   }
 }

@@ -7,6 +7,7 @@ import 'prescription_service.dart';
 import 'bill_service.dart';
 import 'doctor_service.dart';
 import 'specialty_service.dart';
+import 'package:clinic_management/services/price_package_service.dart';
 
 class SupabaseService {
   final PatientService patientService;
@@ -17,6 +18,7 @@ class SupabaseService {
   final DoctorService doctorService;
   final SpecialtyService specialtyService;
   final InventoryService inventoryService;
+  final PricePackageService pricePackageService;
 
   SupabaseService()
       : patientService = PatientService(Supabase.instance.client),
@@ -26,5 +28,6 @@ class SupabaseService {
         billService = BillService(Supabase.instance.client),
         doctorService = DoctorService(Supabase.instance.client),
         specialtyService = SpecialtyService(Supabase.instance.client),
-        inventoryService = InventoryService(Supabase.instance.client);
+        inventoryService = InventoryService(Supabase.instance.client),
+        pricePackageService = PricePackageService(Supabase.instance.client);
 }

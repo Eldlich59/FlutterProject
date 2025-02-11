@@ -1,11 +1,13 @@
 import 'package:clinic_management/models/specialty.dart';
 import 'package:flutter/material.dart';
 import 'package:clinic_management/models/examination.dart';
+import 'package:collection/collection.dart';
 import 'package:clinic_management/services/supabase_service.dart';
 import 'package:clinic_management/models/patient.dart';
 import 'package:clinic_management/models/doctor.dart';
 import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
+import 'package:clinic_management/models/price_package.dart';
 
 class ExaminationFormScreen extends StatefulWidget {
   final Examination? examination;
@@ -23,6 +25,8 @@ class _ExaminationFormScreenState extends State<ExaminationFormScreen>
   final _supabaseService2 = SupabaseService().examinationService;
   final _supabaseService3 = SupabaseService().doctorService; // Add this line
   final _supabaseService4 = SupabaseService().specialtyService; // Add this line
+  final _supabaseService5 =
+      SupabaseService().pricePackageService; // Add this line
 
   late TextEditingController _symptomsController;
   late TextEditingController _diagnosisController;
@@ -34,9 +38,11 @@ class _ExaminationFormScreenState extends State<ExaminationFormScreen>
   Patient? _selectedPatient;
   Doctor? _selectedDoctor;
   Specialty? _selectedSpecialty; // Change type to Specialty
+  PricePackage? _selectedPackage;
   List<Patient> _patients = [];
   List<Doctor> _doctors = []; // Add this line
   List<Specialty> _specialties = []; // Change type to Specialty
+  List<PricePackage> _pricePackages = [];
   bool _isLoading = false;
 
   // Add custom colors
@@ -100,6 +106,10 @@ class _ExaminationFormScreenState extends State<ExaminationFormScreen>
     _loadSpecialties(); // Add this line
 
     _animationController.forward();
+    if (widget.examination != null &&
+        widget.examination!.pricePackageId != null) {
+      _loadPricePackagesForExistingExamination();
+    }
   }
 
   Future<void> _loadPatients() async {
@@ -147,12 +157,45 @@ class _ExaminationFormScreenState extends State<ExaminationFormScreen>
     }
   }
 
+  // Add this method
+  Future<void> _loadPricePackages(String specialtyId) async {
+    try {
+      final packages =
+          await _supabaseService5.getPackagesByChuyenKhoa(specialtyId);
+      setState(() {
+        _pricePackages = packages.where((p) => p.isActive).toList();
+        _selectedPackage = null;
+        if (_feeController.text == '100000') {
+          _feeController.text = '0';
+        }
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lỗi khi tải gói dịch vụ: $e')),
+      );
+    }
+  }
+
   // Replace _updateSpecialties() with this method
   Specialty? _getSelectedSpecialty() {
     return _specialties.firstWhere(
       (s) => s.id == _selectedDoctor?.specialtyId,
       orElse: () => _specialties.first,
     );
+  }
+
+  Future<void> _loadPricePackagesForExistingExamination() async {
+    if (widget.examination?.specialtyId != null) {
+      await _loadPricePackages(widget.examination!.specialtyId!);
+      if (widget.examination?.pricePackageId != null) {
+        _selectedPackage = _pricePackages.firstWhereOrNull(
+          (p) => p.id == widget.examination!.pricePackageId,
+        );
+        if (_selectedPackage != null) {
+          _feeController.text = _selectedPackage!.price.toString();
+        }
+      }
+    }
   }
 
   Future<void> _selectDate(BuildContext context) async {
@@ -471,6 +514,12 @@ class _ExaminationFormScreenState extends State<ExaminationFormScreen>
               setState(() {
                 _selectedSpecialty = value;
                 _selectedDoctor = null;
+                _selectedPackage = null;
+                if (value != null) {
+                  _loadPricePackages(value.id);
+                } else {
+                  _pricePackages = [];
+                }
               });
             },
             validator: (value) {
@@ -480,6 +529,70 @@ class _ExaminationFormScreenState extends State<ExaminationFormScreen>
               return null;
             },
           ),
+          // Add price package dropdown after specialty selection
+          if (_selectedSpecialty != null) ...[
+            const SizedBox(height: 16),
+            Container(
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: _pricePackages.isEmpty
+                      ? Colors.grey.withOpacity(0.5)
+                      : primaryBlue.withOpacity(0.5),
+                ),
+                borderRadius: BorderRadius.circular(10),
+                color: _pricePackages.isEmpty
+                    ? Colors.grey.shade100
+                    : Colors.white,
+              ),
+              child: _pricePackages.isEmpty
+                  ? ListTile(
+                      leading: Icon(
+                        Icons.info_outline,
+                        color: Colors.grey.shade600,
+                      ),
+                      title: Text(
+                        'Không có gói dịch vụ cho chuyên khoa này',
+                        style: TextStyle(
+                          color: Colors.grey.shade600,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    )
+                  : DropdownButtonFormField<PricePackage>(
+                      value: _selectedPackage,
+                      decoration: InputDecoration(
+                        labelText: 'Gói dịch vụ',
+                        prefixIcon: Icon(
+                          Icons.medical_services_outlined,
+                          color: primaryBlue,
+                        ),
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                      ),
+                      items: _pricePackages.map((package) {
+                        return DropdownMenuItem(
+                          value: package,
+                          child: Text(
+                            '${package.name} - ${package.price.toStringAsFixed(0)} VNĐ',
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedPackage = value;
+                          if (value != null) {
+                            _feeController.text = value.price.toString();
+                          }
+                        });
+                      },
+                    ),
+            ),
+          ],
           const SizedBox(height: 16),
 
           // Modify doctor dropdown to filter by specialty
@@ -668,6 +781,7 @@ class _ExaminationFormScreenState extends State<ExaminationFormScreen>
         symptoms: _symptomsController.text,
         diagnosis: _diagnosisController.text,
         examinationFee: double.parse(_feeController.text),
+        pricePackageId: _selectedPackage?.id, // Add this field
       );
 
       if (widget.examination == null) {

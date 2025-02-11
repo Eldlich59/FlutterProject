@@ -12,7 +12,8 @@ class ExaminationService {
         *, 
         BENHNHAN!inner(TenBN), 
         BACSI(TenBS, TrangThai),
-        CHUYENKHOA(MaCK, TenCK, TrangThaiHD)
+        CHUYENKHOA(MaCK, TenCK, TrangThaiHD),
+        price_packages(id, name, price, is_active)
       ''');
 
       if (patientId != null) {
@@ -30,11 +31,13 @@ class ExaminationService {
                 'TenCK': json['CHUYENKHOA']?['TenCK'],
                 'BACSI': json['BACSI'],
                 'CHUYENKHOA': json['CHUYENKHOA'],
+                'price_package_id': json['price_package_id'],
+                'PRICE_PACKAGES': json['price_packages'],
               }))
           .toList();
     } catch (e) {
       print('Error fetching examinations: $e');
-      return [];
+      throw Exception('Error fetching examinations: $e');
     }
   }
 

@@ -1,3 +1,5 @@
+import 'price_package.dart';
+
 class Examination {
   final String id;
   final String patientId;
@@ -12,6 +14,9 @@ class Examination {
   final String? specialtyName; // Add this field
   final bool? isDoctorActive;
   final bool? isSpecialtyActive;
+  final String? pricePackageId; // Add this field
+  final String? packageName;
+  final PricePackage? pricePackage; // Add this field
 
   Examination({
     required this.id,
@@ -27,25 +32,54 @@ class Examination {
     this.specialtyName, // Add this parameter
     this.isDoctorActive,
     this.isSpecialtyActive,
+    this.pricePackageId, // Add this parameter
+    this.packageName,
+    this.pricePackage, // Add this parameter
   });
 
   factory Examination.fromJson(Map<String, dynamic> json) {
-    return Examination(
-      id: json['MaPK']?.toString() ?? '',
-      patientId: json['MaBN']?.toString() ?? '',
-      doctorId: json['MaBS']?.toString(),
-      examinationDate:
-          DateTime.tryParse(json['NgayKham'] ?? '') ?? DateTime.now(),
-      symptoms: json['TrieuChung'] ?? '',
-      diagnosis: json['ChanDoan'] ?? '',
-      examinationFee: double.tryParse(json['TienKham'].toString()) ?? 0.0,
-      patientName: json['TenBN']?.toString(),
-      doctorName: json['TenBS']?.toString(), // Add this field mapping
-      specialtyId: json['MaCK']?.toString(), // Add this field mapping
-      specialtyName: json['TenCK']?.toString(), // Add this mapping
-      isDoctorActive: json['BACSI']?['TrangThai'] ?? false,
-      isSpecialtyActive: json['CHUYENKHOA']?['TrangThaiHD'] ?? false,
-    );
+    try {
+      Map<String, dynamic>? pricePackageData;
+      if (json['price_packages'] != null) {
+        if (json['price_packages'] is Map) {
+          pricePackageData = Map<String, dynamic>.from(json['price_packages']);
+        }
+      }
+
+      return Examination(
+        id: json['MaPK']?.toString() ?? '',
+        patientId: json['MaBN']?.toString() ?? '',
+        doctorId: json['MaBS']?.toString(),
+        examinationDate:
+            DateTime.tryParse(json['NgayKham'] ?? '') ?? DateTime.now(),
+        symptoms: json['TrieuChung'] ?? '',
+        diagnosis: json['ChanDoan'] ?? '',
+        examinationFee:
+            double.tryParse(json['TienKham']?.toString() ?? '0') ?? 0.0,
+        patientName: json['TenBN']?.toString(),
+        doctorName: json['TenBS']?.toString(),
+        specialtyId: json['MaCK']?.toString(),
+        specialtyName: json['TenCK']?.toString(),
+        isDoctorActive: json['BACSI']?['TrangThai'] ?? false,
+        isSpecialtyActive: json['CHUYENKHOA']?['TrangThaiHD'] ?? false,
+        pricePackageId: json['price_package_id']?.toString(),
+        packageName: pricePackageData?['name']?.toString(),
+        pricePackage: pricePackageData != null
+            ? PricePackage.fromJson(pricePackageData)
+            : null,
+      );
+    } catch (e) {
+      print('Error parsing examination: $e');
+      print('JSON data: $json');
+      return Examination(
+        id: json['MaPK']?.toString() ?? '',
+        patientId: json['MaBN']?.toString() ?? '',
+        examinationDate: DateTime.now(),
+        symptoms: json['TrieuChung'] ?? '',
+        diagnosis: json['ChanDoan'] ?? '',
+        examinationFee: 0.0,
+      );
+    }
   }
 
   Map<String, dynamic> toJson() {
@@ -57,7 +91,8 @@ class Examination {
       'TrieuChung': symptoms,
       'ChanDoan': diagnosis,
       'TienKham': examinationFee,
-      if (specialtyId != null) 'MaCK': specialtyId, // Add this field
+      if (specialtyId != null) 'MaCK': specialtyId,
+      if (pricePackageId != null) 'price_package_id': pricePackageId,
     };
   }
 }
