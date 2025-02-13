@@ -572,131 +572,50 @@ class _PrescriptionListScreenState extends State<PrescriptionListScreen>
                                   }
 
                                   if (snapshot.hasError || !snapshot.hasData) {
-                                    return Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 4,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: Colors.red.shade50,
-                                        borderRadius: BorderRadius.circular(12),
-                                        border: Border.all(
-                                          color: Colors.red.shade200,
-                                        ),
-                                      ),
-                                      child: const Text(
-                                        'Lỗi',
-                                        style: TextStyle(
-                                          color: Colors.red,
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                    );
+                                    return const SizedBox.shrink();
                                   }
 
                                   final examData = snapshot.data!;
                                   final examInfo = examData['PHIEUKHAM']
                                       as Map<String, dynamic>?;
-                                  final bool isDoctorActive =
-                                      examInfo?['BACSI']?['TrangThai'] ?? false;
-                                  final bool isSpecialtyActive =
-                                      examInfo?['CHUYENKHOA']?['TrangThaiHD'] ??
-                                          false;
-                                  final bool isPackageActive =
-                                      examInfo?['price_packages']
-                                              ?['is_active'] ??
-                                          false;
-                                  final bool isValid = isDoctorActive &&
-                                      isSpecialtyActive &&
-                                      (examInfo?['price_packages'] == null ||
-                                          isPackageActive);
                                   final String examId =
                                       examInfo?['MaPK']?.toString() ?? '';
 
-                                  return Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      if (examId.isNotEmpty)
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 8,
-                                            vertical: 4,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: Colors.blue.shade50,
-                                            borderRadius:
-                                                BorderRadius.circular(12),
-                                            border: Border.all(
-                                              color: Colors.blue.shade200,
-                                            ),
-                                          ),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Icon(
-                                                Icons.description_outlined,
-                                                size: 14,
-                                                color: Colors.blue.shade700,
-                                              ),
-                                              const SizedBox(width: 4),
-                                              Text(
-                                                'Mã PK: ${examId.length > 6 ? "${examId.substring(0, 6)}..." : examId}',
-                                                style: TextStyle(
-                                                  color: Colors.blue.shade700,
-                                                  fontSize: 12,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      const SizedBox(width: 8),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 8,
-                                          vertical: 4,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: isValid
-                                              ? Colors.green.shade50
-                                              : Colors.red.shade50,
-                                          borderRadius:
-                                              BorderRadius.circular(12),
-                                          border: Border.all(
-                                            color: isValid
-                                                ? Colors.green.shade200
-                                                : Colors.red.shade200,
-                                          ),
-                                        ),
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Icon(
-                                              isValid
-                                                  ? Icons.check_circle_outline
-                                                  : Icons.error_outline,
-                                              size: 14,
-                                              color: isValid
-                                                  ? Colors.green.shade700
-                                                  : Colors.red.shade700,
-                                            ),
-                                            const SizedBox(width: 4),
-                                            Text(
-                                              isValid
-                                                  ? 'Hợp lệ'
-                                                  : 'Không hợp lệ',
-                                              style: TextStyle(
-                                                color: isValid
-                                                    ? Colors.green.shade700
-                                                    : Colors.red.shade700,
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
+                                  if (examId.isEmpty) {
+                                    return const SizedBox.shrink();
+                                  }
+
+                                  return Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.blue.shade50,
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: Colors.blue.shade200,
                                       ),
-                                    ],
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          Icons.description_outlined,
+                                          size: 14,
+                                          color: Colors.blue.shade700,
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          'Mã PK: ${examId.length > 6 ? "${examId.substring(0, 6)}..." : examId}',
+                                          style: TextStyle(
+                                            color: Colors.blue.shade700,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   );
                                 },
                               ),
