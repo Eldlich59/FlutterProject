@@ -324,28 +324,32 @@ class PrescriptionService {
 
   Future<Map<String, dynamic>> getPrescriptionExamination(
       String prescriptionId) async {
-    final response = await _supabase.from('TOATHUOC').select('''
-          *,
-          PHIEUKHAM!inner (
-            MaPK,
-            NgayKham,
-            BACSI (
-              TenBS,
-              TrangThai
-            ),
-            CHUYENKHOA (
-              TenCK,
-              TrangThaiHD
-            ),
-            price_packages (
-              id,
-              name,
-              is_active
-            )
-          )
+    try {
+      final response = await _supabase.from('TOATHUOC').select('''
+          MaPK
         ''').eq('MaToa', prescriptionId).single();
 
-    return response;
+      final examId = response['MaPK'];
+
+      if (examId == null) {
+        print('No exam ID found for prescription: $prescriptionId');
+        return {};
+      }
+
+      final examResponse = await _supabase.from('PHIEUKHAM').select('''
+          TienKham
+        ''').eq('MaPK', examId).single();
+
+      if (examResponse.isEmpty) {
+        print('No examination found for ID: $examId');
+        return {};
+      }
+
+      return {'PHIEUKHAM': examResponse};
+    } catch (e) {
+      print('Error fetching prescription examination: $e');
+      return {};
+    }
   }
 
   Future<List<Map<String, dynamic>>> getPrescriptionsByPatient(

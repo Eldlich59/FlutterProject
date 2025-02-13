@@ -7,7 +7,7 @@ class Examination {
   final DateTime examinationDate;
   final String symptoms;
   final String diagnosis;
-  final double examinationFee;
+  final double examinationCost;
   final String? patientName;
   final String? doctorName; // Add this field
   final String? specialtyId; // Add this field
@@ -25,7 +25,7 @@ class Examination {
     required this.examinationDate,
     required this.symptoms,
     required this.diagnosis,
-    required this.examinationFee,
+    required this.examinationCost,
     this.patientName,
     this.doctorName, // Add this parameter
     this.specialtyId, // Add this parameter
@@ -54,7 +54,7 @@ class Examination {
             DateTime.tryParse(json['NgayKham'] ?? '') ?? DateTime.now(),
         symptoms: json['TrieuChung'] ?? '',
         diagnosis: json['ChanDoan'] ?? '',
-        examinationFee:
+        examinationCost:
             double.tryParse(json['TienKham']?.toString() ?? '0') ?? 0.0,
         patientName: json['TenBN']?.toString(),
         doctorName: json['TenBS']?.toString(),
@@ -77,7 +77,7 @@ class Examination {
         examinationDate: DateTime.now(),
         symptoms: json['TrieuChung'] ?? '',
         diagnosis: json['ChanDoan'] ?? '',
-        examinationFee: 0.0,
+        examinationCost: 0.0,
       );
     }
   }
@@ -90,9 +90,19 @@ class Examination {
       'NgayKham': examinationDate.toIso8601String(),
       'TrieuChung': symptoms,
       'ChanDoan': diagnosis,
-      'TienKham': examinationFee,
+      'TienKham': examinationCost,
       if (specialtyId != null) 'MaCK': specialtyId,
       if (pricePackageId != null) 'price_package_id': pricePackageId,
     };
+  }
+
+  bool isValidForPrescription() {
+    // Kiểm tra các điều kiện để phiếu khám hợp lệ để kê đơn:
+    // 1. Phiếu khám phải thuộc về bác sĩ đang hoạt động
+    // 2. Phiếu khám phải thuộc chuyên khoa đang hoạt động
+    // 3. Phiếu khám phải có gói dịch vụ đang hoạt động
+    return isDoctorActive == true &&
+        isSpecialtyActive == true &&
+        pricePackage?.isActive == true;
   }
 }

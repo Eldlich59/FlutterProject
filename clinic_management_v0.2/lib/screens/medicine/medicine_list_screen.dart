@@ -27,6 +27,7 @@ class _MedicineListScreenState extends State<MedicineListScreen> {
   }
 
   Future<void> _loadMedicines() async {
+    if (!mounted) return;
     try {
       setState(() => _isLoading = true);
       print('Loading medicines...'); // Debug log
@@ -34,6 +35,7 @@ class _MedicineListScreenState extends State<MedicineListScreen> {
       final medicines = await _supabaseService.getMedicines();
       print('Loaded ${medicines.length} medicines'); // Debug log
 
+      if (!mounted) return;
       setState(() {
         _medicines = medicines;
         _isLoading = false;
@@ -42,15 +44,14 @@ class _MedicineListScreenState extends State<MedicineListScreen> {
       print('Error loading medicines: $e'); // Debug log
       print('Stack trace: $stackTrace'); // Debug log
 
+      if (!mounted) return;
       setState(() => _isLoading = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Lỗi: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Lỗi: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -365,6 +366,7 @@ class _MedicineListScreenState extends State<MedicineListScreen> {
   }
 
   Future<void> _confirmDelete(Medicine medicine) async {
+    if (!mounted) return;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -383,21 +385,19 @@ class _MedicineListScreenState extends State<MedicineListScreen> {
       ),
     );
 
-    if (confirmed == true) {
+    if (confirmed == true && mounted) {
       try {
-        await _supabaseService.deleteMedicine(medicine.id); // Remove int.parse
-        _loadMedicines();
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Đã xóa thuốc')),
-          );
-        }
+        await _supabaseService.deleteMedicine(medicine.id);
+        await _loadMedicines();
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Đã xóa thuốc')),
+        );
       } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Lỗi: ${e.toString()}')),
-          );
-        }
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi: ${e.toString()}')),
+        );
       }
     }
   }
@@ -610,9 +610,8 @@ class _MedicineListScreenState extends State<MedicineListScreen> {
   }
 
   void _showMedicineForm(Medicine? medicine) async {
-    // Make method async
+    if (!mounted) return;
     final result = await showDialog<bool>(
-      // Capture the dialog result
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
@@ -621,8 +620,7 @@ class _MedicineListScreenState extends State<MedicineListScreen> {
     );
 
     if (result == true && mounted) {
-      // Check if we need to refresh
-      _loadMedicines(); // Reload the list if changes were made
+      await _loadMedicines();
     }
   }
 }

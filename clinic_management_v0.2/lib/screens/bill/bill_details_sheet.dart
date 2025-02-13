@@ -131,9 +131,52 @@ class _BillDetailsSheetState extends State<BillDetailsSheet>
 
   @override
   Widget build(BuildContext context) {
-    final lightTurquoise = Color(0xFFE6F7F5).withOpacity(0.8); // Clearer
-    final darkTurquoise = Color(0xFF38B2AC).withOpacity(0.95); // Stronger
-   
+    final lightTurquoise = Color(0xFFE6F7F5).withOpacity(0.8);
+    final darkTurquoise = Color(0xFF38B2AC).withOpacity(0.95);
+
+    // Calculate total medicine cost and examination cost for selected prescriptions
+    double selectedMedicineCost = 0;
+    double selectedExaminationCost = 0;
+
+    if (_prescriptionDetails != null) {
+      for (var prescriptionDetail in _prescriptionDetails!) {
+        if (_selectedPrescriptionIds.contains(prescriptionDetail.id)) {
+          print(
+              'Processing prescription: ${prescriptionDetail.id}'); // Debug print
+
+          // Truy cập trực tiếp vào dữ liệu từ PrescriptionDetail
+          final rawData = prescriptionDetail.toJson();
+          print('Raw prescription data: $rawData'); // Debug print
+
+          if (rawData.containsKey('PHIEUKHAM') &&
+              rawData['PHIEUKHAM'] != null) {
+            final phieuKham = rawData['PHIEUKHAM'];
+            print('PhieuKham data: $phieuKham'); // Debug print
+
+            if (phieuKham['TienKham'] != null) {
+              final examCost =
+                  double.tryParse(phieuKham['TienKham'].toString());
+              print('Parsed examination cost: $examCost'); // Debug print
+
+              if (examCost != null) {
+                selectedExaminationCost += examCost;
+                print(
+                    'Updated total examination cost: $selectedExaminationCost'); // Debug print
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // Calculate medicine costs
+    for (var medicine in _medicineDetails) {
+      if (_selectedPrescriptionIds.contains(medicine['prescriptionId'])) {
+        selectedMedicineCost +=
+            medicine['THUOC']['DonGia'] * medicine['Sluong'];
+      }
+    }
+
     return Hero(
       tag: 'bill-${widget.bill.id}',
       child: Container(
@@ -165,8 +208,9 @@ class _BillDetailsSheetState extends State<BillDetailsSheet>
                       right: 20,
                       bottom: 20,
                     ),
-                    height:
-                        MediaQuery.of(context).size.height, // Full screen height
+                    height: MediaQuery.of(context)
+                        .size
+                        .height, // Full screen height
                     decoration: BoxDecoration(
                       color: Colors.white,
                       // Remove border radius for full screen
@@ -213,19 +257,16 @@ class _BillDetailsSheetState extends State<BillDetailsSheet>
                                           'Tên bệnh nhân: ${widget.bill.patientName}',
                                           'Mã hóa đơn: ${widget.bill.id.substring(0, 6)}...',
                                           'Ngày tạo hóa đơn: ${DateFormat('dd/MM/yyyy HH:mm').format(widget.bill.saleDate)}',
-                                          'Tiền thuốc: ${NumberFormat.currency(locale: 'vi_VN', symbol: 'đ').format(widget.bill.medicineCost)}',
-                                          if (widget.bill.examinationCost !=
-                                              null)
-                                            'Tiền khám: ${NumberFormat.currency(locale: 'vi_VN', symbol: 'đ').format(widget.bill.examinationCost)}',
-                                          'Tổng thanh toán: ${NumberFormat.currency(locale: 'vi_VN', symbol: 'đ').format(widget.bill.totalCost)}',
+                                          'Tiền thuốc: ${NumberFormat.currency(locale: 'vi_VN', symbol: 'đ').format(selectedMedicineCost)}',
+                                          'Tiền khám: ${NumberFormat.currency(locale: 'vi_VN', symbol: 'đ').format(selectedExaminationCost)}',
+                                          'Tổng thanh toán: ${NumberFormat.currency(locale: 'vi_VN', symbol: 'đ').format(selectedMedicineCost + selectedExaminationCost)}',
                                         ],
                                         Icons.receipt_long,
                                       ),
                                       if (_prescriptionDetails != null) ...[
                                         const SizedBox(height: 20),
                                         // Show selected prescriptions as chips
-                                        if (_selectedPrescriptionIds
-                                            .isNotEmpty)
+                                        if (_selectedPrescriptionIds.isNotEmpty)
                                           Wrap(
                                             spacing: 8,
                                             runSpacing: 8,

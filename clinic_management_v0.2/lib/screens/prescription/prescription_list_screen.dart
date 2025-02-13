@@ -380,6 +380,7 @@ class _PrescriptionListScreenState extends State<PrescriptionListScreen>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Container(
                                 padding: const EdgeInsets.symmetric(
@@ -403,6 +404,64 @@ class _PrescriptionListScreenState extends State<PrescriptionListScreen>
                                     letterSpacing: 0.5,
                                   ),
                                 ),
+                              ),
+                              PopupMenuButton<String>(
+                                icon: Icon(
+                                  Icons.more_vert,
+                                  color: Colors.grey[600],
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                itemBuilder: (BuildContext context) => [
+                                  PopupMenuItem<String>(
+                                    value: 'view',
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.visibility_outlined,
+                                            color: Colors.blue, size: 20),
+                                        const SizedBox(width: 8),
+                                        const Text('Xem chi tiết'),
+                                      ],
+                                    ),
+                                  ),
+                                  PopupMenuItem<String>(
+                                    value: 'edit',
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.edit_outlined,
+                                            color: Colors.green, size: 20),
+                                        const SizedBox(width: 8),
+                                        const Text('Chỉnh sửa'),
+                                      ],
+                                    ),
+                                  ),
+                                  PopupMenuItem<String>(
+                                    value: 'delete',
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.delete_outline,
+                                            color: Colors.red, size: 20),
+                                        const SizedBox(width: 8),
+                                        const Text('Xóa'),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                                onSelected: (String value) {
+                                  switch (value) {
+                                    case 'view':
+                                      _navigateToPrescriptionDetails(
+                                          prescription);
+                                      break;
+                                    case 'edit':
+                                      _navigateToEditPrescription(prescription);
+                                      break;
+                                    case 'delete':
+                                      _confirmDelete(prescription);
+                                      break;
+                                  }
+                                },
                               ),
                             ],
                           ),
@@ -679,6 +738,7 @@ class _PrescriptionListScreenState extends State<PrescriptionListScreen>
                     ],
                   ),
                 ),
+                const SizedBox(height: 16),
               ],
             ),
           ),

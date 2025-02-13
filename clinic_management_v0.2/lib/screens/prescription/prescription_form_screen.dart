@@ -88,10 +88,13 @@ class _PrescriptionFormScreenState extends State<PrescriptionFormScreen>
       final patients = await _supabaseService3.getPatients();
       final doctors = await _supabaseService5.getDoctor();
 
+      if (!mounted) return; // Add this check
+
       if (widget.prescription?.patientId != null) {
         // Load patient info for existing prescription
         final patient = await _supabaseService3
             .getPatientById(widget.prescription!.patientId!);
+        if (!mounted) return; // Add this check
         setState(() => _selectedPatient = patient);
         // Load examinations for this patient if patient exists
         if (patient != null && patient.id != null) {
@@ -99,6 +102,7 @@ class _PrescriptionFormScreenState extends State<PrescriptionFormScreen>
         }
       }
 
+      if (!mounted) return; // Add this check
       setState(() {
         _medicines = medicines;
         _patients = patients;
@@ -112,6 +116,7 @@ class _PrescriptionFormScreenState extends State<PrescriptionFormScreen>
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return; // Add this check
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Lỗi khi tải dữ liệu: $e')),
       );
@@ -123,6 +128,7 @@ class _PrescriptionFormScreenState extends State<PrescriptionFormScreen>
     try {
       final examinations =
           await _supabaseService4.getExaminations(patientId: patientId);
+      if (!mounted) return; // Add this check
       if (examinations.isNotEmpty) {
         examinations
             .sort((a, b) => b.examinationDate.compareTo(a.examinationDate));
@@ -145,6 +151,7 @@ class _PrescriptionFormScreenState extends State<PrescriptionFormScreen>
         });
       }
     } catch (e) {
+      if (!mounted) return; // Add this check
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Lỗi khi tải danh sách khám: $e')),
       );
@@ -152,6 +159,7 @@ class _PrescriptionFormScreenState extends State<PrescriptionFormScreen>
   }
 
   Future<void> _loadPrescriptionDetails() async {
+    if (!mounted) return; // Add this check
     setState(() => _isLoading = true);
     try {
       final details = await _supabaseService1.getPrescriptionDetails(
@@ -163,6 +171,7 @@ class _PrescriptionFormScreenState extends State<PrescriptionFormScreen>
         await _loadExaminations(widget.prescription!.patientId!);
       }
 
+      if (!mounted) return; // Add this check
       setState(() {
         _details.addAll(details);
         if (_doctors.isNotEmpty) {
@@ -173,10 +182,12 @@ class _PrescriptionFormScreenState extends State<PrescriptionFormScreen>
         }
       });
     } catch (e) {
+      if (!mounted) return; // Add this check
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Đã xảy ra lỗi: $e')),
       );
     } finally {
+      if (!mounted) return; // Add this check
       setState(() => _isLoading = false);
     }
   }
@@ -453,6 +464,71 @@ class _PrescriptionFormScreenState extends State<PrescriptionFormScreen>
     required Function(dynamic) onChanged,
     required String labelText,
   }) {
+    // Special handling for examination dropdown
+    if (labelText == 'Chọn phiếu khám') {
+      items = items.map((item) {
+        final examination = item.value as Examination;
+        final bool isValid = examination.isValidForPrescription();
+        return DropdownMenuItem(
+          value: examination,
+          child: Tooltip(
+            message: isValid
+                ? 'Phiếu khám hợp lệ'
+                : 'Phiếu khám không hợp lệ: \n'
+                    '${!examination.isDoctorActive! ? '- Bác sĩ không còn hoạt động\n' : ''}'
+                    '${!examination.isSpecialtyActive! ? '- Chuyên khoa không còn hoạt động\n' : ''}'
+                    '${examination.pricePackage?.isActive != true ? '- Gói dịch vụ không còn hiệu lực' : ''}',
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 300),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    isValid ? Icons.check_circle : Icons.error_outline,
+                    color: isValid ? Colors.green : Colors.red,
+                    size: 16,
+                  ),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      'Phiếu khám ${examination.id.substring(0, 6)}...',
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: isValid ? null : Colors.red,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color:
+                          isValid ? Colors.green.shade50 : Colors.red.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isValid ? Colors.green : Colors.red,
+                      ),
+                    ),
+                    child: Text(
+                      isValid ? 'Hợp lệ' : 'Không hợp lệ',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isValid ? Colors.green : Colors.red,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      }).toList();
+    }
+
     if (labelText == 'Chọn bác sĩ') {
       items = items.map((item) {
         final doctor = item.value as Doctor;
@@ -502,60 +578,37 @@ class _PrescriptionFormScreenState extends State<PrescriptionFormScreen>
           ),
         ],
       ),
-      child: Column(
-        children: [
-          DropdownButtonFormField(
-            value: value,
-            items: items,
-            onChanged: onChanged,
-            decoration: InputDecoration(
-              labelText: labelText,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
-              filled: true,
-              fillColor: Colors.white,
-            ),
-            validator: (value) {
-              if (value == null) {
-                return 'Vui lòng chọn $labelText';
-              }
-              if (labelText == 'Chọn bác sĩ') {
-                final doctor = value as Doctor;
-                if (!doctor.isActive) {
-                  return 'Vui lòng chọn bác sĩ đang hoạt động';
-                }
-              }
-              return null;
-            },
+      child: DropdownButtonFormField(
+        value: value,
+        items: items,
+        onChanged: onChanged,
+        decoration: InputDecoration(
+          labelText: labelText,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
           ),
-          if (labelText == 'Chọn bác sĩ' &&
-              value != null &&
-              !(value as Doctor).isActive)
-            Container(
-              padding: const EdgeInsets.all(8),
-              margin: const EdgeInsets.only(top: 8),
-              decoration: BoxDecoration(
-                color: Colors.orange.shade50,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.orange),
-              ),
-              child: Row(
-                children: const [
-                  Icon(Icons.warning_amber_rounded,
-                      color: Colors.orange, size: 20),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Bác sĩ này hiện không còn hoạt động',
-                      style: TextStyle(color: Colors.orange),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-        ],
+          filled: true,
+          fillColor: Colors.white,
+        ),
+        validator: (value) {
+          if (value == null) {
+            return 'Vui lòng chọn $labelText';
+          }
+          if (labelText == 'Chọn phiếu khám') {
+            final examination = value as Examination;
+            if (!examination.isValidForPrescription()) {
+              return 'Phiếu khám không hợp lệ để kê đơn';
+            }
+          }
+          if (labelText == 'Chọn bác sĩ') {
+            final doctor = value as Doctor;
+            if (!doctor.isActive) {
+              return 'Vui lòng chọn bác sĩ đang hoạt động';
+            }
+          }
+          return null;
+        },
       ),
     );
   }
@@ -783,11 +836,13 @@ class _PrescriptionFormScreenState extends State<PrescriptionFormScreen>
     try {
       final patient =
           await _supabaseService3.getPatientById(widget.examination!.patientId);
+      if (!mounted) return; // Add this check
       setState(() => _selectedPatient = patient);
 
       final examinations = await _supabaseService4.getExaminations(
           patientId: widget.examination!.patientId);
 
+      if (!mounted) return; // Add this check
       setState(() {
         _examinations = examinations;
         _selectedExamination = examinations.firstWhere(
@@ -804,11 +859,10 @@ class _PrescriptionFormScreenState extends State<PrescriptionFormScreen>
         }
       });
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi khi tải thông tin bệnh nhân: $e')),
-        );
-      }
+      if (!mounted) return; // Add this check
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lỗi khi tải thông tin bệnh nhân: $e')),
+      );
     }
   }
 

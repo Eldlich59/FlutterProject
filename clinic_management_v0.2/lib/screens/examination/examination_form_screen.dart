@@ -99,7 +99,7 @@ class _ExaminationFormScreenState extends State<ExaminationFormScreen>
     _diagnosisController =
         TextEditingController(text: widget.examination?.diagnosis);
     _feeController = TextEditingController(
-      text: widget.examination?.examinationFee.toString() ?? '100000',
+      text: widget.examination?.examinationCost.toString() ?? '100000',
     );
     _loadPatients();
     _loadDoctors(); // Add this line
@@ -614,9 +614,8 @@ class _ExaminationFormScreenState extends State<ExaminationFormScreen>
                       items: _pricePackages.map((package) {
                         return DropdownMenuItem(
                           value: package,
-                          child: Text(
-                            '${package.name} - ${package.price.toStringAsFixed(0)} VNĐ',
-                          ),
+                          child: Text(package
+                              .name), // Remove price display, only show package name
                         );
                       }).toList(),
                       onChanged: (value) {
@@ -817,7 +816,7 @@ class _ExaminationFormScreenState extends State<ExaminationFormScreen>
         examinationDate: _selectedDate,
         symptoms: _symptomsController.text,
         diagnosis: _diagnosisController.text,
-        examinationFee: double.parse(_feeController.text),
+        examinationCost: double.parse(_feeController.text),
         pricePackageId: _selectedPackage?.id, // Add this field
       );
 

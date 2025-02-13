@@ -65,6 +65,41 @@ class ExaminationService {
     }
   }
 
+  Future<Map<String, dynamic>> getExamValidationStatus(String examId) async {
+    try {
+      final response = await _supabase.from('PHIEUKHAM').select('''
+        *,
+        BACSI (
+          MaBS,
+          TenBS,
+          TrangThai
+        ),
+        CHUYENKHOA (
+          MaCK,
+          TenCK,
+          TrangThaiHD
+        ),
+        price_packages (
+          id,
+          name,
+          is_active
+        )
+      ''').eq('MaPK', examId).single();
+
+      return {
+        'PHIEUKHAM': {
+          ...response,
+          'BACSI': response['BACSI'],
+          'CHUYENKHOA': response['CHUYENKHOA'],
+          'price_packages': response['price_packages'],
+        }
+      };
+    } catch (e) {
+      print('Error fetching examination validation status: $e');
+      throw Exception('Error fetching examination validation status: $e');
+    }
+  }
+
   Future<void> addExamination(Examination examination) async {
     await _supabase.from('PHIEUKHAM').insert(examination.toJson());
   }

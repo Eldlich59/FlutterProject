@@ -253,7 +253,7 @@ class _ExaminationDetailsScreenState extends State<ExaminationDetailsScreen>
                               _buildInfoRow(
                                   'Phí khám:',
                                   currencyFormat.format(
-                                      widget.examination.examinationFee)),
+                                      widget.examination.examinationCost)),
                             ],
                             Icons.payment,
                           ),

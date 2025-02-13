@@ -23,7 +23,7 @@ class _BillFormScreenState extends State<BillFormScreen>
   Map<String, dynamic>? _selectedPrescription;
   late DateTime _selectedDate;
   late double _medicineCost;
-  late double _examinationFee; // Add this
+  late double _examinationCost; // Add this
   late double _totalCost; // Add this
   bool _isLoading = false;
 
@@ -71,7 +71,7 @@ class _BillFormScreenState extends State<BillFormScreen>
 
     _selectedDate = DateTime.now();
     _medicineCost = 0; // Changed this line
-    _examinationFee = 0; // Initialize
+    _examinationCost = 0; // Initialize
     _totalCost = 0; // Initialize
     _loadPatients(); // Changed from _loadPrescriptions
   }
@@ -127,19 +127,25 @@ class _BillFormScreenState extends State<BillFormScreen>
 
   // Add method to load prescriptions for selected patient
   Future<void> _loadPatientPrescriptions(String patientId) async {
+    if (!mounted) return;
+
     setState(() => _isLoading = true);
     try {
       final prescriptions =
           await _supabaseService2.getPrescriptionsByPatient(patientId);
+      if (!mounted) return;
+
       setState(() {
         _availablePrescriptions = prescriptions;
         _selectedPrescriptions.clear(); // Clear previous selections
         _medicineCost = 0;
-        _examinationFee = 0;
+        _examinationCost = 0;
         _totalCost = 0;
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Lỗi khi tải danh sách toa thuốc: $e')),
       );
@@ -161,18 +167,18 @@ class _BillFormScreenState extends State<BillFormScreen>
       }
 
       // Changed this section to properly get TienKham
-      double examFee = 0;
+      double examinationCost = 0;
       if (examination['PHIEUKHAM'] != null) {
-        examFee =
+        examinationCost =
             double.tryParse(examination['PHIEUKHAM']['TienKham'].toString()) ??
                 0;
       }
 
-      double total = medicineTotal + examFee;
+      double total = medicineTotal + examinationCost;
 
       setState(() {
         _medicineCost = medicineTotal;
-        _examinationFee = examFee;
+        _examinationCost = examinationCost;
         _totalCost = total;
       });
     } catch (e) {
@@ -525,7 +531,8 @@ class _BillFormScreenState extends State<BillFormScreen>
           _selectedPrescription = value;
         });
         if (value != null) {
-          _calculateMedicineCost(value['MaToa']);
+          // Update total costs (including exam fee) from the selected prescription
+          _calculateTotalCosts();
         }
       },
       validator: (value) {
@@ -602,15 +609,15 @@ class _BillFormScreenState extends State<BillFormScreen>
                   subtitle: Text(
                       'Mã toa: ${prescription['MaToa'].toString().substring(0, 6)}...'),
                   onChanged: (bool? value) async {
-                    if (value == true) {
-                      setState(() {
+                    setState(() {
+                      if (value == true) {
+                        _selectedPrescriptions.clear();
                         _selectedPrescriptions.add(prescription);
-                      });
-                    } else {
-                      setState(() {
+                      } else {
                         _selectedPrescriptions.remove(prescription);
-                      });
-                    }
+                      }
+                    });
+                    // Immediately calculate total costs when prescription selection changes
                     await _calculateTotalCosts();
                   },
                 ),
@@ -626,48 +633,74 @@ class _BillFormScreenState extends State<BillFormScreen>
     if (!mounted) return;
 
     double medicineCost = 0;
-    double examinationFee = 0;
-
-    final prescriptions =
-        List<Map<String, dynamic>>.from(_selectedPrescriptions);
+    double examinationCost = 0;
 
     try {
-      for (var prescription in prescriptions) {
-        final medicines = await _supabaseService2
-            .getPrescriptionMedicines(prescription['MaToa'].toString());
-        final examination = await _supabaseService2
-            .getPrescriptionExamination(prescription['MaToa'].toString());
+      if (_selectedPrescriptions.isNotEmpty) {
+        final prescription = _selectedPrescriptions.last;
+        final prescriptionId = prescription['MaToa'].toString();
+
+        // Get examination fee from PHIEUKHAM
+        final examinationResult =
+            await _supabaseService2.getPrescriptionExamination(prescriptionId);
+
+        // Debugging: Print the entire examinationResult
+        print('Examination Result: $examinationResult');
+
+        if (examinationResult['PHIEUKHAM'] != null) {
+          // Debugging: Print the PHIEUKHAM object
+          print('PHIEUKHAM: ${examinationResult['PHIEUKHAM']}');
+
+          if (examinationResult['PHIEUKHAM']['TienKham'] != null) {
+            // Debugging: Print the raw TienKham value
+            print(
+                'Raw TienKham: ${examinationResult['PHIEUKHAM']['TienKham']}');
+
+            // Directly use TienKham from PHIEUKHAM
+            final tienKham = examinationResult['PHIEUKHAM']['TienKham'];
+            if (tienKham is String) {
+              examinationCost = double.tryParse(tienKham) ?? 0;
+            } else if (tienKham is num) {
+              examinationCost = tienKham.toDouble();
+            } else {
+              examinationCost = 0;
+              print('Unexpected type for TienKham: ${tienKham.runtimeType}');
+            }
+            print('Parsed examinationCost: $examinationCost');
+          } else {
+            print('TienKham is null');
+            examinationCost = 0;
+          }
+        } else {
+          print('examinationResult or PHIEUKHAM is null');
+          examinationCost = 0;
+        }
 
         // Calculate medicine costs
+        final medicines =
+            await _supabaseService2.getPrescriptionMedicines(prescriptionId);
         for (var medicine in medicines) {
           final quantity = medicine['Sluong'] ?? 0;
-          final price = medicine['THUOC']['DonGia'] ?? 0;
+          final price =
+              medicine['THUOC'] != null ? medicine['THUOC']['DonGia'] ?? 0 : 0;
           medicineCost += (quantity * price);
         }
-
-        // Add examination fee
-        if (examination['PHIEUKHAM'] != null) {
-          final examFee = double.tryParse(
-                  examination['PHIEUKHAM']['TienKham'].toString()) ??
-              0;
-          examinationFee += examFee;
-        }
       }
 
-      if (mounted) {
-        setState(() {
-          _medicineCost = medicineCost;
-          _examinationFee = examinationFee;
-          _totalCost = medicineCost + examinationFee;
-        });
-      }
+      if (!mounted) return;
+
+      setState(() {
+        _medicineCost = medicineCost;
+        _examinationCost = examinationCost; // Update examination cost
+        _totalCost = medicineCost + examinationCost;
+      });
     } catch (e) {
-      print('Error calculating costs: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi khi tính tổng tiền: $e')),
-        );
-      }
+      print('Error in _calculateTotalCosts: $e');
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lỗi khi tính tổng tiền: $e')),
+      );
     }
   }
 
@@ -679,7 +712,7 @@ class _BillFormScreenState extends State<BillFormScreen>
         children: [
           _buildCostRow('Tiền thuốc:', _medicineCost),
           _buildDivider(),
-          _buildCostRow('Tiền khám:', _examinationFee),
+          _buildCostRow('Tiền khám:', _examinationCost),
           _buildDivider(),
           _buildCostRow('Tổng tiền:', _totalCost, isTotal: true),
         ],

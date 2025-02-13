@@ -515,7 +515,7 @@ class _ExaminationListScreenState extends State<ExaminationListScreen> {
                                     Border.all(color: Colors.green.shade200),
                               ),
                               child: Text(
-                                'Phí khám: ${_currencyFormat.format(examination.examinationFee)}',
+                                'Phí khám: ${_currencyFormat.format(examination.examinationCost)}',
                                 style: TextStyle(
                                   color: Colors.green.shade700,
                                   fontWeight: FontWeight.bold,
