@@ -33,6 +33,35 @@ class _PricePackagesScreenState extends State<PricePackagesScreen>
   late Animation<double> _searchBarAnimation;
   late Animation<double> _dropdownAnimation;
 
+  // Add new method to check specialty status
+  bool _isSpecialtyActive(String specialtyId) {
+    return specialties
+        .firstWhere(
+          (s) => s.id == specialtyId,
+          orElse: () => Specialty(
+              id: '', name: '', isActive: false, isSelfRegistration: false),
+        )
+        .isActive;
+  }
+
+  // Add new method to show warning
+  void _showInactiveSpecialtyWarning() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Cảnh Báo'),
+        content: Text(
+            'Chuyên khoa của gói dịch vụ này hiện đã ngừng hoạt động. Vui lòng cập nhật sang chuyên khoa khác.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Đóng'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -105,9 +134,35 @@ class _PricePackagesScreenState extends State<PricePackagesScreen>
       final loadedPackages = selectedSpecialtyId != null
           ? await _packageService.getPackagesByChuyenKhoa(selectedSpecialtyId!)
           : await _packageService.getAllPackages();
+
       setState(() {
-        packages = loadedPackages;
-        _filterPackages(); // Update filtered list when loading new data
+        // Process each package
+        packages = loadedPackages.map((package) {
+          // Only check specialty status for its assigned specialty
+          final specialty = specialties.firstWhere(
+            (s) => s.id == package.chuyenKhoaId,
+            orElse: () => Specialty(
+              id: '',
+              name: '',
+              isActive: false,
+              isSelfRegistration: false,
+            ),
+          );
+
+          // Only update package status if its specialty is inactive
+          if (!specialty.isActive && package.isActive) {
+            _packageService.togglePackageStatus(package.id, false);
+            return package.copyWith(isActive: false);
+          }
+          return package;
+        }).toList();
+
+        // Only show warning if viewing a specific inactive specialty
+        if (selectedSpecialtyId != null &&
+            !_isSpecialtyActive(selectedSpecialtyId!)) {
+          _showInactiveSpecialtyWarning();
+        }
+        _filterPackages();
       });
     } catch (e) {
       _showError('Error loading packages: $e');
@@ -296,52 +351,7 @@ class _PricePackagesScreenState extends State<PricePackagesScreen>
                           ),
                         ],
                       ),
-                      child: DropdownButtonFormField<String>(
-                        decoration: InputDecoration(
-                          labelText: 'Chọn Chuyên Khoa',
-                          labelStyle: TextStyle(
-                            color: Colors.pink.shade700,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(15),
-                            borderSide: BorderSide(color: Colors.pink.shade200),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(15),
-                            borderSide: BorderSide(color: Colors.pink.shade200),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(15),
-                            borderSide: BorderSide(
-                                color: Colors.pink.shade400, width: 2),
-                          ),
-                          filled: true,
-                          fillColor: Colors.white,
-                          prefixIcon: Icon(Icons.local_hospital,
-                              color: Colors.pink.shade400),
-                        ),
-                        value: selectedSpecialtyId,
-                        items: [
-                          DropdownMenuItem<String>(
-                            value: null,
-                            child: Text('Tất cả chuyên khoa',
-                                style: TextStyle(color: Colors.pink.shade700)),
-                          ),
-                          ...specialties.map((specialty) {
-                            return DropdownMenuItem<String>(
-                              value: specialty.id,
-                              child: Text(specialty.name),
-                            );
-                          }),
-                        ],
-                        onChanged: (value) {
-                          setState(() {
-                            selectedSpecialtyId = value;
-                            _loadPackages();
-                          });
-                        },
-                      ),
+                      child: _buildSpecialtyDropdown(),
                     ),
                   ),
                 ),
@@ -709,24 +719,13 @@ class _PricePackagesScreenState extends State<PricePackagesScreen>
                               border: Border.all(color: Colors.pink.shade100),
                               color: Colors.pink.shade50.withOpacity(0.5),
                             ),
-                            child: DropdownButtonFormField<String>(
-                              decoration: const InputDecoration(
-                                border: InputBorder.none,
-                                contentPadding:
-                                    EdgeInsets.symmetric(horizontal: 16),
-                              ),
-                              value: dialogSpecialtyId,
-                              items: specialties.map((specialty) {
-                                return DropdownMenuItem(
-                                  value: specialty.id,
-                                  child: Text(specialty.name),
-                                );
-                              }).toList(),
-                              onChanged: (value) => dialogSpecialtyId = value,
-                              validator: (value) => value == null
-                                  ? 'Vui lòng chọn chuyên khoa'
-                                  : null,
-                            ),
+                            child: _buildFormSpecialtyDropdown(
+                                currentValue: dialogSpecialtyId,
+                                onSpecialtyChanged: (value) {
+                                  setState(() {
+                                    dialogSpecialtyId = value;
+                                  });
+                                }),
                           ),
                           const SizedBox(height: 16),
 
@@ -872,7 +871,8 @@ class _PricePackagesScreenState extends State<PricePackagesScreen>
                             final newPackage = PricePackage(
                               id: '', // Will be generated by Supabase
                               name: nameController.text,
-                              chuyenKhoaId: dialogSpecialtyId!,
+                              chuyenKhoaId:
+                                  dialogSpecialtyId ?? specialties.first.id,
                               price: double.parse(priceController.text),
                               description: descriptionController.text,
                               includedServices: servicesController.text
@@ -885,7 +885,7 @@ class _PricePackagesScreenState extends State<PricePackagesScreen>
                               updatedAt: DateTime.now(),
                             );
                             await _packageService.createPackage(newPackage);
-                            if (!mounted) return;
+                            if (!context.mounted) return;
                             Navigator.pop(context);
                             _loadPackages();
                           } catch (e) {
@@ -988,24 +988,13 @@ class _PricePackagesScreenState extends State<PricePackagesScreen>
                               border: Border.all(color: Colors.pink.shade100),
                               color: Colors.pink.shade50.withOpacity(0.5),
                             ),
-                            child: DropdownButtonFormField<String>(
-                              decoration: const InputDecoration(
-                                border: InputBorder.none,
-                                contentPadding:
-                                    EdgeInsets.symmetric(horizontal: 16),
-                              ),
-                              value: dialogSpecialtyId,
-                              items: specialties.map((specialty) {
-                                return DropdownMenuItem(
-                                  value: specialty.id,
-                                  child: Text(specialty.name),
-                                );
-                              }).toList(),
-                              onChanged: (value) => dialogSpecialtyId = value,
-                              validator: (value) => value == null
-                                  ? 'Vui lòng chọn chuyên khoa'
-                                  : null,
-                            ),
+                            child: _buildFormSpecialtyDropdown(
+                                currentValue: dialogSpecialtyId,
+                                onSpecialtyChanged: (value) {
+                                  setState(() {
+                                    dialogSpecialtyId = value;
+                                  });
+                                }),
                           ),
                           const SizedBox(height: 16),
 
@@ -1151,7 +1140,8 @@ class _PricePackagesScreenState extends State<PricePackagesScreen>
                             final updatedPackage = PricePackage(
                               id: package.id,
                               name: nameController.text,
-                              chuyenKhoaId: dialogSpecialtyId!,
+                              chuyenKhoaId:
+                                  dialogSpecialtyId ?? specialties.first.id,
                               price: double.parse(priceController.text),
                               description: descriptionController.text,
                               includedServices: servicesController.text
@@ -1164,7 +1154,7 @@ class _PricePackagesScreenState extends State<PricePackagesScreen>
                               updatedAt: DateTime.now(),
                             );
                             await _packageService.updatePackage(updatedPackage);
-                            if (!mounted) return;
+                            if (!context.mounted) return;
                             Navigator.pop(context);
                             _loadPackages();
                           } catch (e) {
@@ -1281,6 +1271,17 @@ class _PricePackagesScreenState extends State<PricePackagesScreen>
   }
 
   void _showPackageDetails(PricePackage package) {
+    // Find the specialty for this package
+    final specialty = specialties.firstWhere(
+      (s) => s.id == package.chuyenKhoaId,
+      orElse: () => Specialty(
+        id: '',
+        name: 'Không xác định',
+        isActive: false,
+        isSelfRegistration: false,
+      ),
+    );
+
     showDialog(
       context: context,
       builder: (context) => Dialog(
@@ -1353,7 +1354,83 @@ class _PricePackagesScreenState extends State<PricePackagesScreen>
                       ),
                       const SizedBox(height: 16),
 
+                      // Add Specialty Section after package name
+                      const SizedBox(height: 16),
+                      Text(
+                        'Chuyên Khoa',
+                        style: TextStyle(
+                          color: Colors.pink.shade700,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: specialty.isActive
+                              ? Colors.blue.shade50
+                              : Colors.grey.shade50,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: specialty.isActive
+                                ? Colors.blue.shade200
+                                : Colors.grey.shade300,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.local_hospital,
+                              size: 20,
+                              color: specialty.isActive
+                                  ? Colors.blue.shade700
+                                  : Colors.grey.shade600,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                specialty.name,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: specialty.isActive
+                                      ? Colors.blue.shade900
+                                      : Colors.grey.shade700,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                            if (!specialty.isActive)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.red.shade50,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border:
+                                      Border.all(color: Colors.red.shade200),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.block,
+                                        size: 16, color: Colors.red.shade400),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'Ngừng hoạt động',
+                                      style: TextStyle(
+                                          color: Colors.red.shade700,
+                                          fontSize: 12),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+
                       // Move Timestamps here
+                      const SizedBox(height: 16),
                       Text(
                         'Thông Tin Thời Gian',
                         style: TextStyle(
@@ -1586,6 +1663,24 @@ class _PricePackagesScreenState extends State<PricePackagesScreen>
   // Add new method for toggling status
   Future<void> _togglePackageStatus(
       PricePackage package, bool newStatus) async {
+    // Check if trying to activate package when specialty is inactive
+    final specialty = specialties.firstWhere(
+      (s) => s.id == package.chuyenKhoaId,
+      orElse: () => Specialty(
+        id: '',
+        name: '',
+        isActive: false,
+        isSelfRegistration: false,
+      ),
+    );
+
+    if (newStatus && !specialty.isActive) {
+      _showError(
+        'Không thể kích hoạt gói dịch vụ vì chuyên khoa ${specialty.name} đang ngừng hoạt động',
+      );
+      return;
+    }
+
     try {
       await _packageService.togglePackageStatus(package.id, newStatus);
       _loadPackages(); // Reload to update UI
@@ -1628,6 +1723,109 @@ class _PricePackagesScreenState extends State<PricePackagesScreen>
         const SizedBox(width: 4),
         Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
       ],
+    );
+  }
+
+  // Modify the dropdown in the build method
+  Widget _buildSpecialtyDropdown() {
+    // Filter active specialties for dropdown
+    final activeSpecialties = specialties.where((s) => s.isActive).toList();
+
+    return DropdownButtonFormField<String>(
+      decoration: InputDecoration(
+        labelText: 'Chọn Chuyên Khoa',
+        labelStyle: TextStyle(
+          color: Colors.pink.shade700,
+          fontWeight: FontWeight.w500,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(15),
+          borderSide: BorderSide(color: Colors.pink.shade200),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(15),
+          borderSide: BorderSide(color: Colors.pink.shade200),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(15),
+          borderSide: BorderSide(color: Colors.pink.shade400, width: 2),
+        ),
+        filled: true,
+        fillColor: Colors.white,
+        prefixIcon: Icon(Icons.local_hospital, color: Colors.pink.shade400),
+      ),
+      value: selectedSpecialtyId,
+      items: [
+        DropdownMenuItem<String>(
+          value: null,
+          child: Text('Tất cả chuyên khoa',
+              style: TextStyle(color: Colors.pink.shade700)),
+        ),
+        ...activeSpecialties.map((specialty) {
+          return DropdownMenuItem<String>(
+            value: specialty.id,
+            child: Text(specialty.name),
+          );
+        }),
+      ],
+      onChanged: (value) {
+        setState(() {
+          selectedSpecialtyId = value;
+          _loadPackages();
+        });
+      },
+    );
+  }
+
+  // Update the specialty dropdown in _showAddPackageDialog and _showEditPackageDialog
+  Widget _buildFormSpecialtyDropdown(
+      {String? currentValue, ValueChanged<String?>? onSpecialtyChanged}) {
+    return DropdownButtonFormField<String>(
+      decoration: const InputDecoration(
+        border: InputBorder.none,
+        contentPadding: EdgeInsets.symmetric(horizontal: 16),
+      ),
+      value: currentValue ??
+          (specialties.isNotEmpty ? specialties.first.id : null),
+      items: specialties.map((specialty) {
+        return DropdownMenuItem<String>(
+          value: specialty.id,
+          enabled: specialty.isActive,
+          child: Container(
+            constraints: const BoxConstraints(minHeight: 40),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Flexible(
+                  child: Text(
+                    specialty.name,
+                    style: TextStyle(
+                      color: specialty.isActive ? null : Colors.grey.shade400,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                if (!specialty.isActive)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 8),
+                    child: Icon(
+                      Icons.block,
+                      color: Colors.red.shade200,
+                      size: 16,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        );
+      }).toList(),
+      onChanged: (value) {
+        if (onSpecialtyChanged != null) {
+          onSpecialtyChanged(value);
+        }
+      },
+      validator: (value) => value == null ? 'Vui lòng chọn chuyên khoa' : null,
+      isExpanded: true,
     );
   }
 }

@@ -81,54 +81,13 @@ class _PrescriptionListScreenState extends State<PrescriptionListScreen>
       child: Card(
         elevation: 0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: primaryColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(Icons.search, color: primaryColor, size: 20),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: TextField(
-                      controller: _patientSearchController,
-                      decoration: InputDecoration(
-                        hintText: 'Tìm kiếm bệnh nhân hoặc bác sĩ...',
-                        hintStyle: TextStyle(color: Colors.grey[400]),
-                        border: InputBorder.none,
-                      ),
-                      style: const TextStyle(fontSize: 15),
-                      onChanged: (value) {
-                        _doctorSearchController.text = value;
-                        _filterPrescriptions();
-                      },
-                    ),
-                  ),
-                  if (_patientSearchController.text.isNotEmpty)
-                    IconButton(
-                      icon: const Icon(Icons.clear, color: Colors.grey),
-                      onPressed: () {
-                        _patientSearchController.clear();
-                        _doctorSearchController.clear();
-                        _filterPrescriptions();
-                      },
-                    ),
-                ],
-              ),
-            ),
-            Divider(height: 1, color: Colors.grey[200]),
-            InkWell(
-              onTap: () => _selectDate(context),
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Row(
+            children: [
+              // Search field
+              Expanded(
+                flex: 2,
                 child: Row(
                   children: [
                     Container(
@@ -137,43 +96,99 @@ class _PrescriptionListScreenState extends State<PrescriptionListScreen>
                         color: primaryColor.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Icon(
-                        Icons.calendar_today,
-                        color:
-                            _selectedDate != null ? primaryColor : Colors.grey,
-                        size: 20,
-                      ),
+                      child: Icon(Icons.search, color: primaryColor, size: 20),
                     ),
                     const SizedBox(width: 12),
-                    Text(
-                      _selectedDate != null
-                          ? DateFormat('dd/MM/yyyy').format(_selectedDate!)
-                          : 'Chọn ngày',
-                      style: TextStyle(
-                        color: _selectedDate != null
-                            ? primaryColor
-                            : Colors.grey[600],
-                        fontSize: 15,
-                      ),
-                    ),
-                    if (_selectedDate != null) ...[
-                      const Spacer(),
-                      IconButton(
-                        icon: const Icon(Icons.clear, size: 20),
-                        color: Colors.grey,
-                        onPressed: () {
-                          setState(() {
-                            _selectedDate = null;
-                            _filterPrescriptions();
-                          });
+                    Expanded(
+                      child: TextField(
+                        controller: _patientSearchController,
+                        decoration: InputDecoration(
+                          hintText: 'Tìm kiếm toa thuốc...',
+                          hintStyle: TextStyle(color: Colors.grey[400]),
+                          border: InputBorder.none,
+                        ),
+                        style: const TextStyle(fontSize: 15),
+                        onChanged: (value) {
+                          _doctorSearchController.text = value;
+                          _filterPrescriptions();
                         },
                       ),
-                    ],
+                    ),
+                    if (_patientSearchController.text.isNotEmpty)
+                      IconButton(
+                        icon: const Icon(Icons.clear, color: Colors.grey),
+                        onPressed: () {
+                          _patientSearchController.clear();
+                          _doctorSearchController.clear();
+                          _filterPrescriptions();
+                        },
+                      ),
                   ],
                 ),
               ),
-            ),
-          ],
+
+              // Vertical divider
+              Container(
+                height: 30,
+                width: 1,
+                color: Colors.grey[300],
+                margin: const EdgeInsets.symmetric(horizontal: 8),
+              ),
+
+              // Date picker
+              Expanded(
+                child: InkWell(
+                  onTap: () => _selectDate(context),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: primaryColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          Icons.calendar_today,
+                          color: _selectedDate != null
+                              ? primaryColor
+                              : Colors.grey,
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          _selectedDate != null
+                              ? DateFormat('dd/MM/yyyy').format(_selectedDate!)
+                              : 'Chọn ngày',
+                          style: TextStyle(
+                            color: _selectedDate != null
+                                ? primaryColor
+                                : Colors.grey[600],
+                            fontSize: 15,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (_selectedDate != null)
+                        IconButton(
+                          icon: const Icon(Icons.clear, size: 20),
+                          color: Colors.grey,
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          onPressed: () {
+                            setState(() {
+                              _selectedDate = null;
+                              _filterPrescriptions();
+                            });
+                          },
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -331,212 +346,338 @@ class _PrescriptionListScreenState extends State<PrescriptionListScreen>
                 width: 1,
               ),
             ),
-            child: Row(
+            child: Column(
               children: [
-                Container(
-                  width: 64,
-                  height: 64,
-                  decoration: BoxDecoration(
-                    color: primaryColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: primaryColor.withOpacity(0.3),
-                      width: 2,
+                Row(
+                  children: [
+                    Container(
+                      width: 64,
+                      height: 64,
+                      decoration: BoxDecoration(
+                        color: primaryColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: primaryColor.withOpacity(0.3),
+                          width: 2,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: primaryColor.withOpacity(0.2),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Icon(
+                        Icons.medical_information,
+                        color: primaryColor,
+                        size: 32,
+                      ),
                     ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: primaryColor.withOpacity(0.2),
-                        blurRadius: 8,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Icon(
-                    Icons.medical_information,
-                    color: primaryColor,
-                    size: 32,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: primaryColor.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: primaryColor.withOpacity(0.3),
-                            width: 1.5,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: primaryColor.withOpacity(0.1),
-                              blurRadius: 4,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Text(
-                          'Mã: ${prescription.id.length > 6 ? "${prescription.id.substring(0, 6)}..." : prescription.id}',
-                          style: TextStyle(
-                            color: primaryColor.withOpacity(0.8),
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: BoxDecoration(
-                              color: Colors.grey[100],
-                              borderRadius: BorderRadius.circular(10),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.grey.withOpacity(0.1),
-                                  blurRadius: 4,
-                                  offset: const Offset(0, 2),
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 6,
                                 ),
-                              ],
-                            ),
-                            child: Icon(
-                              Icons.person,
-                              size: 14,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              prescription.patientName ?? '',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey[800],
-                                height: 1.3,
-                                letterSpacing: 0.3,
+                                decoration: BoxDecoration(
+                                  color: primaryColor.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: primaryColor.withOpacity(0.3),
+                                    width: 1.5,
+                                  ),
+                                ),
+                                child: Text(
+                                  'Mã: ${prescription.id.length > 6 ? "${prescription.id.substring(0, 6)}..." : prescription.id}',
+                                  style: TextStyle(
+                                    color: primaryColor.withOpacity(0.8),
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
                               ),
-                            ),
+                            ],
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: BoxDecoration(
-                              color: Colors.grey[100],
-                              borderRadius: BorderRadius.circular(10),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.grey.withOpacity(0.1),
-                                  blurRadius: 4,
-                                  offset: const Offset(0, 2),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[100],
+                                  borderRadius: BorderRadius.circular(10),
                                 ),
-                              ],
-                            ),
-                            child: Icon(
-                              Icons.medical_services,
-                              size: 14,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'BS. ${prescription.doctorName}',
-                              style: TextStyle(
-                                color: Colors.grey[700],
-                                fontSize: 14,
-                                height: 1.3,
-                                letterSpacing: 0.3,
+                                child: Icon(
+                                  Icons.person,
+                                  size: 14,
+                                  color: Colors.grey[600],
+                                ),
                               ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: BoxDecoration(
-                              color: Colors.grey[100],
-                              borderRadius: BorderRadius.circular(10),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.grey.withOpacity(0.1),
-                                  blurRadius: 4,
-                                  offset: const Offset(0, 2),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  prescription.patientName ?? '',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey[800],
+                                    height: 1.3,
+                                    letterSpacing: 0.3,
+                                  ),
                                 ),
-                              ],
-                            ),
-                            child: Icon(
-                              Icons.calendar_today,
-                              size: 14,
-                              color: Colors.grey[600],
-                            ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(width: 8),
-                          Text(
-                            DateFormat('dd/MM/yyyy')
-                                .format(prescription.prescriptionDate),
-                            style: TextStyle(
-                              color: Colors.grey[600],
-                              fontSize: 13,
-                              height: 1.3,
-                              letterSpacing: 0.3,
-                            ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[100],
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Icon(
+                                  Icons.medical_services,
+                                  size: 14,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'BS. ${prescription.doctorName}',
+                                  style: TextStyle(
+                                    color: Colors.grey[700],
+                                    fontSize: 14,
+                                    height: 1.3,
+                                    letterSpacing: 0.3,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[100],
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Icon(
+                                  Icons.calendar_today,
+                                  size: 14,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                DateFormat('dd/MM/yyyy HH:mm')
+                                    .format(prescription.prescriptionDate),
+                                style: TextStyle(
+                                  color: Colors.grey[600],
+                                  fontSize: 13,
+                                  height: 1.3,
+                                  letterSpacing: 0.3,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12), // Increased spacing
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              FutureBuilder<Map<String, dynamic>>(
+                                future: SupabaseService()
+                                    .prescriptionService
+                                    .getPrescriptionExamination(
+                                        prescription.id),
+                                builder: (context, snapshot) {
+                                  if (snapshot.connectionState ==
+                                      ConnectionState.waiting) {
+                                    return const SizedBox(
+                                      width: 16,
+                                      height: 16,
+                                      child: CircularProgressIndicator(
+                                          strokeWidth: 2),
+                                    );
+                                  }
+
+                                  if (snapshot.hasError || !snapshot.hasData) {
+                                    return Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 4,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.red.shade50,
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(
+                                          color: Colors.red.shade200,
+                                        ),
+                                      ),
+                                      child: const Text(
+                                        'Lỗi',
+                                        style: TextStyle(
+                                          color: Colors.red,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    );
+                                  }
+
+                                  final examData = snapshot.data!;
+                                  final examInfo = examData['PHIEUKHAM']
+                                      as Map<String, dynamic>?;
+                                  final bool isDoctorActive =
+                                      examInfo?['BACSI']?['TrangThai'] ?? false;
+                                  final bool isSpecialtyActive =
+                                      examInfo?['CHUYENKHOA']?['TrangThaiHD'] ??
+                                          false;
+                                  final bool isPackageActive =
+                                      examInfo?['price_packages']
+                                              ?['is_active'] ??
+                                          false;
+                                  final bool isValid = isDoctorActive &&
+                                      isSpecialtyActive &&
+                                      (examInfo?['price_packages'] == null ||
+                                          isPackageActive);
+                                  final String examId =
+                                      examInfo?['MaPK']?.toString() ?? '';
+
+                                  return Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      if (examId.isNotEmpty)
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 4,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: Colors.blue.shade50,
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                            border: Border.all(
+                                              color: Colors.blue.shade200,
+                                            ),
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(
+                                                Icons.description_outlined,
+                                                size: 14,
+                                                color: Colors.blue.shade700,
+                                              ),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                'Mã PK: ${examId.length > 6 ? "${examId.substring(0, 6)}..." : examId}',
+                                                style: TextStyle(
+                                                  color: Colors.blue.shade700,
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      const SizedBox(width: 8),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 4,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: isValid
+                                              ? Colors.green.shade50
+                                              : Colors.red.shade50,
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                          border: Border.all(
+                                            color: isValid
+                                                ? Colors.green.shade200
+                                                : Colors.red.shade200,
+                                          ),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                              isValid
+                                                  ? Icons.check_circle_outline
+                                                  : Icons.error_outline,
+                                              size: 14,
+                                              color: isValid
+                                                  ? Colors.green.shade700
+                                                  : Colors.red.shade700,
+                                            ),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              isValid
+                                                  ? 'Hợp lệ'
+                                                  : 'Không hợp lệ',
+                                              style: TextStyle(
+                                                color: isValid
+                                                    ? Colors.green.shade700
+                                                    : Colors.red.shade700,
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              ),
+                            ],
                           ),
                         ],
                       ),
-                    ],
-                  ),
-                ),
-                PopupMenuButton(
-                  icon:
-                      Icon(Icons.more_vert, color: Colors.grey[700], size: 24),
-                  offset: const Offset(0, 40),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 8,
-                  itemBuilder: (context) => [
-                    PopupMenuItem(
-                      child: const ListTile(
-                        leading: Icon(Icons.visibility),
-                        title: Text('Chi tiết'),
-                        contentPadding: EdgeInsets.zero,
-                      ),
-                      onTap: () => _navigateToPrescriptionDetails(prescription),
-                    ),
-                    PopupMenuItem(
-                      child: const ListTile(
-                        leading: Icon(Icons.edit),
-                        title: Text('Sửa'),
-                        contentPadding: EdgeInsets.zero,
-                      ),
-                      onTap: () => Future(
-                          () => _navigateToEditPrescription(prescription)),
-                    ),
-                    PopupMenuItem(
-                      child: const ListTile(
-                        leading: Icon(Icons.delete, color: Colors.red),
-                        title: Text('Xóa'),
-                        contentPadding: EdgeInsets.zero,
-                      ),
-                      onTap: () => Future(() => _confirmDelete(prescription)),
                     ),
                   ],
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.amber.shade200,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Tổng tiền thuốc:',
+                        style: TextStyle(
+                          color: Colors.amber[900],
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Text(
+                        NumberFormat.currency(locale: 'vi_VN', symbol: 'đ')
+                            .format(prescription.medicineCost),
+                        style: TextStyle(
+                          color: Colors.amber[900],
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),

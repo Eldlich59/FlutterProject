@@ -161,7 +161,7 @@ class _BillListScreenState extends State<BillListScreen>
       child: TextField(
         controller: _searchController,
         decoration: InputDecoration(
-          hintText: 'Tìm theo Mã HĐ hoặc Tên bệnh nhân...',
+          hintText: 'Tìm kiếm hóa đơn...',
           hintStyle: TextStyle(
             color: Colors.grey.withOpacity(0.5), // Make hint text more faded
           ),

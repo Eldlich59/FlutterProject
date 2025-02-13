@@ -41,6 +41,30 @@ class ExaminationService {
     }
   }
 
+  Future<Map<String, dynamic>> getExaminationById(String examId) async {
+    try {
+      final response = await _supabase.from('PHIEUKHAM').select('''
+        *,
+        BENHNHAN (TenBN),
+        BACSI (
+          MaBS,
+          TenBS,
+          TrangThai
+        ),
+        CHUYENKHOA (
+          MaCK,
+          TenCK,
+          TrangThaiHD
+        )
+      ''').eq('MaPK', examId).single();
+
+      return response;
+    } catch (e) {
+      print('Error fetching examination by ID: $e');
+      throw Exception('Error fetching examination: $e');
+    }
+  }
+
   Future<void> addExamination(Examination examination) async {
     await _supabase.from('PHIEUKHAM').insert(examination.toJson());
   }

@@ -157,13 +157,18 @@ class _PrescriptionFormScreenState extends State<PrescriptionFormScreen>
       final details = await _supabaseService1.getPrescriptionDetails(
         widget.prescription!.id,
       );
+
+      // Load examinations for the patient
+      if (widget.prescription?.patientId != null) {
+        await _loadExaminations(widget.prescription!.patientId!);
+      }
+
       setState(() {
         _details.addAll(details);
         if (_doctors.isNotEmpty) {
-          // Find matching doctor if exists
           _selectedDoctor = _doctors.firstWhere(
             (d) => d.id == widget.prescription!.doctorId,
-            orElse: () => _doctors[0], // Default to first doctor if not found
+            orElse: () => _doctors[0],
           );
         }
       });
@@ -328,9 +333,9 @@ class _PrescriptionFormScreenState extends State<PrescriptionFormScreen>
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          if (widget.prescription == null) ...[
-                            _buildSectionHeader('Chọn bệnh nhân'),
-                            const SizedBox(height: 8),
+                          _buildSectionHeader('Chọn bệnh nhân'),
+                          const SizedBox(height: 8),
+                          if (widget.prescription == null)
                             _buildDropdownField(
                               value: _selectedPatient?.id,
                               items: _patients.map((patient) {
@@ -358,40 +363,38 @@ class _PrescriptionFormScreenState extends State<PrescriptionFormScreen>
                               },
                               labelText: 'Chọn bệnh nhân',
                             ),
+                          const SizedBox(height: 16),
+                          _buildPatientInfo(),
+                          if (_selectedPatient != null) ...[
                             const SizedBox(height: 16),
-                            _buildPatientInfo(),
-                            if (_selectedPatient != null) ...[
-                              const SizedBox(height: 16),
-                              _buildSectionHeader('Thông tin khám'),
-                              const SizedBox(height: 8),
-                              _buildDropdownField(
-                                value: _selectedExamination,
-                                items: _examinations.map((examination) {
-                                  return DropdownMenuItem(
-                                    value: examination,
-                                    child: Text(
-                                        'Phiếu khám ${examination.id.substring(0, 6)}...'),
-                                  );
-                                }).toList(),
-                                onChanged: (value) {
-                                  setState(() {
-                                    _selectedExamination = value;
-                                    // Automatically select the doctor when examination changes
-                                    if (value != null && _doctors.isNotEmpty) {
-                                      _selectedDoctor = _doctors.firstWhere(
-                                        (d) => d.id == value.doctorId,
-                                        orElse: () => _doctors.firstWhere(
-                                            (d) => d.isActive,
-                                            orElse: () => _doctors[0]),
-                                      );
-                                    }
-                                  });
-                                },
-                                labelText: 'Chọn phiếu khám',
-                              ),
-                            ],
-                          ] else
-                            _buildPatientInfo(),
+                            _buildSectionHeader('Thông tin khám'),
+                            const SizedBox(height: 8),
+                            _buildDropdownField(
+                              value: _selectedExamination,
+                              items: _examinations.map((examination) {
+                                return DropdownMenuItem(
+                                  value: examination,
+                                  child: Text(
+                                      'Phiếu khám ${examination.id.substring(0, 6)}...'),
+                                );
+                              }).toList(),
+                              onChanged: (value) {
+                                setState(() {
+                                  _selectedExamination = value;
+                                  // Automatically select the doctor when examination changes
+                                  if (value != null && _doctors.isNotEmpty) {
+                                    _selectedDoctor = _doctors.firstWhere(
+                                      (d) => d.id == value.doctorId,
+                                      orElse: () => _doctors.firstWhere(
+                                          (d) => d.isActive,
+                                          orElse: () => _doctors[0]),
+                                    );
+                                  }
+                                });
+                              },
+                              labelText: 'Chọn phiếu khám',
+                            ),
+                          ],
                           const SizedBox(height: 24),
                           _buildSectionHeader('Thông tin kê đơn'),
                           const SizedBox(height: 8),
@@ -706,7 +709,8 @@ class _PrescriptionFormScreenState extends State<PrescriptionFormScreen>
           widget.prescription!.id,
           _selectedDoctor!.id,
           _details,
-          prescriptionDate: _selectedDate, // Add this parameter
+          prescriptionDate: _selectedDate,
+          examId: _selectedExamination?.id, // Add examination ID when updating
         );
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(

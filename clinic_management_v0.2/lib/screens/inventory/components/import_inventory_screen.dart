@@ -156,7 +156,7 @@ class _ImportInventoryScreenState extends State<ImportInventoryScreen> {
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'Tìm kiếm theo mã phiếu...',
+                hintText: 'Tìm kiếm phiếu nhập kho...',
                 prefixIcon: const Icon(Icons.search, color: Colors.white),
                 suffixIcon: _searchQuery.isNotEmpty
                     ? IconButton(

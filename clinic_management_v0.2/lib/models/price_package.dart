@@ -55,4 +55,28 @@ class PricePackage {
       rethrow;
     }
   }
+
+  PricePackage copyWith({
+    String? id,
+    String? name,
+    String? chuyenKhoaId,
+    double? price,
+    String? description,
+    List<String>? includedServices,
+    bool? isActive,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) {
+    return PricePackage(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      chuyenKhoaId: chuyenKhoaId ?? this.chuyenKhoaId,
+      price: price ?? this.price,
+      description: description ?? this.description,
+      includedServices: includedServices ?? this.includedServices,
+      isActive: isActive ?? this.isActive,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
 }

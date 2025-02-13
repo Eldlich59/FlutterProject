@@ -177,7 +177,7 @@ class _ExportInventoryScreenState extends State<ExportInventoryScreen> {
                   child: TextField(
                     controller: _searchController,
                     decoration: InputDecoration(
-                      hintText: 'Tìm theo mã phiếu xuất...',
+                      hintText: 'Tìm kiếm phiếu xuất kho...',
                       prefixIcon:
                           const Icon(Icons.search, color: Colors.pinkAccent),
                       border: OutlineInputBorder(

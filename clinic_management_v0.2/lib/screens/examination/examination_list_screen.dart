@@ -286,6 +286,14 @@ class _ExaminationListScreenState extends State<ExaminationListScreen> {
         itemCount: _filteredExaminations.length,
         itemBuilder: (context, index) {
           final examination = _filteredExaminations[index];
+          // Thay đổi logic kiểm tra tính hợp lệ
+          final bool isValid = examination.pricePackageId != null &&
+              (examination.pricePackage?.isActive ?? false) &&
+              examination.doctorId != null &&
+              (examination.isDoctorActive ?? false) &&
+              examination.specialtyId != null &&
+              (examination.isSpecialtyActive ?? false);
+
           return AnimationConfiguration.staggeredList(
             position: index,
             duration: const Duration(milliseconds: 375),
@@ -318,6 +326,7 @@ class _ExaminationListScreenState extends State<ExaminationListScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Container(
                                   padding: const EdgeInsets.all(8),
@@ -337,13 +346,60 @@ class _ExaminationListScreenState extends State<ExaminationListScreen> {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      Text(
-                                        'Mã phiếu khám: ${examination.id.substring(0, 6)}...',
-                                        style: const TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                          letterSpacing: 0.5,
-                                        ),
+                                      Wrap(
+                                        spacing: 8,
+                                        crossAxisAlignment:
+                                            WrapCrossAlignment.center,
+                                        children: [
+                                          Text(
+                                            'Mã phiếu khám: ${examination.id.substring(0, 6)}...',
+                                            style: const TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                              letterSpacing: 0.5,
+                                            ),
+                                          ),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 8,
+                                              vertical: 4,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: isValid
+                                                  ? Colors.green.shade100
+                                                  : Colors.red.shade100,
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Icon(
+                                                  isValid
+                                                      ? Icons.check_circle
+                                                      : Icons.error,
+                                                  size: 14,
+                                                  color: isValid
+                                                      ? Colors.green.shade700
+                                                      : Colors.red.shade700,
+                                                ),
+                                                const SizedBox(width: 4),
+                                                Text(
+                                                  isValid
+                                                      ? 'Còn hiệu lực'
+                                                      : 'Không hợp lệ',
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    color: isValid
+                                                        ? Colors.green.shade700
+                                                        : Colors.red.shade700,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                       const SizedBox(height: 4),
                                     ],

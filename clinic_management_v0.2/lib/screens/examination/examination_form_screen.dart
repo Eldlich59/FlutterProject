@@ -505,9 +505,43 @@ class _ExaminationFormScreenState extends State<ExaminationFormScreen>
               fillColor: Colors.white,
             ),
             items: _specialties.map((specialty) {
-              return DropdownMenuItem(
+              return DropdownMenuItem<Specialty>(
                 value: specialty,
-                child: Text(specialty.name),
+                enabled: specialty.isActive,
+                child: DefaultTextStyle(
+                  style: const TextStyle(fontSize: 14),
+                  child: Container(
+                    constraints: const BoxConstraints(maxWidth: 300),
+                    child: RichText(
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      text: TextSpan(
+                        style: const TextStyle(color: Colors.black),
+                        children: [
+                          TextSpan(
+                            text: specialty.name,
+                            style: TextStyle(
+                              color: specialty.isActive
+                                  ? Colors.black
+                                  : Colors.grey,
+                              fontStyle: specialty.isActive
+                                  ? FontStyle.normal
+                                  : FontStyle.italic,
+                            ),
+                          ),
+                          if (!specialty.isActive)
+                            const TextSpan(
+                              text: ' (Ngừng hoạt động)',
+                              style: TextStyle(
+                                color: Colors.red,
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
               );
             }).toList(),
             onChanged: (value) {
@@ -525,6 +559,9 @@ class _ExaminationFormScreenState extends State<ExaminationFormScreen>
             validator: (value) {
               if (value == null) {
                 return 'Vui lòng chọn chuyên khoa';
+              }
+              if (!value.isActive) {
+                return 'Chuyên khoa này đã ngừng hoạt động';
               }
               return null;
             },

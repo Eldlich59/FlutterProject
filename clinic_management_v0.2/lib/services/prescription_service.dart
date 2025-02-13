@@ -135,6 +135,7 @@ class PrescriptionService {
     String doctorId,
     List<PrescriptionDetail> details, {
     DateTime? prescriptionDate,
+    String? examId, // Add this parameter
   }) async {
     try {
       // Calculate TienThuoc - Fix calculation
@@ -149,6 +150,7 @@ class PrescriptionService {
         'MaBS': doctorId,
         if (prescriptionDate != null)
           'Ngayketoa': prescriptionDate.toIso8601String(),
+        if (examId != null) 'MaPK': examId, // Add this line
         'TienThuoc':
             totalMedicineCost.roundToDouble(), // Ensure proper rounding
       };
@@ -324,8 +326,22 @@ class PrescriptionService {
       String prescriptionId) async {
     final response = await _supabase.from('TOATHUOC').select('''
           *,
-          PHIEUKHAM (
-            TienKham
+          PHIEUKHAM!inner (
+            MaPK,
+            NgayKham,
+            BACSI (
+              TenBS,
+              TrangThai
+            ),
+            CHUYENKHOA (
+              TenCK,
+              TrangThaiHD
+            ),
+            price_packages (
+              id,
+              name,
+              is_active
+            )
           )
         ''').eq('MaToa', prescriptionId).single();
 
@@ -364,5 +380,39 @@ class PrescriptionService {
       ''').eq('MaBN', patientId).order('Ngayketoa', ascending: false);
 
     return List<Map<String, dynamic>>.from(response);
+  }
+
+  Future<List<Map<String, dynamic>>> getAvailableExaminations(
+      String patientId) async {
+    try {
+      final response = await _supabase.from('PHIEUKHAM').select('''
+            *,
+            BACSI (
+              MaBS,
+              TenBS
+            ),
+            CHUYENKHOA (
+              MaCK,
+              TenCK
+            )
+          ''').eq('MaBN', patientId).order('NgayKham', ascending: false);
+
+      return List<Map<String, dynamic>>.from(response);
+    } catch (e) {
+      print('Error fetching available examinations: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> updatePrescriptionExamination(
+      String prescriptionId, String newExamId) async {
+    try {
+      await _supabase
+          .from('TOATHUOC')
+          .update({'MaPK': newExamId}).eq('MaToa', prescriptionId);
+    } catch (e) {
+      print('Error updating prescription examination: $e');
+      rethrow;
+    }
   }
 }
