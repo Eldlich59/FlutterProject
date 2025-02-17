@@ -797,11 +797,8 @@ class _PrescriptionListScreenState extends State<PrescriptionListScreen>
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => Hero(
-          // Add Hero widget here instead
-          tag: 'prescription-${prescription.id}',
-          child: PrescriptionDetailScreen(prescription: prescription),
-        ),
+        builder: (context) =>
+            PrescriptionDetailScreen(prescription: prescription),
       ),
     );
   }

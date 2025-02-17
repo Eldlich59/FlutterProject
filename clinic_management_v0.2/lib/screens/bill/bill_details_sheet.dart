@@ -177,166 +177,162 @@ class _BillDetailsSheetState extends State<BillDetailsSheet>
       }
     }
 
-    return Hero(
-      tag: 'bill-${widget.bill.id}',
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              lightTurquoise,
-              Colors.white,
-            ],
-            stops: const [0.0, 0.3],
-          ),
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            lightTurquoise,
+            Colors.white,
+          ],
+          stops: const [0.0, 0.3],
         ),
-        child: Scaffold(
-          // Changed to Scaffold
-          body: AnimatedBuilder(
-            animation: _animationController,
-            builder: (context, child) {
-              return Transform.translate(
-                offset: Offset(0, _slideAnimation.value),
-                child: Opacity(
-                  opacity: _fadeAnimation.value,
-                  child: Container(
-                    padding: EdgeInsets.only(
-                      top: MediaQuery.of(context).padding.top +
-                          20, // Add safe area padding
-                      left: 20,
-                      right: 20,
-                      bottom: 20,
-                    ),
-                    height: MediaQuery.of(context)
-                        .size
-                        .height, // Full screen height
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      // Remove border radius for full screen
-                    ),
-                    child: _isLoading
-                        ? Center(
-                            child:
-                                CircularProgressIndicator(color: darkTurquoise))
-                        : AnimatedOpacity(
-                            opacity: _isVisible ? 1.0 : 0.0,
-                            duration: Duration(milliseconds: 500),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
+      ),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: AnimatedBuilder(
+          animation: _animationController,
+          builder: (context, child) {
+            return Transform.translate(
+              offset: Offset(0, _slideAnimation.value),
+              child: Opacity(
+                opacity: _fadeAnimation.value,
+                child: Container(
+                  padding: EdgeInsets.only(
+                    top: MediaQuery.of(context).padding.top +
+                        20, // Add safe area padding
+                    left: 20,
+                    right: 20,
+                    bottom: 20,
+                  ),
+                  height:
+                      MediaQuery.of(context).size.height, // Full screen height
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    // Remove border radius for full screen
+                  ),
+                  child: _isLoading
+                      ? Center(
+                          child:
+                              CircularProgressIndicator(color: darkTurquoise))
+                      : AnimatedOpacity(
+                          opacity: _isVisible ? 1.0 : 0.0,
+                          duration: Duration(milliseconds: 500),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'Chi tiết hóa đơn',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .headlineSmall
+                                        ?.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                          color: darkTurquoise,
+                                        ),
+                                  ),
+                                  IconButton(
+                                    icon: Icon(Icons.close,
+                                        color: Colors.grey.shade600),
+                                    onPressed: () => Navigator.pop(context),
+                                  ),
+                                ],
+                              ),
+                              Divider(color: lightTurquoise, thickness: 2),
+                              Expanded(
+                                child: ListView(
                                   children: [
-                                    Text(
-                                      'Chi tiết hóa đơn',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .headlineSmall
-                                          ?.copyWith(
-                                            fontWeight: FontWeight.bold,
-                                            color: darkTurquoise,
-                                          ),
+                                    _buildInfoSection(
+                                      'Thông tin hóa đơn',
+                                      [
+                                        'Tên bệnh nhân: ${widget.bill.patientName}',
+                                        'Mã hóa đơn: ${widget.bill.id.substring(0, 6)}...',
+                                        'Ngày tạo hóa đơn: ${DateFormat('dd/MM/yyyy HH:mm').format(widget.bill.saleDate)}',
+                                        'Tiền thuốc: ${NumberFormat.currency(locale: 'vi_VN', symbol: 'đ').format(selectedMedicineCost)}',
+                                        'Tiền khám: ${NumberFormat.currency(locale: 'vi_VN', symbol: 'đ').format(selectedExaminationCost)}',
+                                        'Tổng thanh toán: ${NumberFormat.currency(locale: 'vi_VN', symbol: 'đ').format(selectedMedicineCost + selectedExaminationCost)}',
+                                      ],
+                                      Icons.receipt_long,
                                     ),
-                                    IconButton(
-                                      icon: Icon(Icons.close,
-                                          color: Colors.grey.shade600),
-                                      onPressed: () => Navigator.pop(context),
-                                    ),
-                                  ],
-                                ),
-                                Divider(color: lightTurquoise, thickness: 2),
-                                Expanded(
-                                  child: ListView(
-                                    children: [
-                                      _buildInfoSection(
-                                        'Thông tin hóa đơn',
-                                        [
-                                          'Tên bệnh nhân: ${widget.bill.patientName}',
-                                          'Mã hóa đơn: ${widget.bill.id.substring(0, 6)}...',
-                                          'Ngày tạo hóa đơn: ${DateFormat('dd/MM/yyyy HH:mm').format(widget.bill.saleDate)}',
-                                          'Tiền thuốc: ${NumberFormat.currency(locale: 'vi_VN', symbol: 'đ').format(selectedMedicineCost)}',
-                                          'Tiền khám: ${NumberFormat.currency(locale: 'vi_VN', symbol: 'đ').format(selectedExaminationCost)}',
-                                          'Tổng thanh toán: ${NumberFormat.currency(locale: 'vi_VN', symbol: 'đ').format(selectedMedicineCost + selectedExaminationCost)}',
-                                        ],
-                                        Icons.receipt_long,
-                                      ),
-                                      if (_prescriptionDetails != null) ...[
-                                        const SizedBox(height: 20),
-                                        // Show selected prescriptions as chips
-                                        if (_selectedPrescriptionIds.isNotEmpty)
-                                          Wrap(
-                                            spacing: 8,
-                                            runSpacing: 8,
-                                            children: _selectedPrescriptionIds
-                                                .map((id) {
-                                              return Chip(
-                                                backgroundColor:
-                                                    Color(0xFFE0F7F5),
-                                                label: Text(
-                                                    'Toa ${widget.bill.prescriptionIds.indexOf(id) + 1}'),
-                                                deleteIcon:
-                                                    Icon(Icons.close, size: 18),
-                                                onDeleted: () {
-                                                  setState(() {
-                                                    _selectedPrescriptionIds
-                                                        .remove(id);
-                                                  });
-                                                },
-                                              );
-                                            }).toList(),
-                                          ),
-                                        const SizedBox(height: 12),
-                                        // Only show dropdown if there are unselected prescriptions
-                                        if (_selectedPrescriptionIds.length <
-                                            widget.bill.prescriptionIds.length)
-                                          DropdownButton<String>(
-                                            hint: Text('Chọn toa thuốc'),
-                                            value: null,
-                                            onChanged: (String? newValue) {
-                                              if (newValue != null) {
+                                    if (_prescriptionDetails != null) ...[
+                                      const SizedBox(height: 20),
+                                      // Show selected prescriptions as chips
+                                      if (_selectedPrescriptionIds.isNotEmpty)
+                                        Wrap(
+                                          spacing: 8,
+                                          runSpacing: 8,
+                                          children: _selectedPrescriptionIds
+                                              .map((id) {
+                                            return Chip(
+                                              backgroundColor:
+                                                  Color(0xFFE0F7F5),
+                                              label: Text(
+                                                  'Toa ${widget.bill.prescriptionIds.indexOf(id) + 1}'),
+                                              deleteIcon:
+                                                  Icon(Icons.close, size: 18),
+                                              onDeleted: () {
                                                 setState(() {
                                                   _selectedPrescriptionIds
-                                                      .add(newValue);
+                                                      .remove(id);
                                                 });
-                                              }
-                                            },
-                                            items: widget.bill.prescriptionIds
-                                                .where((id) =>
-                                                    !_selectedPrescriptionIds
-                                                        .contains(id))
-                                                .map<DropdownMenuItem<String>>(
-                                                    (String value) {
-                                              return DropdownMenuItem<String>(
-                                                value: value,
-                                                child: Text(
-                                                    'Toa thuốc ${widget.bill.prescriptionIds.indexOf(value) + 1}'),
-                                              );
-                                            }).toList(),
-                                          ),
-                                        if (_selectedPrescriptionIds
-                                            .isNotEmpty) ...[
-                                          const SizedBox(height: 20),
-                                          ..._selectedPrescriptionIds
-                                              .map((prescriptionId) {
-                                            return _buildPrescriptionDetails(
-                                                prescriptionId);
-                                          }),
-                                        ],
+                                              },
+                                            );
+                                          }).toList(),
+                                        ),
+                                      const SizedBox(height: 12),
+                                      // Only show dropdown if there are unselected prescriptions
+                                      if (_selectedPrescriptionIds.length <
+                                          widget.bill.prescriptionIds.length)
+                                        DropdownButton<String>(
+                                          hint: Text('Chọn toa thuốc'),
+                                          value: null,
+                                          onChanged: (String? newValue) {
+                                            if (newValue != null) {
+                                              setState(() {
+                                                _selectedPrescriptionIds
+                                                    .add(newValue);
+                                              });
+                                            }
+                                          },
+                                          items: widget.bill.prescriptionIds
+                                              .where((id) =>
+                                                  !_selectedPrescriptionIds
+                                                      .contains(id))
+                                              .map<DropdownMenuItem<String>>(
+                                                  (String value) {
+                                            return DropdownMenuItem<String>(
+                                              value: value,
+                                              child: Text(
+                                                  'Toa thuốc ${widget.bill.prescriptionIds.indexOf(value) + 1}'),
+                                            );
+                                          }).toList(),
+                                        ),
+                                      if (_selectedPrescriptionIds
+                                          .isNotEmpty) ...[
+                                        const SizedBox(height: 20),
+                                        ..._selectedPrescriptionIds
+                                            .map((prescriptionId) {
+                                          return _buildPrescriptionDetails(
+                                              prescriptionId);
+                                        }),
                                       ],
                                     ],
-                                  ),
+                                  ],
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
-                  ),
+                        ),
                 ),
-              );
-            },
-          ),
+              ),
+            );
+          },
         ),
       ),
     );

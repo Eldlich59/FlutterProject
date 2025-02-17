@@ -466,11 +466,11 @@ class _PrescriptionFormScreenState extends State<PrescriptionFormScreen>
   }) {
     // Special handling for examination dropdown
     if (labelText == 'Chọn phiếu khám') {
-      items = items.map((item) {
-        final examination = item.value as Examination;
+      items = _examinations.map((examination) {
         final bool isValid = examination.isValidForPrescription();
-        return DropdownMenuItem(
-          value: examination,
+        return DropdownMenuItem<Examination>(
+          // Thêm type parameter
+          value: examination, // Đảm bảo mỗi examination là duy nhất
           child: Tooltip(
             message: isValid
                 ? 'Phiếu khám hợp lệ'

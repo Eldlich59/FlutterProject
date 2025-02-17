@@ -5,6 +5,7 @@ import 'package:clinic_management/models/doctor.dart';
 import 'package:clinic_management/services/supabase_service.dart';
 import 'package:clinic_management/screens/prescription/prescription_form_screen.dart';
 import 'package:clinic_management/models/patient.dart';
+import 'package:clinic_management/models/examination.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 
 class PrescriptionDetailScreen extends StatelessWidget {
@@ -215,10 +216,138 @@ class PrescriptionDetailScreen extends StatelessWidget {
                           ],
                         ),
                         const Divider(height: 24),
-                        _buildInfoRow(
-                            'Ngày kê toa',
-                            DateFormat('dd/MM/yyyy HH:mm')
-                                .format(prescription.prescriptionDate)),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            FutureBuilder<Object?>(
+                              future: prescription.examId != null
+                                  ? SupabaseService()
+                                      .examinationService
+                                      .getExaminationById(prescription.examId!)
+                                  : Future.value(null),
+                              builder: (context, examSnapshot) {
+                                if (examSnapshot.connectionState ==
+                                    ConnectionState.waiting) {
+                                  return _buildInfoRow(
+                                    'Mã phiếu khám',
+                                    prescription.examId != null
+                                        ? '${prescription.examId!.substring(0, 6)}...'
+                                        : 'Không có',
+                                    suffix: const SizedBox(
+                                      width: 16,
+                                      height: 16,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    ),
+                                  );
+                                }
+
+                                Examination? examination;
+                                if (examSnapshot.data != null) {
+                                  try {
+                                    final Map<String, dynamic> data =
+                                        (examSnapshot.data
+                                                as Map<String, dynamic>)['data']
+                                            as Map<String, dynamic>;
+                                    examination = Examination.fromJson(data);
+
+                                    // Debug print để kiểm tra giá trị
+                                    print('Examination data: $data');
+                                    print(
+                                        'isDoctorActive: ${examination.isDoctorActive}');
+                                    print(
+                                        'isSpecialtyActive: ${examination.isSpecialtyActive}');
+                                    print(
+                                        'pricePackage?.isActive: ${examination.pricePackage?.isActive}');
+                                    print(
+                                        'isValid: ${examination.isValidForPrescription()}');
+                                  } catch (e) {
+                                    print('Error parsing examination: $e');
+                                  }
+                                }
+
+                                final isValid =
+                                    examination?.isValidForPrescription() ??
+                                        false;
+
+                                String tooltipMessage = '';
+                                if (examination != null && !isValid) {
+                                  tooltipMessage = 'Phiếu khám không hợp lệ: \n'
+                                      '${examination.isDoctorActive == false ? '- Bác sĩ không còn hoạt động\n' : ''}'
+                                      '${examination.isSpecialtyActive == false ? '- Chuyên khoa không còn hoạt động\n' : ''}'
+                                      '${examination.pricePackage?.isActive == false ? '- Gói dịch vụ không còn hiệu lực' : ''}';
+                                }
+
+                                return _buildInfoRow(
+                                  'Mã phiếu khám',
+                                  prescription.examId != null
+                                      ? '${prescription.examId!.substring(0, 6)}...'
+                                      : 'Không có',
+                                  suffix: prescription.examId != null
+                                      ? Tooltip(
+                                          message: isValid
+                                              ? 'Phiếu khám hợp lệ'
+                                              : tooltipMessage,
+                                          child: Container(
+                                            margin:
+                                                const EdgeInsets.only(left: 24),
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 8,
+                                              vertical: 4,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: isValid
+                                                  ? Colors.green[50]
+                                                  : Colors.red[50],
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                              border: Border.all(
+                                                color: isValid
+                                                    ? Colors.green
+                                                    : Colors.red,
+                                                width: 1,
+                                              ),
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Icon(
+                                                  isValid
+                                                      ? Icons.check_circle
+                                                      : Icons.error,
+                                                  size: 16,
+                                                  color: isValid
+                                                      ? Colors.green
+                                                      : Colors.red,
+                                                ),
+                                                const SizedBox(width: 4),
+                                                Text(
+                                                  isValid
+                                                      ? 'Hợp lệ'
+                                                      : 'Không hợp lệ',
+                                                  style: TextStyle(
+                                                    color: isValid
+                                                        ? Colors.green
+                                                        : Colors.red,
+                                                    fontSize: 12,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        )
+                                      : null,
+                                );
+                              },
+                            ),
+                            _buildInfoRow(
+                                'Ngày kê toa',
+                                DateFormat('dd/MM/yyyy HH:mm')
+                                    .format(prescription.prescriptionDate)),
+                          ],
+                        ),
                       ],
                     ),
                   ),
@@ -390,14 +519,14 @@ class PrescriptionDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
+  Widget _buildInfoRow(String label, String value, {Widget? suffix}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 100,
+            width: 120, // Changed from 100 to 120
             child: Text(
               label,
               style: TextStyle(
@@ -407,9 +536,14 @@ class PrescriptionDetailScreen extends StatelessWidget {
             ),
           ),
           Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(fontWeight: FontWeight.w500),
+            child: Row(
+              children: [
+                Text(
+                  value,
+                  style: const TextStyle(fontWeight: FontWeight.w500),
+                ),
+                if (suffix != null) suffix,
+              ],
             ),
           ),
         ],
@@ -452,8 +586,10 @@ class PrescriptionDetailScreen extends StatelessWidget {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) =>
-            PrescriptionFormScreen(prescription: prescription),
+        builder: (context) => PrescriptionFormScreen(
+          prescription: prescription,
+          isEditing: true,
+        ),
       ),
     );
   }
@@ -521,6 +657,25 @@ class PrescriptionDetailScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Future<bool> _checkExamIdValidity(String? examId) async {
+    if (examId == null) return false;
+    try {
+      final Map<String, dynamic> examinationData = await SupabaseService()
+          .prescriptionService
+          .getPrescriptionExamination(prescription.id);
+
+      if (examinationData.isEmpty) return false;
+
+      final examInfo = examinationData['PHIEUKHAM'] as Map<String, dynamic>?;
+      if (examInfo == null) return false;
+
+      final String fetchedExamId = examInfo['MaPK']?.toString() ?? '';
+      return fetchedExamId.isNotEmpty && fetchedExamId == examId;
+    } catch (e) {
+      return false;
+    }
   }
 }
 

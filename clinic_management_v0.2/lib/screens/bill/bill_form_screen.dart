@@ -576,7 +576,7 @@ class _BillFormScreenState extends State<BillFormScreen>
       children: [
         const SizedBox(height: 20),
         Text(
-          'Chọn toa thuốc',
+          'Chọn toa thuốc (có thể chọn nhiều)',
           style: TextStyle(
             color: _turquoiseColor,
             fontSize: 16,
@@ -611,13 +611,11 @@ class _BillFormScreenState extends State<BillFormScreen>
                   onChanged: (bool? value) async {
                     setState(() {
                       if (value == true) {
-                        _selectedPrescriptions.clear();
                         _selectedPrescriptions.add(prescription);
                       } else {
                         _selectedPrescriptions.remove(prescription);
                       }
                     });
-                    // Immediately calculate total costs when prescription selection changes
                     await _calculateTotalCosts();
                   },
                 ),
@@ -636,44 +634,22 @@ class _BillFormScreenState extends State<BillFormScreen>
     double examinationCost = 0;
 
     try {
-      if (_selectedPrescriptions.isNotEmpty) {
-        final prescription = _selectedPrescriptions.last;
+      // Calculate costs for all selected prescriptions
+      for (var prescription in _selectedPrescriptions) {
         final prescriptionId = prescription['MaToa'].toString();
 
-        // Get examination fee from PHIEUKHAM
+        // Get examination fee
         final examinationResult =
             await _supabaseService2.getPrescriptionExamination(prescriptionId);
 
-        // Debugging: Print the entire examinationResult
-        print('Examination Result: $examinationResult');
-
-        if (examinationResult['PHIEUKHAM'] != null) {
-          // Debugging: Print the PHIEUKHAM object
-          print('PHIEUKHAM: ${examinationResult['PHIEUKHAM']}');
-
-          if (examinationResult['PHIEUKHAM']['TienKham'] != null) {
-            // Debugging: Print the raw TienKham value
-            print(
-                'Raw TienKham: ${examinationResult['PHIEUKHAM']['TienKham']}');
-
-            // Directly use TienKham from PHIEUKHAM
-            final tienKham = examinationResult['PHIEUKHAM']['TienKham'];
-            if (tienKham is String) {
-              examinationCost = double.tryParse(tienKham) ?? 0;
-            } else if (tienKham is num) {
-              examinationCost = tienKham.toDouble();
-            } else {
-              examinationCost = 0;
-              print('Unexpected type for TienKham: ${tienKham.runtimeType}');
-            }
-            print('Parsed examinationCost: $examinationCost');
-          } else {
-            print('TienKham is null');
-            examinationCost = 0;
+        if (examinationResult['PHIEUKHAM'] != null &&
+            examinationResult['PHIEUKHAM']['TienKham'] != null) {
+          final tienKham = examinationResult['PHIEUKHAM']['TienKham'];
+          if (tienKham is String) {
+            examinationCost += double.tryParse(tienKham) ?? 0;
+          } else if (tienKham is num) {
+            examinationCost += tienKham.toDouble();
           }
-        } else {
-          print('examinationResult or PHIEUKHAM is null');
-          examinationCost = 0;
         }
 
         // Calculate medicine costs
@@ -691,7 +667,7 @@ class _BillFormScreenState extends State<BillFormScreen>
 
       setState(() {
         _medicineCost = medicineCost;
-        _examinationCost = examinationCost; // Update examination cost
+        _examinationCost = examinationCost;
         _totalCost = medicineCost + examinationCost;
       });
     } catch (e) {
