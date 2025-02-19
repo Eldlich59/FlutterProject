@@ -74,10 +74,16 @@ flutter:
     - assets/icons/private_icon.svg
     - assets/icons/public_icon.svg
     - assets/icons/friend_icon.svg
+    - assets/icons/heart_icon.svg
+    - assets/icons/short_divider_icon.svg
+    - assets/icons/small_heart_icon.svg
+    - assets/icons/medium_heart_icon.svg
+    - assets/icons/message_icon.svg
     - assets/image/avatar.jpg
     - assets/image/ely.jpg
     - assets/image/acheron_summer.jpg
     - assets/image/clone_queen.jpg
+    - assets/image/feixiao_summer.jpg
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
 

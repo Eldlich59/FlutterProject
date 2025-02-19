@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:super_app/widget/post/post_body_widget.dart';
+import 'package:super_app/widget/post/post_footer_widget.dart';
 import 'package:super_app/widget/post/post_header_widget.dart';
 
 void main() {
@@ -281,7 +282,13 @@ class _MyHomePageState extends State<MyHomePage> {
                 width: double.infinity,
                 color: Colors.white,
                 child: const Column(
-                  children: [PostHeaderWidget(), PostBodyWidget()],
+                  children: [
+                    PostHeaderWidget(),
+                    PostBodyWidget(
+                      hasPostImage: true, //hien thi anh
+                    ),
+                    PostFooterWidget(),
+                  ],
                 ),
               )
             ],
