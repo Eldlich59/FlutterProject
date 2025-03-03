@@ -130,8 +130,6 @@ class PostHeaderWidget extends StatelessWidget {
             ),
           ],
         );
-      default:
-        return const SizedBox();
     }
   }
 }
