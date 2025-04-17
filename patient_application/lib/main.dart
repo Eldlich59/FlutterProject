@@ -175,13 +175,19 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           ),
         ],
       ),
-      body: IndexedStack(index: _selectedIndex, children: _screens),
+      // Use SafeArea to prevent content from being hidden under system UI
+      body: SafeArea(
+        child: IndexedStack(index: _selectedIndex, children: _screens),
+      ),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed, // Needed for more than 3 items
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
         selectedItemColor: Theme.of(context).primaryColor,
         unselectedItemColor: Colors.grey,
+        // Reduce label font size to avoid overflow on smaller devices
+        selectedFontSize: 12,
+        unselectedFontSize: 12,
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.dashboard_outlined),

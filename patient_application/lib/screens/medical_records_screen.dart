@@ -196,6 +196,11 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen>
   List<MedicalRecord> _medicalRecords = [];
   List<Prescription> _prescriptions = [];
   List<TestResult> _testResults = [];
+  
+  // Flags to track if tables exist
+  bool _medicalRecordsTableExists = true;
+  bool _prescriptionsTableExists = true;
+  bool _testResultsTableExists = true;
 
   @override
   void initState() {
@@ -222,46 +227,86 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen>
       }
 
       // Tải lịch sử khám bệnh
-      final medicalRecordsData = await supabase
-          .from('medical_records')
-          .select()
-          .eq('patient_id', userId)
-          .order('visit_date', ascending: false);
+      try {
+        final medicalRecordsData = await supabase
+            .from('medical_records')
+            .select()
+            .eq('patient_id', userId)
+            .order('visit_date', ascending: false);
+
+        setState(() {
+          _medicalRecords =
+              medicalRecordsData
+                  .map<MedicalRecord>((json) => MedicalRecord.fromJson(json))
+                  .toList();
+          _medicalRecordsTableExists = true;
+        });
+      } catch (e) {
+        debugPrint('Lỗi khi tải dữ liệu lịch sử khám bệnh: $e');
+        // Kiểm tra xem lỗi có phải do bảng không tồn tại
+        if (e.toString().contains("relation") && e.toString().contains("does not exist")) {
+          setState(() {
+            _medicalRecords = [];
+            _medicalRecordsTableExists = false;
+          });
+        }
+      }
 
       // Tải đơn thuốc
-      final prescriptionsData = await supabase
-          .from('prescriptions')
-          .select()
-          .eq('patient_id', userId)
-          .order('prescribed_date', ascending: false);
+      try {
+        final prescriptionsData = await supabase
+            .from('prescriptions')
+            .select()
+            .eq('patient_id', userId)
+            .order('prescribed_date', ascending: false);
+
+        setState(() {
+          _prescriptions =
+              prescriptionsData
+                  .map<Prescription>((json) => Prescription.fromJson(json))
+                  .toList();
+          _prescriptionsTableExists = true;
+        });
+      } catch (e) {
+        debugPrint('Lỗi khi tải dữ liệu đơn thuốc: $e');
+        if (e.toString().contains("relation") && e.toString().contains("does not exist")) {
+          setState(() {
+            _prescriptions = [];
+            _prescriptionsTableExists = false;
+          });
+        }
+      }
 
       // Tải kết quả xét nghiệm
-      final testResultsData = await supabase
-          .from('test_results')
-          .select()
-          .eq('patient_id', userId)
-          .order('test_date', ascending: false);
+      try {
+        final testResultsData = await supabase
+            .from('test_results')
+            .select()
+            .eq('patient_id', userId)
+            .order('test_date', ascending: false);
 
-      setState(() {
-        _medicalRecords =
-            medicalRecordsData
-                .map<MedicalRecord>((json) => MedicalRecord.fromJson(json))
-                .toList();
-
-        _prescriptions =
-            prescriptionsData
-                .map<Prescription>((json) => Prescription.fromJson(json))
-                .toList();
-
-        _testResults =
-            testResultsData
-                .map<TestResult>((json) => TestResult.fromJson(json))
-                .toList();
-      });
+        setState(() {
+          _testResults =
+              testResultsData
+                  .map<TestResult>((json) => TestResult.fromJson(json))
+                  .toList();
+          _testResultsTableExists = true;
+        });
+      } catch (e) {
+        debugPrint('Lỗi khi tải dữ liệu kết quả xét nghiệm: $e');
+        if (e.toString().contains("relation") && e.toString().contains("does not exist")) {
+          setState(() {
+            _testResults = [];
+            _testResultsTableExists = false;
+          });
+        }
+      }
     } catch (e) {
-      debugPrint('Lỗi khi tải dữ liệu y bạ: $e');
+      debugPrint('Lỗi chung khi tải dữ liệu y bạ: $e');
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -297,6 +342,18 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen>
   }
 
   Widget _buildMedicalHistoryTab() {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    
+    if (!_medicalRecordsTableExists) {
+      return _buildFeatureInDevelopment(
+        'Tính năng đang được phát triển',
+        'Lịch sử khám bệnh sẽ sớm được kích hoạt. Xin vui lòng thử lại sau.',
+        Icons.engineering,
+      );
+    }
+    
     return _medicalRecords.isEmpty
         ? _buildEmptyState(
           'Chưa có lịch sử khám bệnh',
@@ -557,6 +614,18 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen>
   }
 
   Widget _buildPrescriptionsTab() {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    
+    if (!_prescriptionsTableExists) {
+      return _buildFeatureInDevelopment(
+        'Tính năng đang được phát triển',
+        'Đơn thuốc sẽ sớm được kích hoạt. Xin vui lòng thử lại sau.',
+        Icons.engineering,
+      );
+    }
+    
     return _prescriptions.isEmpty
         ? _buildEmptyState(
           'Chưa có đơn thuốc',
@@ -795,6 +864,18 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen>
   }
 
   Widget _buildTestResultsTab() {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    
+    if (!_testResultsTableExists) {
+      return _buildFeatureInDevelopment(
+        'Tính năng đang được phát triển',
+        'Kết quả xét nghiệm sẽ sớm được kích hoạt. Xin vui lòng thử lại sau.',
+        Icons.engineering,
+      );
+    }
+    
     return _testResults.isEmpty
         ? _buildEmptyState(
           'Chưa có kết quả xét nghiệm',
@@ -1181,6 +1262,37 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen>
           },
         );
       },
+    );
+  }
+
+  Widget _buildFeatureInDevelopment(String title, String subtitle, IconData icon) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 64, color: Colors.grey[400]),
+            const SizedBox(height: 16),
+            Text(
+              title,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              subtitle,
+              style: TextStyle(color: Colors.grey[600]),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: _loadMedicalData,
+              child: const Text('Thử lại'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
