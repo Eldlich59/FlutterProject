@@ -546,7 +546,7 @@ class _HealthMetricsScreenState extends State<HealthMetricsScreen>
           rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
           topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
         ),
-        minY: 90, // SpO2 típicamente no baja de 90%
+        minY: 85, // SpO2 típicamente no baja de 90%
         maxY: 100,
         borderData: FlBorderData(show: true),
         lineBarsData: [
