@@ -2,185 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:patient_application/main.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
-
-// Các model cần thiết
-class MedicalRecord {
-  final String id;
-  final String patientId;
-  final String doctorName;
-  final String hospitalName;
-  final String specialty;
-  final DateTime visitDate;
-  final String diagnosis;
-  final String reason;
-  final String conclusion;
-  final String? instructions;
-  final String? notes;
-
-  MedicalRecord({
-    required this.id,
-    required this.patientId,
-    required this.doctorName,
-    required this.hospitalName,
-    required this.specialty,
-    required this.visitDate,
-    required this.diagnosis,
-    required this.reason,
-    required this.conclusion,
-    this.instructions,
-    this.notes,
-  });
-
-  factory MedicalRecord.fromJson(Map<String, dynamic> json) {
-    return MedicalRecord(
-      id: json['id'],
-      patientId: json['patient_id'],
-      doctorName: json['doctor_name'],
-      hospitalName: json['hospital_name'],
-      specialty: json['specialty'],
-      visitDate: DateTime.parse(json['visit_date']),
-      diagnosis: json['diagnosis'],
-      reason: json['reason'],
-      conclusion: json['conclusion'],
-      instructions: json['instructions'],
-      notes: json['notes'],
-    );
-  }
-}
-
-class Medication {
-  final String name;
-  final String dosage;
-  final String frequency;
-  final String duration;
-  final String? instructions;
-
-  Medication({
-    required this.name,
-    required this.dosage,
-    required this.frequency,
-    required this.duration,
-    this.instructions,
-  });
-
-  factory Medication.fromJson(Map<String, dynamic> json) {
-    return Medication(
-      name: json['name'],
-      dosage: json['dosage'],
-      frequency: json['frequency'],
-      duration: json['duration'],
-      instructions: json['instructions'],
-    );
-  }
-}
-
-class Prescription {
-  final String id;
-  final String patientId;
-  final String doctorName;
-  final DateTime prescribedDate;
-  final DateTime expiryDate;
-  final String diagnosis;
-  final List<Medication> medications;
-  final String? notes;
-
-  Prescription({
-    required this.id,
-    required this.patientId,
-    required this.doctorName,
-    required this.prescribedDate,
-    required this.expiryDate,
-    required this.diagnosis,
-    required this.medications,
-    this.notes,
-  });
-
-  factory Prescription.fromJson(Map<String, dynamic> json) {
-    return Prescription(
-      id: json['id'],
-      patientId: json['patient_id'],
-      doctorName: json['doctor_name'],
-      prescribedDate: DateTime.parse(json['prescribed_date']),
-      expiryDate: DateTime.parse(json['expiry_date']),
-      diagnosis: json['diagnosis'],
-      medications:
-          (json['medications'] as List)
-              .map((med) => Medication.fromJson(med))
-              .toList(),
-      notes: json['notes'],
-    );
-  }
-}
-
-class TestResultItem {
-  final String name;
-  final String value;
-  final String referenceRange;
-  final String status;
-
-  TestResultItem({
-    required this.name,
-    required this.value,
-    required this.referenceRange,
-    required this.status,
-  });
-
-  factory TestResultItem.fromJson(Map<String, dynamic> json) {
-    return TestResultItem(
-      name: json['name'],
-      value: json['value'],
-      referenceRange: json['reference_range'],
-      status: json['status'],
-    );
-  }
-}
-
-class TestResult {
-  final String id;
-  final String patientId;
-  final String testName;
-  final String laboratoryName;
-  final DateTime testDate;
-  final String doctorName;
-  final String status;
-  final List<TestResultItem> results;
-  final String? notes;
-  final List<String>? imageUrls;
-
-  TestResult({
-    required this.id,
-    required this.patientId,
-    required this.testName,
-    required this.laboratoryName,
-    required this.testDate,
-    required this.doctorName,
-    required this.status,
-    required this.results,
-    this.notes,
-    this.imageUrls,
-  });
-
-  factory TestResult.fromJson(Map<String, dynamic> json) {
-    return TestResult(
-      id: json['id'],
-      patientId: json['patient_id'],
-      testName: json['test_name'],
-      laboratoryName: json['laboratory_name'],
-      testDate: DateTime.parse(json['test_date']),
-      doctorName: json['doctor_name'],
-      status: json['status'],
-      results:
-          (json['results'] as List)
-              .map((item) => TestResultItem.fromJson(item))
-              .toList(),
-      notes: json['notes'],
-      imageUrls:
-          json['image_urls'] != null
-              ? List<String>.from(json['image_urls'])
-              : null,
-    );
-  }
-}
+import 'package:patient_application/models/medical_records/medical_record.dart';
+import 'package:patient_application/models/medical_records/prescription.dart';
+import 'package:patient_application/models/medical_records/test_result.dart';
 
 class MedicalRecordsScreen extends StatefulWidget {
   const MedicalRecordsScreen({super.key});
@@ -196,7 +20,7 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen>
   List<MedicalRecord> _medicalRecords = [];
   List<Prescription> _prescriptions = [];
   List<TestResult> _testResults = [];
-  
+
   // Flags to track if tables exist
   bool _medicalRecordsTableExists = true;
   bool _prescriptionsTableExists = true;
@@ -244,7 +68,8 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen>
       } catch (e) {
         debugPrint('Lỗi khi tải dữ liệu lịch sử khám bệnh: $e');
         // Kiểm tra xem lỗi có phải do bảng không tồn tại
-        if (e.toString().contains("relation") && e.toString().contains("does not exist")) {
+        if (e.toString().contains("relation") &&
+            e.toString().contains("does not exist")) {
           setState(() {
             _medicalRecords = [];
             _medicalRecordsTableExists = false;
@@ -269,7 +94,8 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen>
         });
       } catch (e) {
         debugPrint('Lỗi khi tải dữ liệu đơn thuốc: $e');
-        if (e.toString().contains("relation") && e.toString().contains("does not exist")) {
+        if (e.toString().contains("relation") &&
+            e.toString().contains("does not exist")) {
           setState(() {
             _prescriptions = [];
             _prescriptionsTableExists = false;
@@ -294,7 +120,8 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen>
         });
       } catch (e) {
         debugPrint('Lỗi khi tải dữ liệu kết quả xét nghiệm: $e');
-        if (e.toString().contains("relation") && e.toString().contains("does not exist")) {
+        if (e.toString().contains("relation") &&
+            e.toString().contains("does not exist")) {
           setState(() {
             _testResults = [];
             _testResultsTableExists = false;
@@ -345,7 +172,7 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen>
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
-    
+
     if (!_medicalRecordsTableExists) {
       return _buildFeatureInDevelopment(
         'Tính năng đang được phát triển',
@@ -353,7 +180,7 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen>
         Icons.engineering,
       );
     }
-    
+
     return _medicalRecords.isEmpty
         ? _buildEmptyState(
           'Chưa có lịch sử khám bệnh',
@@ -617,7 +444,7 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen>
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
-    
+
     if (!_prescriptionsTableExists) {
       return _buildFeatureInDevelopment(
         'Tính năng đang được phát triển',
@@ -625,7 +452,7 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen>
         Icons.engineering,
       );
     }
-    
+
     return _prescriptions.isEmpty
         ? _buildEmptyState(
           'Chưa có đơn thuốc',
@@ -867,7 +694,7 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen>
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
-    
+
     if (!_testResultsTableExists) {
       return _buildFeatureInDevelopment(
         'Tính năng đang được phát triển',
@@ -875,7 +702,7 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen>
         Icons.engineering,
       );
     }
-    
+
     return _testResults.isEmpty
         ? _buildEmptyState(
           'Chưa có kết quả xét nghiệm',
@@ -1265,7 +1092,11 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen>
     );
   }
 
-  Widget _buildFeatureInDevelopment(String title, String subtitle, IconData icon) {
+  Widget _buildFeatureInDevelopment(
+    String title,
+    String subtitle,
+    IconData icon,
+  ) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24.0),

@@ -101,18 +101,36 @@ class _HomeScreenState extends State<HomeScreen> {
 
       // Tải bài viết nổi bật
       try {
-        final articleData = await supabase
+        // First try to get featured articles
+        final featuredData = await supabase
             .from('articles')
             .select()
             .eq('is_featured', true)
             .order('publish_date', ascending: false)
             .limit(3);
 
+        List<Article> featuredArticles = List<Article>.from(
+          featuredData.map((json) => Article.fromJson(json)),
+        );
+
+        // If we don't have enough featured articles, get some regular ones too
+        if (featuredArticles.length < 3) {
+          final regularData = await supabase
+              .from('articles')
+              .select()
+              .eq('is_featured', false)
+              .order('publish_date', ascending: false)
+              .limit(3 - featuredArticles.length);
+
+          featuredArticles.addAll(
+            List<Article>.from(
+              regularData.map((json) => Article.fromJson(json)),
+            ),
+          );
+        }
+
         setState(() {
-          _featuredArticles =
-              articleData
-                  .map<Article>((json) => Article.fromJson(json))
-                  .toList();
+          _featuredArticles = featuredArticles;
         });
       } catch (e) {
         debugPrint('Lỗi khi tải dữ liệu bài viết: $e');
@@ -223,8 +241,8 @@ class _HomeScreenState extends State<HomeScreen> {
               : RefreshIndicator(
                 onRefresh: _loadDashboardData,
                 child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(vertical: 16.0),
                   physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -408,12 +426,13 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             TextButton.icon(
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const HealthMetricsScreen(),
-                ),
-              ),
+              onPressed:
+                  () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const HealthMetricsScreen(),
+                    ),
+                  ),
               icon: const Icon(Icons.arrow_forward, size: 16),
               label: const Text('Xem tất cả'),
               style: TextButton.styleFrom(
@@ -426,17 +445,18 @@ class _HomeScreenState extends State<HomeScreen> {
         const SizedBox(height: 8),
         _recentMetrics.isEmpty
             ? _buildEmptyState(
-                'Chưa có dữ liệu sức khỏe',
-                'Thêm chỉ số mới để theo dõi sức khỏe của bạn',
-                Icons.monitor_heart_outlined,
-                onAction: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const HealthMetricsScreen(),
+              'Chưa có dữ liệu sức khỏe',
+              'Thêm chỉ số mới để theo dõi sức khỏe của bạn',
+              Icons.monitor_heart_outlined,
+              onAction:
+                  () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const HealthMetricsScreen(),
+                    ),
                   ),
-                ),
-                actionLabel: 'Thêm chỉ số mới',
-              )
+              actionLabel: 'Thêm chỉ số mới',
+            )
             : _buildCompactHealthMetricsGrid(),
       ],
     );
@@ -445,7 +465,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildCompactHealthMetricsGrid() {
     // Limit to max 2 cards to keep the home screen compact
     final metrics = _recentMetrics.take(2).toList();
-    
+
     return Card(
       elevation: 1,
       margin: EdgeInsets.zero,
@@ -458,12 +478,13 @@ class _HomeScreenState extends State<HomeScreen> {
         itemBuilder: (context, index) {
           final metric = metrics[index];
           return InkWell(
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const HealthMetricsScreen(),
-              ),
-            ),
+            onTap:
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const HealthMetricsScreen(),
+                  ),
+                ),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Column(
@@ -472,7 +493,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   // Date row
                   Row(
                     children: [
-                      Icon(Icons.calendar_today, size: 14, color: Colors.grey[600]),
+                      Icon(
+                        Icons.calendar_today,
+                        size: 14,
+                        color: Colors.grey[600],
+                      ),
                       const SizedBox(width: 6),
                       Text(
                         '${metric.timestamp.day}/${metric.timestamp.month}/${metric.timestamp.year}',
@@ -491,13 +516,29 @@ class _HomeScreenState extends State<HomeScreen> {
                     runSpacing: 8,
                     children: [
                       if (metric.bmi != null)
-                        _buildCompactMetricChip('BMI', metric.bmi!.toStringAsFixed(1), Icons.monitor_weight),
+                        _buildCompactMetricChip(
+                          'BMI',
+                          metric.bmi!.toStringAsFixed(1),
+                          Icons.monitor_weight,
+                        ),
                       if (metric.heartRate != null)
-                        _buildCompactMetricChip('Nhịp tim', '${metric.heartRate} bpm', Icons.favorite),
+                        _buildCompactMetricChip(
+                          'Nhịp tim',
+                          '${metric.heartRate} bpm',
+                          Icons.favorite,
+                        ),
                       if (metric.bloodPressure != null)
-                        _buildCompactMetricChip('Huyết áp', metric.bloodPressure.toString(), Icons.favorite_border),
+                        _buildCompactMetricChip(
+                          'Huyết áp',
+                          metric.bloodPressure.toString(),
+                          Icons.favorite_border,
+                        ),
                       if (metric.spo2 != null)
-                        _buildCompactMetricChip('SpO2', '${metric.spo2}%', Icons.air),
+                        _buildCompactMetricChip(
+                          'SpO2',
+                          '${metric.spo2}%',
+                          Icons.air,
+                        ),
                     ],
                   ),
                 ],
@@ -535,116 +576,214 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildFeaturedArticlesSection(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Bản tin sức khỏe',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            TextButton.icon(
-              onPressed:
-                  () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const ArticlesScreen(),
-                    ),
-                  ),
-              icon: const Icon(Icons.arrow_forward, size: 16),
-              label: const Text('Xem tất cả'),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        _featuredArticles.isEmpty
-            ? _buildEmptyState(
-              'Chưa có bài viết',
-              'Hãy quay lại sau để xem các bài viết mới nhất',
-              Icons.description_outlined,
-            )
-            : ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: _featuredArticles.length,
-              itemBuilder: (context, index) {
-                final article = _featuredArticles[index];
-                return _buildArticleCard(article);
-              },
-            ),
-      ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Bản tin sức khỏe',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              TextButton.icon(
+                onPressed:
+                    () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ArticlesScreen(),
+                      ),
+                    ).then(
+                      (_) => _loadDashboardData(),
+                    ), // Refresh when returning
+                icon: const Icon(Icons.arrow_forward, size: 16),
+                label: const Text('Xem tất cả'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _featuredArticles.isEmpty
+              ? _buildEmptySection(
+                'Không có bài viết nổi bật',
+                Icons.article_outlined,
+              )
+              : Column(
+                children:
+                    _featuredArticles
+                        .map(
+                          (article) => _buildHomeArticleCard(context, article),
+                        )
+                        .toList(),
+              ),
+        ],
+      ),
     );
   }
 
-  Widget _buildArticleCard(Article article) {
+  Widget _buildHomeArticleCard(BuildContext context, Article article) {
     return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       margin: const EdgeInsets.only(bottom: 16),
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 2,
       child: InkWell(
-        onTap: () {
-          // Chuyển đến trang chi tiết bài viết
-          Navigator.push(
+        onTap: () async {
+          final result = await Navigator.push(
             context,
             MaterialPageRoute(
               builder: (context) => ArticleDetailScreen(article: article),
             ),
           );
+
+          // Refresh dashboard if article was modified or deleted
+          if (result == true) {
+            _loadDashboardData();
+          }
         },
-        borderRadius: BorderRadius.circular(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Thumbnail image
             if (article.thumbnailUrl != null)
-              ClipRRect(
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(12),
-                ),
+              SizedBox(
+                height: 180,
+                width: double.infinity,
                 child: CachedNetworkImage(
                   imageUrl: article.thumbnailUrl!,
-                  height: 150,
-                  width: double.infinity,
                   fit: BoxFit.cover,
                   placeholder:
                       (context, url) =>
                           const Center(child: CircularProgressIndicator()),
                   errorWidget:
-                      (context, url, error) =>
-                          const Icon(Icons.image_not_supported_outlined),
+                      (context, url, error) => Container(
+                        color: Colors.grey[200],
+                        child: const Icon(
+                          Icons.image_not_supported,
+                          color: Colors.grey,
+                        ),
+                      ),
                 ),
               ),
+
+            // Content section
             Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Featured badge if applicable
+                  if (article.isFeatured)
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).primaryColor,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Text(
+                        'Nổi bật',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+
+                  // Title
                   Text(
                     article.title,
                     style: const TextStyle(
+                      fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      fontSize: 16,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
+
                   const SizedBox(height: 8),
+
+                  // Brief content/summary
                   Text(
                     article.briefContent,
-                    maxLines: 2,
+                    style: TextStyle(color: Colors.grey[700], height: 1.3),
+                    maxLines:
+                        3, // Increase from 2 to 3 lines for slightly more preview content
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 8),
+
+                  const SizedBox(height: 12),
+
+                  // Author and date row
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Icon(Icons.timer_outlined, size: 12),
-                      const SizedBox(width: 4),
-                      Text(
-                        article.timeAgo,
-                        style: const TextStyle(fontSize: 12),
+                      // Author info
+                      Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 12,
+                            backgroundColor: Theme.of(
+                              context,
+                            ).primaryColor.withOpacity(0.8),
+                            child: Text(
+                              article.authorName[0],
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            article.authorName,
+                            style: const TextStyle(fontSize: 14),
+                          ),
+                        ],
+                      ),
+
+                      // Date info
+                      Row(
+                        children: [
+                          const Icon(Icons.access_time, size: 14),
+                          const SizedBox(width: 4),
+                          Text(
+                            article.timeAgo,
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                        ],
                       ),
                     ],
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // Categories
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children:
+                        article.categories.map((category) {
+                          return Chip(
+                            label: Text(category),
+                            materialTapTargetSize:
+                                MaterialTapTargetSize.shrinkWrap,
+                            labelStyle: const TextStyle(fontSize: 10),
+                            padding: EdgeInsets.zero,
+                            labelPadding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                            ),
+                            backgroundColor:
+                                Theme.of(
+                                  context,
+                                ).colorScheme.surfaceContainerHighest,
+                          );
+                        }).toList(),
                   ),
                 ],
               ),
@@ -734,6 +873,25 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Widget _buildEmptySection(String message, IconData icon) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 32.0),
+        child: Column(
+          children: [
+            Icon(icon, size: 48, color: Colors.grey[400]),
+            const SizedBox(height: 16),
+            Text(
+              message,
+              style: TextStyle(color: Colors.grey[600]),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   // Thêm hàm để kiểm tra và tải dữ liệu sức khỏe
   Future<void> _testHealthMetricsLoad() async {
     try {
@@ -817,74 +975,5 @@ class _HomeScreenState extends State<HomeScreen> {
         context,
       ).showSnackBar(SnackBar(content: Text('Lỗi: $e')));
     }
-  }
-}
-
-// Màn hình chi tiết bài viết
-class ArticleDetailScreen extends StatelessWidget {
-  final Article article;
-
-  const ArticleDetailScreen({super.key, required this.article});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            expandedHeight: 200,
-            pinned: true,
-            flexibleSpace: FlexibleSpaceBar(
-              title: Text(
-                article.title,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-              background:
-                  article.thumbnailUrl != null
-                      ? CachedNetworkImage(
-                        imageUrl: article.thumbnailUrl!,
-                        fit: BoxFit.cover,
-                      )
-                      : Container(color: Theme.of(context).primaryColor),
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      CircleAvatar(child: Text(article.authorName[0])),
-                      const SizedBox(width: 8),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            article.authorName,
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          Text(article.timeAgo),
-                        ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    article.content,
-                    style: const TextStyle(fontSize: 16, height: 1.6),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }

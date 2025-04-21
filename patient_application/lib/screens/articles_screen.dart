@@ -481,9 +481,15 @@ class ArticleDetailScreen extends StatelessWidget {
           SliverAppBar(
             expandedHeight: 250,
             pinned: true,
+            backgroundColor: Colors.black.withOpacity(
+              0.7,
+            ), // Add this for better visibility
             actions: [
               IconButton(
-                icon: const Icon(Icons.delete, color: Colors.white),
+                icon: const Icon(
+                  Icons.delete,
+                  color: Colors.white,
+                ), // Make sure icon is visible
                 tooltip: 'Xóa bài viết',
                 onPressed: () => _deleteArticle(context),
               ),
@@ -548,19 +554,15 @@ class ArticleDetailScreen extends StatelessWidget {
                         }).toList(),
                   ),
                   const SizedBox(height: 24),
-                  Text(
-                    article.content,
-                    style: const TextStyle(fontSize: 16, height: 1.6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    child: Text(
+                      article.content,
+                      style: const TextStyle(fontSize: 16, height: 1.6),
+                    ),
                   ),
                   if (article.tags != null && article.tags!.isNotEmpty) ...[
-                    const SizedBox(height: 24),
-                    const Divider(),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Tags:',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 16),
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
@@ -568,7 +570,16 @@ class ArticleDetailScreen extends StatelessWidget {
                           article.tags!.map((tag) {
                             return Chip(
                               label: Text('#$tag'),
-                              backgroundColor: Colors.grey[200],
+                              backgroundColor:
+                                  Theme.of(
+                                    context,
+                                  ).colorScheme.surfaceContainerHighest,
+                              labelStyle: TextStyle(
+                                color:
+                                    Theme.of(
+                                      context,
+                                    ).colorScheme.onSurfaceVariant,
+                              ),
                             );
                           }).toList(),
                     ),
