@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:patient_application/models/article.dart';
 import 'package:patient_application/main.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:patient_application/screens/create_article_screen.dart';
 
 class ArticlesScreen extends StatefulWidget {
   const ArticlesScreen({super.key});
@@ -96,7 +97,28 @@ class _ArticlesScreenState extends State<ArticlesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Bản tin sức khỏe')),
+      appBar: AppBar(
+        title: const Text('Bản tin sức khỏe'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add),
+            tooltip: 'Tạo bài viết mới',
+            onPressed: () async {
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const CreateArticleScreen(),
+                ),
+              );
+
+              // Refresh the articles list if a new article was created
+              if (result == true) {
+                _loadArticles();
+              }
+            },
+          ),
+        ],
+      ),
       body:
           _isLoading
               ? const Center(child: CircularProgressIndicator())
@@ -202,13 +224,18 @@ class _ArticlesScreenState extends State<ArticlesScreen> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       margin: const EdgeInsets.only(bottom: 16),
       child: InkWell(
-        onTap: () {
-          Navigator.push(
+        onTap: () async {
+          final result = await Navigator.push(
             context,
             MaterialPageRoute(
               builder: (context) => ArticleDetailScreen(article: article),
             ),
           );
+
+          // Refresh the articles list if an article was deleted or updated
+          if (result == true) {
+            _loadArticles();
+          }
         },
         borderRadius: BorderRadius.circular(12),
         child: Column(
@@ -380,6 +407,72 @@ class ArticleDetailScreen extends StatelessWidget {
 
   const ArticleDetailScreen({super.key, required this.article});
 
+  // Add this function to handle article deletion
+  Future<void> _deleteArticle(BuildContext context) async {
+    // Show confirmation dialog first
+    final bool confirmDelete =
+        await showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text('Xác nhận xóa'),
+              content: Text(
+                'Bạn có chắc chắn muốn xóa bài viết "${article.title}" không?',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Hủy'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Xóa', style: TextStyle(color: Colors.red)),
+                ),
+              ],
+            );
+          },
+        ) ??
+        false;
+
+    if (!confirmDelete) return;
+
+    try {
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return const Center(child: CircularProgressIndicator());
+        },
+      );
+
+      // Delete from Supabase
+      await supabase.from('articles').delete().eq('id', article.id);
+
+      // Close loading dialog
+      if (context.mounted) Navigator.of(context).pop();
+
+      // Show success message and return to articles list
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Bài viết đã được xóa thành công')),
+        );
+        // Pop twice to return to articles list and indicate that refresh is needed
+        Navigator.of(context).pop(true);
+      }
+    } catch (e) {
+      // Close loading dialog
+      if (context.mounted) Navigator.of(context).pop();
+
+      // Show error message
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Không thể xóa bài viết: $e')));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -388,6 +481,13 @@ class ArticleDetailScreen extends StatelessWidget {
           SliverAppBar(
             expandedHeight: 250,
             pinned: true,
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.delete, color: Colors.white),
+                tooltip: 'Xóa bài viết',
+                onPressed: () => _deleteArticle(context),
+              ),
+            ],
             flexibleSpace: FlexibleSpaceBar(
               title: Text(
                 article.title,
@@ -595,16 +695,38 @@ class ArticleDetailScreen extends StatelessWidget {
 
   Future<List<Article>> _fetchRelatedArticles() async {
     try {
-      // Tìm bài viết liên quan dựa trên cùng danh mục
+      // Don't filter by categories on the server side to avoid type issues
       final data = await supabase
           .from('articles')
           .select()
           .neq('id', article.id)
-          .filter('categories', 'cs', '{${article.categories.join(',')}}')
           .order('publish_date', ascending: false)
-          .limit(5);
+          .limit(10);
 
-      return List<Article>.from(data.map((json) => Article.fromJson(json)));
+      List<Article> articles;
+
+      try {
+        articles = List<Article>.from(
+          data.map((json) => Article.fromJson(json)),
+        );
+      } catch (e) {
+        debugPrint('Error parsing articles: $e');
+        return [];
+      }
+
+      // Filter related articles on the client side based on matching categories
+      final relatedArticles =
+          articles
+              .where((a) {
+                // Check if any category in the current article is contained in this article
+                return article.categories.any(
+                  (category) => a.categories.contains(category),
+                );
+              })
+              .take(5)
+              .toList();
+
+      return relatedArticles;
     } catch (e) {
       debugPrint('Lỗi khi tải bài viết liên quan: $e');
       return [];
