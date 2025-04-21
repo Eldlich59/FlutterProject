@@ -112,21 +112,53 @@ class _HealthMetricsScreenState extends State<HealthMetricsScreen>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Theo dõi sức khỏe'),
+        title: const Text(
+          'Theo dõi sức khỏe',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
+        elevation: 2,
         bottom: TabBar(
           controller: _tabController,
-          isScrollable: true,
+          isScrollable: false, // Changed from true to false to center tabs
+          indicatorWeight: 3,
+          indicatorSize: TabBarIndicatorSize.tab,
+          labelColor: theme.primaryColor,
+          unselectedLabelColor: Colors.grey,
           tabs: const [
-            Tab(text: 'Tất cả'),
-            Tab(text: 'BMI'),
-            Tab(text: 'Nhịp tim'),
-            Tab(text: 'Huyết áp'),
-            Tab(text: 'SpO2'),
+            Tab(
+              text: 'Tất cả',
+              icon: Icon(Icons.dashboard_rounded),
+              iconMargin: EdgeInsets.only(bottom: 4),
+            ),
+            Tab(
+              text: 'BMI',
+              icon: Icon(Icons.monitor_weight_outlined),
+              iconMargin: EdgeInsets.only(bottom: 4),
+            ),
+            Tab(
+              text: 'Nhịp tim',
+              icon: Icon(Icons.favorite_outline),
+              iconMargin: EdgeInsets.only(bottom: 4),
+            ),
+            Tab(
+              text: 'Huyết áp',
+              icon: Icon(Icons.monitor_heart_outlined),
+              iconMargin: EdgeInsets.only(bottom: 4),
+            ),
+            Tab(
+              text: 'SpO2',
+              icon: Icon(Icons.air_outlined),
+              iconMargin: EdgeInsets.only(bottom: 4),
+            ),
           ],
         ),
       ),
+
       body:
           _isLoading
               ? const Center(child: CircularProgressIndicator())
@@ -135,35 +167,81 @@ class _HealthMetricsScreenState extends State<HealthMetricsScreen>
                 child:
                     _metrics.isEmpty
                         ? _buildEmptyState()
-                        : Column(
-                          children: [
-                            if (_selectedMetricType != 'all')
-                              Padding(
-                                padding: const EdgeInsets.all(16.0),
-                                child: SizedBox(
-                                  height: 200,
-                                  child: _buildChart(),
+                        : Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              if (_selectedMetricType != 'all')
+                                Card(
+                                  margin: const EdgeInsets.symmetric(
+                                    vertical: 16.0,
+                                  ),
+                                  elevation: 4,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(16.0),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          _getChartTitle(),
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                        const SizedBox(height: 8),
+                                        SizedBox(
+                                          height: 220,
+                                          child: _buildChart(),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              Expanded(
+                                child: ListView.builder(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 8.0,
+                                  ),
+                                  itemCount: _filteredMetrics.length,
+                                  itemBuilder: (context, index) {
+                                    final metric = _filteredMetrics[index];
+                                    return _buildMetricCard(metric);
+                                  },
                                 ),
                               ),
-                            Expanded(
-                              child: ListView.builder(
-                                padding: const EdgeInsets.all(16),
-                                itemCount: _filteredMetrics.length,
-                                itemBuilder: (context, index) {
-                                  final metric = _filteredMetrics[index];
-                                  return _buildMetricCard(metric);
-                                },
-                              ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
               ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: _showAddMetricDialog,
+        icon: const Icon(Icons.add),
+        label: const Text('Thêm chỉ số'),
         tooltip: 'Thêm chỉ số mới',
-        child: const Icon(Icons.add),
       ),
     );
+  }
+
+  String _getChartTitle() {
+    switch (_selectedMetricType) {
+      case 'bmi':
+        return 'Chỉ số khối cơ thể (BMI) theo thời gian';
+      case 'heart':
+        return 'Nhịp tim (bpm) theo thời gian';
+      case 'blood_pressure':
+        return 'Huyết áp (mmHg) theo thời gian';
+      case 'spo2':
+        return 'Nồng độ oxy trong máu (SpO2) theo thời gian';
+      default:
+        return '';
+    }
   }
 
   Widget _buildEmptyState() {
@@ -210,78 +288,179 @@ class _HealthMetricsScreenState extends State<HealthMetricsScreen>
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  DateFormat('dd/MM/yyyy HH:mm').format(metric.timestamp),
-                  style: const TextStyle(fontWeight: FontWeight.bold),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.calendar_today,
+                      size: 16,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      DateFormat('dd/MM/yyyy').format(metric.timestamp),
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ],
                 ),
-                IconButton(
-                  icon: const Icon(Icons.delete_outline, color: Colors.red),
-                  onPressed: () => _deleteMetric(metric),
-                  iconSize: 20,
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.access_time,
+                      size: 16,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      DateFormat('HH:mm').format(metric.timestamp),
+                      style: TextStyle(
+                        color: Colors.grey[700],
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline, color: Colors.red),
+                      onPressed: () => _deleteMetric(metric),
+                      iconSize: 20,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                  ],
                 ),
               ],
             ),
-            const Divider(),
-            if (metric.bmi != null)
-              _buildMetricItem(
-                'BMI',
-                metric.bmi!.toStringAsFixed(1),
-                Icons.monitor_weight,
-              ),
-            if (metric.heartRate != null)
-              _buildMetricItem(
-                'Nhịp tim',
-                '${metric.heartRate} bpm',
-                Icons.favorite,
-              ),
-            if (metric.bloodPressure != null)
-              _buildMetricItem(
-                'Huyết áp',
-                metric.bloodPressure.toString(),
-                Icons.favorite_border,
-              ),
-            if (metric.spo2 != null)
-              _buildMetricItem('SpO2', '${metric.spo2}%', Icons.air),
-            if (metric.temperature != null)
-              _buildMetricItem(
-                'Nhiệt độ',
-                '${metric.temperature}°C',
-                Icons.thermostat,
-              ),
-            if (metric.respiratoryRate != null)
-              _buildMetricItem(
-                'Nhịp thở',
-                '${metric.respiratoryRate} nhịp/phút',
-                Icons.air,
-              ),
+            const Divider(height: 24),
+            Wrap(
+              spacing: 16,
+              runSpacing: 12,
+              children: [
+                if (metric.bmi != null)
+                  _buildMetricItemChip(
+                    'BMI',
+                    metric.bmi!.toStringAsFixed(1),
+                    Icons.monitor_weight,
+                    _getBMIColor(metric.bmi!),
+                  ),
+                if (metric.heartRate != null)
+                  _buildMetricItemChip(
+                    'Nhịp tim',
+                    '${metric.heartRate} bpm',
+                    Icons.favorite,
+                    _getHeartRateColor(metric.heartRate!),
+                  ),
+                if (metric.bloodPressure != null)
+                  _buildMetricItemChip(
+                    'Huyết áp',
+                    '${metric.bloodPressure!.systolic}/${metric.bloodPressure!.diastolic}',
+                    Icons.favorite_border,
+                    _getBloodPressureColor(
+                      metric.bloodPressure!.systolic,
+                      metric.bloodPressure!.diastolic,
+                    ),
+                  ),
+                if (metric.spo2 != null)
+                  _buildMetricItemChip(
+                    'SpO2',
+                    '${metric.spo2}%',
+                    Icons.air,
+                    _getSpO2Color(metric.spo2!),
+                  ),
+                if (metric.temperature != null)
+                  _buildMetricItemChip(
+                    'Nhiệt độ',
+                    '${metric.temperature}°C',
+                    Icons.thermostat,
+                    _getTemperatureColor(metric.temperature!),
+                  ),
+                if (metric.respiratoryRate != null)
+                  _buildMetricItemChip(
+                    'Nhịp thở',
+                    '${metric.respiratoryRate} lần/phút',
+                    Icons.air,
+                    Theme.of(context).primaryColor,
+                  ),
+              ],
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildMetricItem(String label, String value, IconData icon) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+  Widget _buildMetricItemChip(
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: color.withAlpha(25), // Thay thế withOpacity(0.1)
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: color.withAlpha(76),
+        ), // Thay thế withOpacity(0.3)
+      ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Row(
+          Icon(icon, size: 18, color: color),
+          const SizedBox(width: 8),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(icon, size: 16, color: Theme.of(context).primaryColor),
-              const SizedBox(width: 8),
-              Text(label, style: const TextStyle(fontSize: 14)),
+              Text(
+                label,
+                style: TextStyle(fontSize: 12, color: Colors.grey[800]),
+              ),
+              Text(
+                value,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  color: color,
+                ),
+              ),
             ],
-          ),
-          Text(
-            value,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
           ),
         ],
       ),
     );
+  }
+
+  // Helper functions to determine colors based on health values
+  Color _getBMIColor(double bmi) {
+    if (bmi < 18.5) return Colors.blue;
+    if (bmi < 25) return Colors.green;
+    if (bmi < 30) return Colors.orange;
+    return Colors.red;
+  }
+
+  Color _getHeartRateColor(int heartRate) {
+    if (heartRate < 60) return Colors.blue;
+    if (heartRate <= 100) return Colors.green;
+    return Colors.red;
+  }
+
+  Color _getBloodPressureColor(int systolic, int diastolic) {
+    if (systolic < 120 && diastolic < 80) return Colors.green;
+    if (systolic < 130 && diastolic < 80) return Colors.lightGreen;
+    if (systolic < 140 && diastolic < 90) return Colors.orange;
+    return Colors.red;
+  }
+
+  Color _getSpO2Color(int spo2) {
+    if (spo2 >= 95) return Colors.green;
+    if (spo2 >= 90) return Colors.orange;
+    return Colors.red;
+  }
+
+  Color _getTemperatureColor(double temp) {
+    if (temp < 36.1) return Colors.blue;
+    if (temp <= 37.2) return Colors.green;
+    if (temp <= 38) return Colors.orange;
+    return Colors.red;
   }
 
   Widget _buildChart() {
@@ -353,7 +532,7 @@ class _HealthMetricsScreenState extends State<HealthMetricsScreen>
             dotData: FlDotData(show: true),
             belowBarData: BarAreaData(
               show: true,
-              color: Colors.blue.withOpacity(0.2),
+              color: Colors.blue.withAlpha(50), // Thay thế withOpacity(0.2)
             ),
           ),
         ],
@@ -573,74 +752,169 @@ class _HealthMetricsScreenState extends State<HealthMetricsScreen>
     showDialog(
       context: context,
       builder: (context) {
-        double? weight, height, temperature, bloodSugar;
+        double? weight, height, temperature;
         int? heartRate, spo2, respiratoryRate;
         int systolic = 120, diastolic = 80;
+        final formKey = GlobalKey<FormState>();
 
         return AlertDialog(
-          title: const Text('Thêm chỉ số sức khỏe'),
+          title: Row(
+            children: [
+              Icon(Icons.add_circle, color: Theme.of(context).primaryColor),
+              const SizedBox(width: 8),
+              const Text('Thêm chỉ số sức khỏe mới'),
+            ],
+          ),
           content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Cân nặng (kg)'),
-                  onChanged: (value) => weight = double.tryParse(value),
-                ),
-                TextField(
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Chiều cao (cm)',
+            child: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Nhập các chỉ số sức khỏe mà bạn muốn ghi lại:',
+                    style: TextStyle(fontStyle: FontStyle.italic),
                   ),
-                  onChanged: (value) => height = double.tryParse(value),
-                ),
-                TextField(
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Nhịp tim (bpm)',
+                  const SizedBox(height: 16),
+
+                  // BMI Section
+                  _buildSectionHeader('Cân nặng và chiều cao'),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(
+                            labelText: 'Cân nặng (kg)',
+                            prefixIcon: Icon(Icons.line_weight),
+                            border: OutlineInputBorder(),
+                          ),
+                          onChanged: (value) => weight = double.tryParse(value),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: TextFormField(
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(
+                            labelText: 'Chiều cao (cm)',
+                            prefixIcon: Icon(Icons.height),
+                            border: OutlineInputBorder(),
+                          ),
+                          onChanged: (value) => height = double.tryParse(value),
+                        ),
+                      ),
+                    ],
                   ),
-                  onChanged: (value) => heartRate = int.tryParse(value),
-                ),
-                TextField(
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'SpO2 (%)'),
-                  onChanged: (value) => spo2 = int.tryParse(value),
-                ),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          labelText: 'Huyết áp tâm thu',
+                  const SizedBox(height: 16),
+
+                  // Heart rate and SpO2
+                  _buildSectionHeader('Nhịp tim và SpO2'),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(
+                            labelText: 'Nhịp tim (bpm)',
+                            prefixIcon: Icon(Icons.favorite),
+                            border: OutlineInputBorder(),
+                          ),
+                          onChanged: (value) => heartRate = int.tryParse(value),
                         ),
-                        onChanged:
-                            (value) => systolic = int.tryParse(value) ?? 120,
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: TextField(
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          labelText: 'Huyết áp tâm trương',
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: TextFormField(
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(
+                            labelText: 'SpO2 (%)',
+                            prefixIcon: Icon(Icons.air),
+                            border: OutlineInputBorder(),
+                          ),
+                          onChanged: (value) => spo2 = int.tryParse(value),
                         ),
-                        onChanged:
-                            (value) => diastolic = int.tryParse(value) ?? 80,
                       ),
-                    ),
-                  ],
-                ),
-              ],
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Blood pressure
+                  _buildSectionHeader('Huyết áp'),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(
+                            labelText: 'Tâm thu (mmHg)',
+                            prefixIcon: Icon(Icons.arrow_upward),
+                            border: OutlineInputBorder(),
+                          ),
+                          onChanged:
+                              (value) => systolic = int.tryParse(value) ?? 120,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: TextFormField(
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(
+                            labelText: 'Tâm trương (mmHg)',
+                            prefixIcon: Icon(Icons.arrow_downward),
+                            border: OutlineInputBorder(),
+                          ),
+                          onChanged:
+                              (value) => diastolic = int.tryParse(value) ?? 80,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Temperature and respiratory rate
+                  _buildSectionHeader('Nhiệt độ và nhịp thở'),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(
+                            labelText: 'Nhiệt độ (°C)',
+                            prefixIcon: Icon(Icons.thermostat),
+                            border: OutlineInputBorder(),
+                          ),
+                          onChanged:
+                              (value) => temperature = double.tryParse(value),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: TextFormField(
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(
+                            labelText: 'Nhịp thở (lần/phút)',
+                            prefixIcon: Icon(Icons.air_outlined),
+                            border: OutlineInputBorder(),
+                          ),
+                          onChanged:
+                              (value) => respiratoryRate = int.tryParse(value),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
           actions: [
-            TextButton(
+            TextButton.icon(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Hủy'),
+              icon: const Icon(Icons.cancel, color: Colors.grey),
+              label: const Text('Hủy'),
             ),
-            ElevatedButton(
+            ElevatedButton.icon(
               onPressed: () async {
                 final userId = supabase.auth.currentUser?.id;
                 if (userId != null) {
@@ -650,6 +924,11 @@ class _HealthMetricsScreenState extends State<HealthMetricsScreen>
                             ? weight! / ((height! / 100) * (height! / 100))
                             : null;
 
+                    final bloodPressure =
+                        (systolic != 0 && diastolic != 0)
+                            ? {'systolic': systolic, 'diastolic': diastolic}
+                            : null;
+
                     final newMetric = {
                       'patient_id': userId,
                       'timestamp': DateTime.now().toIso8601String(),
@@ -657,14 +936,10 @@ class _HealthMetricsScreenState extends State<HealthMetricsScreen>
                       'height': height,
                       'bmi': bmi,
                       'heart_rate': heartRate,
-                      'blood_pressure':
-                          heartRate != null
-                              ? {'systolic': systolic, 'diastolic': diastolic}
-                              : null,
+                      'blood_pressure': bloodPressure,
                       'spo2': spo2,
                       'temperature': temperature,
                       'respiratory_rate': respiratoryRate,
-                      'blood_sugar': bloodSugar,
                     };
 
                     final response =
@@ -672,6 +947,10 @@ class _HealthMetricsScreenState extends State<HealthMetricsScreen>
                             .from('health_metrics')
                             .insert(newMetric)
                             .select();
+
+                    Navigator.pop(context);
+
+                    if (!mounted) return;
 
                     if (response.isNotEmpty) {
                       final newHealthMetric = HealthMetrics.fromJson(
@@ -682,25 +961,49 @@ class _HealthMetricsScreenState extends State<HealthMetricsScreen>
                       });
                     }
 
-                    Navigator.pop(context);
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text('Đã thêm chỉ số sức khỏe mới'),
+                        content: Text('Đã thêm chỉ số sức khỏe mới thành công'),
+                        backgroundColor: Colors.green,
                       ),
                     );
                   } catch (e) {
                     Navigator.pop(context);
+
+                    if (!mounted) return;
+
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Lỗi khi thêm chỉ số: $e')),
+                      SnackBar(
+                        content: Text('Lỗi khi thêm chỉ số: $e'),
+                        backgroundColor: Colors.red,
+                      ),
                     );
                   }
                 }
               },
-              child: const Text('Lưu'),
+              icon: const Icon(Icons.save),
+              label: const Text('Lưu'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).primaryColor,
+                foregroundColor: Colors.white,
+              ),
             ),
           ],
         );
       },
+    );
+  }
+
+  Widget _buildSectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: Text(
+        title,
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          color: Theme.of(context).primaryColor,
+        ),
+      ),
     );
   }
 
@@ -728,6 +1031,8 @@ class _HealthMetricsScreenState extends State<HealthMetricsScreen>
       try {
         await supabase.from('health_metrics').delete().eq('id', metric.id);
 
+        if (!mounted) return;
+
         setState(() {
           _metrics.removeWhere((m) => m.id == metric.id);
         });
@@ -736,6 +1041,8 @@ class _HealthMetricsScreenState extends State<HealthMetricsScreen>
           context,
         ).showSnackBar(const SnackBar(content: Text('Đã xóa chỉ số sức khỏe')));
       } catch (e) {
+        if (!mounted) return;
+
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('Lỗi khi xóa: $e')));
