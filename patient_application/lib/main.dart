@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:patient_application/config/supabase_config.dart';
-import 'package:patient_application/screens/articles_screen.dart';
+import 'package:patient_application/screens/article/articles_screen.dart';
 import 'package:patient_application/screens/chat_screen.dart';
 import 'package:patient_application/screens/health_metrics_screen.dart';
 import 'package:patient_application/screens/home_screen.dart';
@@ -29,7 +29,9 @@ class MyApp extends StatelessWidget {
       title: 'Patient Application',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color.fromARGB(255, 101, 54, 182),
+        ),
         useMaterial3: true,
       ),
       home: _handleAuthState(),

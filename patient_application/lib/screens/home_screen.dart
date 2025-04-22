@@ -3,12 +3,16 @@ import 'package:flutter/foundation.dart';
 import 'package:patient_application/models/patient.dart';
 import 'package:patient_application/models/health_metrics.dart';
 import 'package:patient_application/models/article.dart';
+import 'package:patient_application/models/appointment.dart';
 import 'package:patient_application/screens/health_metrics_screen.dart';
-import 'package:patient_application/screens/articles_screen.dart';
+import 'package:patient_application/screens/article/articles_screen.dart';
 import 'package:patient_application/screens/medical_records_screen.dart';
 import 'package:patient_application/screens/chat_screen.dart';
 import 'package:patient_application/main.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:patient_application/config/supabase_config.dart';
+import 'package:patient_application/screens/appointment/appointments_screen.dart'; // Add this line
+import 'package:patient_application/screens/appointment/book_appointment_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final String title;
@@ -28,6 +32,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Patient? _patient;
   List<HealthMetrics> _recentMetrics = [];
   List<Article> _featuredArticles = [];
+  List<Appointment> _upcomingAppointments = []; // Add this line
   bool _isLoading = true;
 
   @override
@@ -135,6 +140,30 @@ class _HomeScreenState extends State<HomeScreen> {
       } catch (e) {
         debugPrint('Lỗi khi tải dữ liệu bài viết: $e');
         setState(() => _featuredArticles = []);
+      }
+
+      // Load upcoming appointments
+      try {
+        final appointmentsData = await supabase
+            .from('appointments')
+            .select()
+            .eq('patient_id', userId)
+            .eq('status', 'scheduled')
+            .gte('date_time', DateTime.now().toIso8601String())
+            .order('date_time')
+            .limit(5);
+
+        debugPrint('Đã tải lịch hẹn: ${appointmentsData.length} lịch hẹn');
+
+        setState(() {
+          _upcomingAppointments =
+              appointmentsData
+                  .map<Appointment>((json) => Appointment.fromJson(json))
+                  .toList();
+        });
+      } catch (e) {
+        debugPrint('Lỗi khi tải lịch hẹn: $e');
+        setState(() => _upcomingAppointments = []);
       }
     } catch (e) {
       debugPrint('Lỗi chung khi tải dữ liệu dashboard: $e');
@@ -798,24 +827,163 @@ class _HomeScreenState extends State<HomeScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Lịch hẹn sắp tới', style: Theme.of(context).textTheme.titleLarge),
-        const SizedBox(height: 16),
-        _buildEmptyState(
-          'Không có lịch hẹn',
-          'Bạn chưa có lịch hẹn nào sắp tới',
-          Icons.event_busy,
-          onAction: () {
-            // Implement appointment booking functionality
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Tính năng đặt lịch sẽ sớm ra mắt'),
-                duration: Duration(seconds: 2),
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                'Lịch hẹn sắp tới',
+                style: Theme.of(context).textTheme.titleLarge,
               ),
-            );
-          },
-          actionLabel: 'Đặt lịch khám',
+            ),
+            TextButton.icon(
+              onPressed:
+                  () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const AppointmentsScreen(),
+                    ),
+                  ).then((_) => _loadDashboardData()),
+              icon: const Icon(Icons.arrow_forward, size: 16),
+              label: const Text('Xem tất cả'),
+            ),
+          ],
         ),
+        const SizedBox(height: 16),
+        _upcomingAppointments.isEmpty
+            ? _buildEmptyState(
+              'Không có lịch hẹn',
+              'Bạn chưa có lịch hẹn nào sắp tới',
+              Icons.event_busy,
+              onAction: () => _showAppointmentForm(),
+              actionLabel: 'Đặt lịch khám',
+            )
+            : Column(
+              children:
+                  _upcomingAppointments
+                      .map((appointment) => _buildAppointmentCard(appointment))
+                      .toList(),
+            ),
       ],
+    );
+  }
+
+  Widget _buildAppointmentCard(Appointment appointment) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 2,
+      child: InkWell(
+        onTap: () => _showAppointmentDetails(appointment),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              // Doctor avatar or placeholder
+              CircleAvatar(
+                radius: 24,
+                backgroundImage:
+                    appointment.doctorAvatarUrl != null
+                        ? CachedNetworkImageProvider(
+                          appointment.doctorAvatarUrl!,
+                        )
+                        : null,
+                child:
+                    appointment.doctorAvatarUrl == null
+                        ? Icon(Icons.person, size: 24, color: Colors.grey[300])
+                        : null,
+              ),
+              const SizedBox(width: 16),
+              // Appointment details
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        // Date and time with icon
+                        Row(
+                          children: [
+                            const Icon(Icons.event, size: 14),
+                            const SizedBox(width: 4),
+                            Text(
+                              appointment.formattedDate,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            const Icon(Icons.access_time, size: 14),
+                            const SizedBox(width: 4),
+                            Text(appointment.formattedTime),
+                          ],
+                        ),
+                        // Status chip
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: appointment.getStatusColor().withOpacity(
+                              0.2,
+                            ),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Text(
+                            appointment.getStatusText(),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: appointment.getStatusColor(),
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    // Doctor name and specialty
+                    Text(
+                      'BS. ${appointment.doctorName}',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      appointment.doctorSpecialty,
+                      style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                    ),
+                    const SizedBox(height: 4),
+                    // Location
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.location_on,
+                          size: 14,
+                          color: Colors.grey[600],
+                        ),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            appointment.location,
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 14,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -975,5 +1143,214 @@ class _HomeScreenState extends State<HomeScreen> {
         context,
       ).showSnackBar(SnackBar(content: Text('Lỗi: $e')));
     }
+  }
+
+  void _showAppointmentDetails(Appointment appointment) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder:
+          (context) => SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Title and status
+                Row(
+                  children: [
+                    const Text(
+                      'Chi tiết lịch hẹn',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: appointment.getStatusColor().withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Text(
+                        appointment.getStatusText(),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: appointment.getStatusColor(),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const Divider(height: 24),
+
+                // Doctor info
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: CircleAvatar(
+                    backgroundImage:
+                        appointment.doctorAvatarUrl != null
+                            ? CachedNetworkImageProvider(
+                              appointment.doctorAvatarUrl!,
+                            )
+                            : null,
+                    child:
+                        appointment.doctorAvatarUrl == null
+                            ? const Icon(Icons.person)
+                            : null,
+                  ),
+                  title: Text('BS. ${appointment.doctorName}'),
+                  subtitle: Text(appointment.doctorSpecialty),
+                ),
+
+                const Divider(height: 24),
+
+                // Date and time
+                _detailRow(Icons.event, 'Ngày', appointment.formattedDate),
+                const SizedBox(height: 12),
+                _detailRow(Icons.access_time, 'Giờ', appointment.formattedTime),
+                const SizedBox(height: 12),
+                _detailRow(Icons.location_on, 'Địa điểm', appointment.location),
+
+                // Notes if available
+                if (appointment.notes != null &&
+                    appointment.notes!.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  _detailRow(Icons.note, 'Ghi chú', appointment.notes!),
+                ],
+
+                const SizedBox(height: 24),
+
+                // Action buttons
+                if (appointment.status == 'scheduled') ...[
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => _cancelAppointment(appointment),
+                          icon: const Icon(Icons.cancel, color: Colors.red),
+                          label: const Text('Hủy lịch hẹn'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.red,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () => _rescheduleAppointment(appointment),
+                          icon: const Icon(Icons.edit_calendar),
+                          label: const Text('Đổi lịch hẹn'),
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+
+                const SizedBox(height: 16),
+              ],
+            ),
+          ),
+    );
+  }
+
+  Widget _detailRow(IconData icon, String label, String value) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 18, color: Colors.grey[700]),
+        const SizedBox(width: 8),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+            ),
+            const SizedBox(height: 2),
+            Text(value, style: const TextStyle(fontSize: 16)),
+          ],
+        ),
+      ],
+    );
+  }
+
+  void _showAppointmentForm() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const BookAppointmentScreen()),
+    ).then((_) => _loadDashboardData());
+  }
+
+  Future<void> _cancelAppointment(Appointment appointment) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Hủy lịch hẹn'),
+            content: Text(
+              'Bạn có chắc chắn muốn hủy lịch hẹn với BS. ${appointment.doctorName} vào ${appointment.formattedDateTime}?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Không'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Có, hủy lịch'),
+              ),
+            ],
+          ),
+    );
+
+    if (confirmed == true) {
+      try {
+        await supabase
+            .from('appointments')
+            .update({'status': 'cancelled'})
+            .eq('id', appointment.id);
+
+        _loadDashboardData(); // Reload data
+
+        if (mounted) {
+          Navigator.pop(context); // Close details sheet
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Đã hủy lịch hẹn thành công')),
+          );
+        }
+      } catch (e) {
+        debugPrint('Lỗi khi hủy lịch hẹn: $e');
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Lỗi khi hủy lịch hẹn: $e')));
+        }
+      }
+    }
+  }
+
+  void _rescheduleAppointment(Appointment appointment) {
+    // Placeholder for reschedule functionality
+    // Would normally navigate to reschedule screen
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Tính năng đổi lịch đang được phát triển')),
+    );
   }
 }

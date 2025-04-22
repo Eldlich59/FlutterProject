@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:patient_application/models/article.dart';
 import 'package:patient_application/main.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:patient_application/screens/create_article_screen.dart';
+import 'package:patient_application/screens/article/create_article_screen.dart';
 
 class ArticlesScreen extends StatefulWidget {
   const ArticlesScreen({super.key});
