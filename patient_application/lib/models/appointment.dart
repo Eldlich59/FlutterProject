@@ -27,16 +27,19 @@ class Appointment {
 
   factory Appointment.fromJson(Map<String, dynamic> json) {
     return Appointment(
-      id: json['id'],
-      patientId: json['patient_id'],
-      doctorId: json['doctor_id'],
-      doctorName: json['doctor_name'],
-      doctorSpecialty: json['doctor_specialty'],
-      doctorAvatarUrl: json['doctor_avatar_url'],
-      dateTime: DateTime.parse(json['date_time']),
-      status: json['status'],
-      notes: json['notes'],
-      location: json['location'],
+      id: json['id'] ?? '',
+      patientId: json['patient_id'] ?? '',
+      doctorId: json['doctor_id'] ?? '',
+      doctorName: json['doctor_name'] ?? '',
+      doctorSpecialty: json['doctor_specialty'] ?? '',
+      doctorAvatarUrl: json['doctor_avatar_url'], // This can be null
+      dateTime:
+          json['date_time'] != null
+              ? DateTime.parse(json['date_time'])
+              : DateTime.now(),
+      status: json['status'] ?? 'scheduled',
+      notes: json['notes'], // This can be null
+      location: json['location'] ?? '',
     );
   }
 

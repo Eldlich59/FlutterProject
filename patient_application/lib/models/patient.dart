@@ -61,25 +61,28 @@ class Patient {
   factory Patient.fromJson(Map<String, dynamic> json) {
     return Patient(
       id: json['id'],
-      fullName: json['full_name'],
-      dateOfBirth: DateTime.parse(json['date_of_birth']),
+      fullName: json['full_name'] ?? '',
+      email: json['email'] ?? '',
+      phoneNumber: json['phone_number'],
+      address: json['address'],
+      dateOfBirth:
+          json['date_of_birth'] != null
+              ? DateTime.parse(json['date_of_birth'])
+              : DateTime(1900, 1, 1), // Default date when null
       gender: json['gender'],
       bloodType: json['blood_type'],
-      address: json['address'],
-      phoneNumber: json['phone_number'],
-      email: json['email'],
-      avatarUrl: json['avatar_url'],
+      height:
+          json['height']?.toDouble(), // Ensure proper conversion from integer
+      weight:
+          json['weight']?.toDouble(), // Ensure proper conversion from integer
       emergencyContact: json['emergency_contact'],
+      avatarUrl: json['avatar_url'],
       allergies:
-          json['allergies'] != null
-              ? List<String>.from(json['allergies'])
-              : null,
+          json['allergies'] != null ? List<String>.from(json['allergies']) : [],
       chronicConditions:
           json['chronic_conditions'] != null
               ? List<String>.from(json['chronic_conditions'])
-              : null,
-      height: json['height']?.toDouble(),
-      weight: json['weight']?.toDouble(),
+              : [],
     );
   }
 
@@ -88,52 +91,50 @@ class Patient {
     return {
       'id': id,
       'full_name': fullName,
-      'date_of_birth': dateOfBirth.toIso8601String(),
-      'gender': gender,
-      'blood_type': bloodType,
-      'address': address,
-      'phone_number': phoneNumber,
       'email': email,
-      'avatar_url': avatarUrl,
+      'phone': phoneNumber,
+      'address': address,
       'emergency_contact': emergencyContact,
-      'allergies': allergies,
-      'chronic_conditions': chronicConditions,
       'height': height,
       'weight': weight,
+      'allergies': allergies,
+      'chronic_conditions': chronicConditions,
+      // Các trường khác...
     };
   }
 
   // Tạo bản sao với các giá trị đã được cập nhật
   Patient copyWith({
+    String? id,
     String? fullName,
     DateTime? dateOfBirth,
     String? gender,
     String? bloodType,
-    String? address,
-    String? phoneNumber,
     String? email,
-    String? avatarUrl,
+    String? phoneNumber,
+    String? address,
     String? emergencyContact,
-    List<String>? allergies,
-    List<String>? chronicConditions,
     double? height,
     double? weight,
+    List<String>? allergies,
+    List<String>? chronicConditions,
+    // Các trường khác...
   }) {
     return Patient(
-      id: id,
+      id: id ?? this.id,
       fullName: fullName ?? this.fullName,
       dateOfBirth: dateOfBirth ?? this.dateOfBirth,
       gender: gender ?? this.gender,
       bloodType: bloodType ?? this.bloodType,
-      address: address ?? this.address,
-      phoneNumber: phoneNumber ?? this.phoneNumber,
       email: email ?? this.email,
-      avatarUrl: avatarUrl ?? this.avatarUrl,
+      phoneNumber: phoneNumber ?? this.phoneNumber,
+      address: address ?? this.address,
       emergencyContact: emergencyContact ?? this.emergencyContact,
-      allergies: allergies ?? this.allergies,
-      chronicConditions: chronicConditions ?? this.chronicConditions,
       height: height ?? this.height,
       weight: weight ?? this.weight,
+      allergies: allergies ?? this.allergies,
+      chronicConditions: chronicConditions ?? this.chronicConditions,
+      // Các trường khác...
     );
   }
 }
