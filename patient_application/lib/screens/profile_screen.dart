@@ -33,6 +33,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _loadPatientData();
   }
 
+  // Thêm didChangeDependencies override
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Tải lại dữ liệu khi màn hình được hiển thị lại
+    _loadPatientData();
+  }
+
   void _initControllers() {
     _fullNameController = TextEditingController();
     _emailController = TextEditingController();
@@ -55,6 +63,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     super.dispose();
   }
 
+  // Thay thế phương thức _loadPatientData() hiện tại
   Future<void> _loadPatientData() async {
     try {
       setState(() {
@@ -66,104 +75,72 @@ class _ProfileScreenState extends State<ProfileScreen> {
         throw Exception('Người dùng chưa đăng nhập');
       }
 
-      try {
-        // Thử tải dữ liệu bệnh nhân
-        final data =
-            await supabase
-                .from('patients')
-                .select()
-                .eq('id', userId)
-                .maybeSingle();
+      debugPrint('Loading data for userId: $userId');
 
-        if (data != null) {
-          // Đã tìm thấy hồ sơ bệnh nhân
+      try {
+        // Sử dụng cách tiếp cận khác để truy vấn
+        final List<dynamic> response = await supabase
+            .from('patients')
+            .select()
+            .eq('id', userId);
+
+        debugPrint('Supabase response: $response');
+
+        if (response.isNotEmpty) {
+          final data = response[0];
+          debugPrint('Patient data found: $data');
+
+          // Log chi tiết từng trường
+          debugPrint(
+            'full_name: ${data['full_name']} (${data['full_name']?.runtimeType})',
+          );
+          debugPrint('email: ${data['email']} (${data['email']?.runtimeType})');
+          debugPrint(
+            'height: ${data['height']} (${data['height']?.runtimeType})',
+          );
+          debugPrint(
+            'weight: ${data['weight']} (${data['weight']?.runtimeType})',
+          );
+          debugPrint(
+            'allergies: ${data['allergies']} (${data['allergies']?.runtimeType})',
+          );
+          debugPrint(
+            'chronic_conditions: ${data['chronic_conditions']} (${data['chronic_conditions']?.runtimeType})',
+          );
+
           setState(() {
             _patient = Patient.fromJson(data);
+
+            // Cập nhật tất cả controller với dữ liệu mới
             _fullNameController.text = _patient?.fullName ?? '';
             _emailController.text = _patient?.email ?? '';
             _phoneController.text = _patient?.phoneNumber ?? '';
             _addressController.text = _patient?.address ?? '';
             _emergencyContactController.text = _patient?.emergencyContact ?? '';
-            _heightController.text = _patient?.height?.toString() ?? '';
-            _weightController.text = _patient?.weight?.toString() ?? '';
+
+            if (_patient?.height != null) {
+              _heightController.text = _patient!.height!.toString();
+            }
+
+            if (_patient?.weight != null) {
+              _weightController.text = _patient!.weight!.toString();
+            }
+
             _allergies = _patient?.allergies?.toList() ?? [];
             _chronicConditions = _patient?.chronicConditions?.toList() ?? [];
+
+            debugPrint('Controllers đã được cập nhật với giá trị mới');
+            debugPrint('fullNameController: ${_fullNameController.text}');
+            debugPrint('heightController: ${_heightController.text}');
           });
         } else {
-          // Không tìm thấy hồ sơ bệnh nhân - tạo một hồ sơ mới
-          debugPrint(
-            'Không tìm thấy hồ sơ bệnh nhân cho người dùng $userId - tạo mới',
-          );
-
-          // Lấy thông tin từ bảng auth.users
-          final authUser = await supabase.auth.getUser();
-          String email = authUser.user?.email ?? '';
-
-          // Tạo bản ghi bệnh nhân mới với các trường cơ bản
-          final patientData = {
-            'id': userId,
-            'full_name': '', // Sẽ yêu cầu người dùng cập nhật
-            'email': email,
-          };
-
-          // Thêm vào cơ sở dữ liệu
-          await supabase.from('patients').insert(patientData);
-
-          // Tạo đối tượng bệnh nhân mới trong ứng dụng
-          setState(() {
-            _patient = Patient(
-              id: userId,
-              fullName: '',
-              email: email,
-              allergies: [],
-              chronicConditions: [],
-              dateOfBirth: DateTime(1900, 1, 1), // Default date instead of null
-              gender: '',
-              bloodType: '',
-              address: '',
-              phoneNumber: '',
-            );
-
-            // Cập nhật controllers
-            _emailController.text = email;
-
-            // Tự động bật chế độ chỉnh sửa để người dùng cập nhật thông tin
-            _isEditing = true;
-          });
+          debugPrint('Không tìm thấy dữ liệu cho userId: $userId');
         }
       } catch (e) {
-        debugPrint('Lỗi khi tải dữ liệu bệnh nhân: $e');
-
-        // Nếu lỗi xảy ra khi truy vấn, tạo đối tượng bệnh nhân trống
-        final userId = supabase.auth.currentUser!.id;
-        final email = supabase.auth.currentUser!.email ?? '';
-
-        setState(() {
-          _patient = Patient(
-            id: userId,
-            fullName: '',
-            email: email,
-            allergies: [],
-            chronicConditions: [],
-            dateOfBirth: DateTime(1900, 1, 1), // Add default date
-            gender: '',
-            bloodType: '',
-            address: '',
-            phoneNumber: '',
-          );
-
-          _emailController.text = email;
-          _isEditing =
-              true; // Bật chế độ chỉnh sửa để người dùng nhập thông tin
-        });
+        debugPrint('Lỗi khi truy vấn dữ liệu bệnh nhân: $e');
       }
     } catch (e) {
       debugPrint('Lỗi khi tải dữ liệu bệnh nhân: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Không thể tải thông tin: $e')));
-      }
     } finally {
       if (mounted) {
         setState(() {
@@ -182,12 +159,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
       });
 
       // Parse height and weight
-      double? height;
-      double? weight;
+      double? heightDouble;
+      double? weightDouble;
+      int? heightInt;
+      int? weightInt;
 
       try {
         if (_heightController.text.trim().isNotEmpty) {
-          height = double.parse(_heightController.text.trim());
+          heightDouble = double.parse(_heightController.text.trim());
+          // Chuyển đổi height từ double sang int để phù hợp với kiểu dữ liệu bigint trong database
+          heightInt = heightDouble.round();
         }
       } catch (e) {
         if (mounted) {
@@ -201,7 +182,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       try {
         if (_weightController.text.trim().isNotEmpty) {
-          weight = double.parse(_weightController.text.trim());
+          weightDouble = double.parse(_weightController.text.trim());
+          // Chuyển đổi weight từ double sang int để phù hợp với kiểu dữ liệu bigint trong database
+          weightInt = weightDouble.round();
         }
       } catch (e) {
         if (mounted) {
@@ -218,13 +201,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
         'full_name': _fullNameController.text.trim(),
       };
 
-      // Chuyển đổi các giá trị số thập phân thành số nguyên cho cơ sở dữ liệu
-      if (height != null) {
-        updateData['height'] = height.toInt(); // Chuyển đổi thành số nguyên
+      // Debug the data before sending
+      debugPrint('About to update patient data: ${_patient!.id}');
+      debugPrint('Height going to DB (as int): $heightInt');
+      debugPrint('Weight going to DB (as int): $weightInt');
+
+      // Cập nhật chiều cao và cân nặng dưới dạng số nguyên (int)
+      if (heightInt != null) {
+        updateData['height'] = heightInt;
       }
 
-      if (weight != null) {
-        updateData['weight'] = weight.toInt(); // Chuyển đổi thành số nguyên
+      if (weightInt != null) {
+        updateData['weight'] = weightInt;
       }
 
       // Xử lý các mảng
@@ -258,27 +246,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
       // Gọi API để cập nhật
       await supabase.from('patients').update(updateData).eq('id', _patient!.id);
 
-      // Cập nhật state - giữ nguyên kiểu double trong model
-      final updatedPatient = _patient!.copyWith(
-        fullName: _fullNameController.text.trim(),
-        email: email.isNotEmpty ? email : null,
-        phoneNumber: phone.isNotEmpty ? phone : null,
-        address: address.isNotEmpty ? address : null,
-        emergencyContact: emergency.isNotEmpty ? emergency : null,
-        height: height, // Giữ nguyên kiểu double trong model
-        weight: weight, // Giữ nguyên kiểu double trong model
-        allergies: _allergies,
-        chronicConditions: _chronicConditions,
-      );
+      // Tải lại dữ liệu từ server để đảm bảo đồng bộ
+      await _loadPatientData();
 
+      // Tắt chế độ chỉnh sửa
       setState(() {
-        _patient = updatedPatient;
         _isEditing = false;
       });
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Thông tin đã được cập nhật')),
+          const SnackBar(content: Text('Cập nhật thông tin thành công')),
         );
       }
     } catch (e) {
@@ -297,12 +275,77 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  Future<void> _debugRawData() async {
+    try {
+      final userId = supabase.auth.currentUser?.id;
+      if (userId == null) {
+        debugPrint('DEBUG: userId is null');
+        return;
+      }
+
+      debugPrint('DEBUG: Fetching data for userId: $userId');
+
+      // Truy vấn trực tiếp không qua .maybeSingle()
+      final response = await supabase
+          .from('patients')
+          .select()
+          .eq('id', userId);
+
+      debugPrint('DEBUG: Raw response from Supabase: $response');
+
+      if (response.isNotEmpty) {
+        debugPrint('DEBUG: First row data: ${response[0]}');
+
+        // Hiển thị dialog với dữ liệu raw
+        if (mounted) {
+          showDialog(
+            context: context,
+            builder:
+                (context) => AlertDialog(
+                  title: const Text('Raw Database Data'),
+                  content: SingleChildScrollView(
+                    child: Text(response[0].toString()),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Đóng'),
+                    ),
+                  ],
+                ),
+          );
+        }
+      } else {
+        debugPrint('DEBUG: No data found');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Không tìm thấy dữ liệu từ database')),
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('DEBUG: Error fetching raw data: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Log thông tin hiện tại của patient và controller
+    debugPrint('Current patient data: ${_patient?.toJson()}');
+    debugPrint(
+      'Current controller values: Name=${_fullNameController.text}, Height=${_heightController.text}',
+    );
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Hồ sơ cá nhân'),
         actions: [
+          // Thêm nút debug
+          IconButton(
+            icon: const Icon(Icons.bug_report),
+            onPressed: _debugRawData,
+            tooltip: 'Debug Database',
+          ),
           if (!_isEditing)
             IconButton(
               icon: const Icon(Icons.edit),

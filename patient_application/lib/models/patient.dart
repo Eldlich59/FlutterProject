@@ -1,4 +1,5 @@
 import 'package:intl/intl.dart';
+import 'package:flutter/foundation.dart';
 
 class Patient {
   final String id;
@@ -57,31 +58,63 @@ class Patient {
     return DateFormat('dd/MM/yyyy').format(dateOfBirth);
   }
 
-  // Factory constructor từ JSON
+  // Enhanced fromJson method with better type handling
   factory Patient.fromJson(Map<String, dynamic> json) {
+    debugPrint('Converting JSON to Patient: $json');
+    // Hiển thị tất cả các khóa có trong JSON
+    debugPrint('JSON keys: ${json.keys.toList()}');
+
+    // Robust height conversion
+    double? heightValue;
+    if (json['height'] != null) {
+      if (json['height'] is int) {
+        heightValue = (json['height'] as int).toDouble();
+      } else if (json['height'] is double) {
+        heightValue = json['height'];
+      } else if (json['height'] is String) {
+        heightValue = double.tryParse(json['height']);
+      }
+    }
+
+    // Robust weight conversion
+    double? weightValue;
+    if (json['weight'] != null) {
+      if (json['weight'] is int) {
+        weightValue = (json['weight'] as int).toDouble();
+      } else if (json['weight'] is double) {
+        weightValue = json['weight'];
+      } else if (json['weight'] is String) {
+        weightValue = double.tryParse(json['weight']);
+      }
+    }
+
     return Patient(
       id: json['id'],
       fullName: json['full_name'] ?? '',
       email: json['email'] ?? '',
-      phoneNumber: json['phone_number'],
-      address: json['address'],
+      phoneNumber: json['phone_number'] ?? '',
+      address: json['address'] ?? '',
       dateOfBirth:
           json['date_of_birth'] != null
               ? DateTime.parse(json['date_of_birth'])
-              : DateTime(1900, 1, 1), // Default date when null
-      gender: json['gender'],
-      bloodType: json['blood_type'],
-      height:
-          json['height']?.toDouble(), // Ensure proper conversion from integer
-      weight:
-          json['weight']?.toDouble(), // Ensure proper conversion from integer
-      emergencyContact: json['emergency_contact'],
+              : DateTime(1900, 1, 1),
+      gender: json['gender'] ?? '',
+      bloodType: json['blood_type'] ?? '',
       avatarUrl: json['avatar_url'],
+      emergencyContact: json['emergency_contact'],
+      height: heightValue,
+      weight: weightValue,
       allergies:
-          json['allergies'] != null ? List<String>.from(json['allergies']) : [],
+          json['allergies'] != null
+              ? (json['allergies'] is List
+                  ? List<String>.from(json['allergies'])
+                  : [])
+              : [],
       chronicConditions:
           json['chronic_conditions'] != null
-              ? List<String>.from(json['chronic_conditions'])
+              ? (json['chronic_conditions'] is List
+                  ? List<String>.from(json['chronic_conditions'])
+                  : [])
               : [],
     );
   }
@@ -92,14 +125,17 @@ class Patient {
       'id': id,
       'full_name': fullName,
       'email': email,
-      'phone': phoneNumber,
+      'phone_number': phoneNumber, // Changed from 'phone' to 'phone_number'
       'address': address,
       'emergency_contact': emergencyContact,
       'height': height,
       'weight': weight,
       'allergies': allergies,
       'chronic_conditions': chronicConditions,
-      // Các trường khác...
+      'date_of_birth': dateOfBirth.toIso8601String(),
+      'gender': gender,
+      'blood_type': bloodType,
+      'avatar_url': avatarUrl,
     };
   }
 
