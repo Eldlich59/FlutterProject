@@ -15,21 +15,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _isLoading = true;
   bool _isEditing = false;
 
-  // Controllers for editing
-  late TextEditingController _fullNameController;
-  late TextEditingController _emailController;
-  late TextEditingController _phoneController;
-  late TextEditingController _addressController;
-  late TextEditingController _emergencyContactController;
-  late TextEditingController _heightController;
-  late TextEditingController _weightController;
+  // Controllers for editing - khởi tạo ngay lập tức
+  TextEditingController _fullNameController = TextEditingController();
+  TextEditingController _emailController = TextEditingController();
+  TextEditingController _phoneController = TextEditingController();
+  TextEditingController _addressController = TextEditingController();
+  TextEditingController _emergencyContactController = TextEditingController();
+  TextEditingController _heightController = TextEditingController();
+  TextEditingController _weightController = TextEditingController();
+  TextEditingController _dateOfBirthController =
+      TextEditingController(); // Khởi tạo ngay
+  String _selectedGender = ''; // Thêm biến cho giới tính
   List<String> _allergies = [];
   List<String> _chronicConditions = [];
 
   @override
   void initState() {
     super.initState();
-    _initControllers();
+    // Không cần gọi _initControllers() vì controllers đã được khởi tạo
     _loadPatientData();
   }
 
@@ -41,16 +44,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _loadPatientData();
   }
 
-  void _initControllers() {
-    _fullNameController = TextEditingController();
-    _emailController = TextEditingController();
-    _phoneController = TextEditingController();
-    _addressController = TextEditingController();
-    _emergencyContactController = TextEditingController();
-    _heightController = TextEditingController();
-    _weightController = TextEditingController();
-  }
-
   @override
   void dispose() {
     _fullNameController.dispose();
@@ -60,10 +53,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _emergencyContactController.dispose();
     _heightController.dispose();
     _weightController.dispose();
+    _dateOfBirthController.dispose(); // Giải phóng controller
     super.dispose();
   }
 
-  // Thay thế phương thức _loadPatientData() hiện tại
   Future<void> _loadPatientData() async {
     try {
       setState(() {
@@ -107,6 +100,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
           debugPrint(
             'chronic_conditions: ${data['chronic_conditions']} (${data['chronic_conditions']?.runtimeType})',
           );
+          debugPrint(
+            'date_of_birth: ${data['date_of_birth']} (${data['date_of_birth']?.runtimeType})',
+          );
+          debugPrint(
+            'gender: ${data['gender']} (${data['gender']?.runtimeType})',
+          );
 
           setState(() {
             _patient = Patient.fromJson(data);
@@ -126,12 +125,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
               _weightController.text = _patient!.weight!.toString();
             }
 
+            // Cập nhật giá trị ngày sinh và giới tính
+            _dateOfBirthController.text = _patient?.formattedDateOfBirth ?? '';
+            _selectedGender = _patient?.gender ?? '';
+
             _allergies = _patient?.allergies?.toList() ?? [];
             _chronicConditions = _patient?.chronicConditions?.toList() ?? [];
 
             debugPrint('Controllers đã được cập nhật với giá trị mới');
-            debugPrint('fullNameController: ${_fullNameController.text}');
-            debugPrint('heightController: ${_heightController.text}');
           });
         } else {
           debugPrint('Không tìm thấy dữ liệu cho userId: $userId');
@@ -167,7 +168,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       try {
         if (_heightController.text.trim().isNotEmpty) {
           heightDouble = double.parse(_heightController.text.trim());
-          // Chuyển đổi height từ double sang int để phù hợp với kiểu dữ liệu bigint trong database
           heightInt = heightDouble.round();
         }
       } catch (e) {
@@ -183,7 +183,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       try {
         if (_weightController.text.trim().isNotEmpty) {
           weightDouble = double.parse(_weightController.text.trim());
-          // Chuyển đổi weight từ double sang int để phù hợp với kiểu dữ liệu bigint trong database
           weightInt = weightDouble.round();
         }
       } catch (e) {
@@ -216,8 +215,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
 
       // Xử lý các mảng
-      updateData['allergies'] = _allergies;
-      updateData['chronic_conditions'] = _chronicConditions;
+      if (_allergies.isNotEmpty) {
+        updateData['allergies'] = _allergies;
+      } else {
+        updateData['allergies'] = []; // Đảm bảo gửi mảng rỗng thay vì null
+      }
+
+      if (_chronicConditions.isNotEmpty) {
+        updateData['chronic_conditions'] = _chronicConditions;
+      } else {
+        updateData['chronic_conditions'] =
+            []; // Đảm bảo gửi mảng rỗng thay vì null
+      }
 
       // Chỉ thêm các trường văn bản khi có giá trị
       final email = _emailController.text.trim();
@@ -240,24 +249,65 @@ class _ProfileScreenState extends State<ProfileScreen> {
         updateData['emergency_contact'] = emergency;
       }
 
+      // Cập nhật giới tính nếu đã chọn
+      if (_selectedGender.isNotEmpty) {
+        updateData['gender'] =
+            _selectedGender; // _selectedGender đã là giá trị tiếng Anh rồi
+      }
+
+      // Cập nhật ngày sinh nếu có
+      final dateOfBirth = _dateOfBirthController.text.trim();
+      if (dateOfBirth.isNotEmpty) {
+        try {
+          // Định dạng ngày: dd/MM/yyyy -> yyyy-MM-dd (định dạng ISO cho database)
+          final parts = dateOfBirth.split('/');
+          if (parts.length == 3) {
+            final day = parts[0].padLeft(2, '0');
+            final month = parts[1].padLeft(2, '0');
+            final year = parts[2];
+            updateData['date_of_birth'] = '$year-$month-$day';
+          }
+        } catch (e) {
+          debugPrint('Lỗi khi chuyển đổi định dạng ngày sinh: $e');
+        }
+      }
+
       // Debug: Ghi log dữ liệu sẽ cập nhật
       debugPrint('Cập nhật dữ liệu: $updateData');
 
-      // Gọi API để cập nhật
-      await supabase.from('patients').update(updateData).eq('id', _patient!.id);
+      // Gọi API để cập nhật với xử lý lỗi chi tiết hơn
+      try {
+        final response =
+            await supabase
+                .from('patients')
+                .update(updateData)
+                .eq('id', _patient!.id)
+                .select(); // Thêm .select() để nhận phản hồi
 
-      // Tải lại dữ liệu từ server để đảm bảo đồng bộ
-      await _loadPatientData();
+        debugPrint('Cập nhật thành công, phản hồi: $response');
 
-      // Tắt chế độ chỉnh sửa
-      setState(() {
-        _isEditing = false;
-      });
+        // Tải lại dữ liệu từ server để đảm bảo đồng bộ
+        await _loadPatientData();
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Cập nhật thông tin thành công')),
-        );
+        // Tắt chế độ chỉnh sửa
+        setState(() {
+          _isEditing = false;
+        });
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Cập nhật thông tin thành công')),
+          );
+        }
+      } catch (supabaseError) {
+        // Xử lý lỗi cụ thể từ Supabase
+        debugPrint('Lỗi Supabase khi cập nhật: $supabaseError');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Lỗi cập nhật: $supabaseError')),
+          );
+        }
+        throw supabaseError; // Ném lại lỗi để outer catch xử lý
       }
     } catch (e) {
       debugPrint('Lỗi khi cập nhật dữ liệu bệnh nhân: $e');
@@ -501,6 +551,61 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       maxLines: 2,
                     ),
+                    const SizedBox(height: 8),
+
+                    // Thêm trường ngày sinh với date picker
+                    GestureDetector(
+                      onTap: () async {
+                        final DateTime? picked = await showDatePicker(
+                          context: context,
+                          initialDate: DateTime.now().subtract(
+                            const Duration(days: 365 * 25),
+                          ), // Mặc định 25 tuổi
+                          firstDate: DateTime(1900),
+                          lastDate: DateTime.now(),
+                        );
+                        if (picked != null) {
+                          setState(() {
+                            // Format ngày theo định dạng dd/MM/yyyy
+                            _dateOfBirthController.text =
+                                '${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}';
+                          });
+                        }
+                      },
+                      child: AbsorbPointer(
+                        child: TextField(
+                          controller: _dateOfBirthController,
+                          decoration: const InputDecoration(
+                            labelText: 'Ngày sinh',
+                            prefixIcon: Icon(Icons.calendar_today),
+                            hintText: 'DD/MM/YYYY',
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Thêm dropdown để chọn giới tính
+                    DropdownButtonFormField<String>(
+                      value:
+                          _selectedGender.isNotEmpty ? _selectedGender : null,
+                      decoration: const InputDecoration(
+                        labelText: 'Giới tính',
+                        prefixIcon: Icon(Icons.person),
+                      ),
+                      items: const [
+                        DropdownMenuItem(value: 'Male', child: Text('Nam')),
+                        DropdownMenuItem(value: 'Female', child: Text('Nữ')),
+                        DropdownMenuItem(value: 'Other', child: Text('Khác')),
+                      ],
+                      onChanged: (value) {
+                        if (value != null) {
+                          setState(() {
+                            _selectedGender = value;
+                          });
+                        }
+                      },
+                    ),
                   ],
                 )
                 : Column(
@@ -509,7 +614,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     _buildInfoRow('Số điện thoại', _patient?.phoneNumber),
                     _buildInfoRow('Địa chỉ', _patient?.address),
                     _buildInfoRow('Ngày sinh', _patient?.formattedDateOfBirth),
-                    _buildInfoRow('Giới tính', _patient?.gender),
+                    _buildInfoRow(
+                      'Giới tính',
+                      _mapGenderToVietnamese(_patient?.gender),
+                    ),
                   ],
                 ),
           ],
@@ -783,5 +891,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
       ],
     );
+  }
+
+  String _mapGenderToVietnamese(String? gender) {
+    if (gender == null) return 'Chưa cập nhật';
+
+    switch (gender) {
+      case 'Male':
+        return 'Nam';
+      case 'Female':
+        return 'Nữ';
+      case 'Other':
+        return 'Khác';
+      default:
+        return gender;
+    }
   }
 }
