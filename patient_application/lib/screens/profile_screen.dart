@@ -526,6 +526,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ? Column(
                   children: [
                     TextField(
+                      controller: _fullNameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Họ và tên',
+                        prefixIcon: Icon(Icons.person),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
                       controller: _emailController,
                       decoration: const InputDecoration(
                         labelText: 'Email',
