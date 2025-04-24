@@ -16,14 +16,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _isEditing = false;
 
   // Controllers for editing - khởi tạo ngay lập tức
-  TextEditingController _fullNameController = TextEditingController();
-  TextEditingController _emailController = TextEditingController();
-  TextEditingController _phoneController = TextEditingController();
-  TextEditingController _addressController = TextEditingController();
-  TextEditingController _emergencyContactController = TextEditingController();
-  TextEditingController _heightController = TextEditingController();
-  TextEditingController _weightController = TextEditingController();
-  TextEditingController _dateOfBirthController =
+  final TextEditingController _fullNameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _addressController = TextEditingController();
+  final TextEditingController _emergencyContactController =
+      TextEditingController();
+  final TextEditingController _heightController = TextEditingController();
+  final TextEditingController _weightController = TextEditingController();
+  final TextEditingController _dateOfBirthController =
       TextEditingController(); // Khởi tạo ngay
   String _selectedGender = ''; // Thêm biến cho giới tính
   List<String> _allergies = [];
@@ -307,7 +308,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             SnackBar(content: Text('Lỗi cập nhật: $supabaseError')),
           );
         }
-        throw supabaseError; // Ném lại lỗi để outer catch xử lý
+        rethrow; // Ném lại lỗi để outer catch xử lý
       }
     } catch (e) {
       debugPrint('Lỗi khi cập nhật dữ liệu bệnh nhân: $e');
