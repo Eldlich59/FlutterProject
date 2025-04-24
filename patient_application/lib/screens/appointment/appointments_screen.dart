@@ -84,6 +84,70 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
     }
   }
 
+  Future<void> _deleteAppointment(Appointment appointment) async {
+    // Kiểm tra nếu lịch hẹn có thể hủy
+    if (appointment.status == 'completed' ||
+        appointment.status == 'cancelled') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Không thể hủy lịch hẹn đã hoàn thành hoặc đã hủy'),
+        ),
+      );
+      return;
+    }
+
+    try {
+      // Hiển thị hộp thoại xác nhận
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder:
+            (context) => AlertDialog(
+              title: const Text('Xác nhận hủy lịch hẹn'),
+              content: Text(
+                'Bạn có chắc chắn muốn hủy lịch hẹn với BS. ${appointment.doctorName} vào ngày ${appointment.formattedDate} lúc ${appointment.formattedTime}?',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Không'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Có, hủy lịch'),
+                ),
+              ],
+            ),
+      );
+
+      if (confirmed != true) return;
+
+      setState(() => _isLoading = true);
+
+      // Xóa lịch hẹn từ cơ sở dữ liệu
+      await supabase.from('appointments').delete().eq('id', appointment.id);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Đã hủy lịch hẹn thành công')),
+        );
+      }
+
+      // Cập nhật lại danh sách lịch hẹn
+      _loadAppointments();
+    } catch (e) {
+      debugPrint('Lỗi khi hủy lịch hẹn: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Không thể hủy lịch hẹn: ${e.toString()}')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -172,6 +236,31 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
                                       ),
                                     ],
                                   ),
+                                ),
+                                // Thêm icon menu
+                                PopupMenuButton<String>(
+                                  icon: const Icon(Icons.more_vert),
+                                  onSelected: (value) {
+                                    if (value == 'delete') {
+                                      _deleteAppointment(appointment);
+                                    }
+                                  },
+                                  itemBuilder:
+                                      (BuildContext context) => [
+                                        const PopupMenuItem<String>(
+                                          value: 'delete',
+                                          child: Row(
+                                            children: [
+                                              Icon(
+                                                Icons.cancel,
+                                                color: Colors.red,
+                                              ),
+                                              SizedBox(width: 8),
+                                              Text('Hủy lịch hẹn'),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
                                 ),
                                 // Status chip
                                 Container(

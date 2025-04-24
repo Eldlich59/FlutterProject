@@ -860,6 +860,7 @@ class _HomeScreenState extends State<HomeScreen> {
             : Column(
               children:
                   _upcomingAppointments
+                      .take(2) // Giới hạn chỉ hiển thị tối đa 2 lịch hẹn
                       .map((appointment) => _buildAppointmentCard(appointment))
                       .toList(),
             ),
