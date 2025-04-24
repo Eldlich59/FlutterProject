@@ -350,61 +350,71 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildQuickActions(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Truy cập nhanh', style: Theme.of(context).textTheme.titleLarge),
-        const SizedBox(height: 16),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            _buildQuickActionItem(
-              icon: Icons.monitor_heart,
-              color: Colors.redAccent,
-              label: 'Chỉ số\nsức khỏe',
-              onTap:
-                  () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const HealthMetricsScreen(),
+    final screenWidth = MediaQuery.of(context).size.width;
+    final itemWidth =
+        (screenWidth - 64) /
+        4; // Tính toán chiều rộng cho mỗi mục (32px padding + khoảng cách)
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Truy cập nhanh', style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildQuickActionItem(
+                icon: Icons.monitor_heart,
+                color: Colors.redAccent,
+                label: 'Chỉ số\nsức khỏe',
+                width: itemWidth,
+                onTap:
+                    () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const HealthMetricsScreen(),
+                      ),
                     ),
-                  ),
-            ),
-            _buildQuickActionItem(
-              icon: Icons.event_available,
-              color: Colors.blueAccent,
-              label: 'Đặt lịch\nkhám',
-              onTap: () {
-                // Chuyển đến màn hình đặt lịch (có thể thêm sau)
-              },
-            ),
-            _buildQuickActionItem(
-              icon: Icons.message,
-              color: Colors.greenAccent,
-              label: 'Chat với\nbác sĩ',
-              onTap:
-                  () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const ChatListScreen(),
+              ),
+              _buildQuickActionItem(
+                icon: Icons.event_available,
+                color: Colors.blueAccent,
+                label: 'Đặt lịch\nkhám',
+                width: itemWidth,
+                onTap: () => _showAppointmentForm(),
+              ),
+              _buildQuickActionItem(
+                icon: Icons.message,
+                color: Colors.greenAccent,
+                label: 'Chat với\nbác sĩ',
+                width: itemWidth,
+                onTap:
+                    () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ChatListScreen(),
+                      ),
                     ),
-                  ),
-            ),
-            _buildQuickActionItem(
-              icon: Icons.assignment_outlined,
-              color: Colors.purpleAccent,
-              label: 'Y bạ\nđiện tử',
-              onTap:
-                  () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const MedicalRecordsScreen(),
+              ),
+              _buildQuickActionItem(
+                icon: Icons.assignment_outlined,
+                color: Colors.purpleAccent,
+                label: 'Y bạ\nđiện tử',
+                width: itemWidth,
+                onTap:
+                    () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const MedicalRecordsScreen(),
+                      ),
                     ),
-                  ),
-            ),
-          ],
-        ),
-      ],
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -413,12 +423,13 @@ class _HomeScreenState extends State<HomeScreen> {
     required Color color,
     required String label,
     required VoidCallback onTap,
+    double? width,
   }) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
       child: Container(
-        width: 80,
+        width: width ?? 80,
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: color.withOpacity(0.1),
@@ -1273,16 +1284,18 @@ class _HomeScreenState extends State<HomeScreen> {
       children: [
         Icon(icon, size: 18, color: Colors.grey[700]),
         const SizedBox(width: 8),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label,
-              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-            ),
-            const SizedBox(height: 2),
-            Text(value, style: const TextStyle(fontSize: 16)),
-          ],
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              ),
+              const SizedBox(height: 2),
+              Text(value, style: const TextStyle(fontSize: 16), softWrap: true),
+            ],
+          ),
         ),
       ],
     );

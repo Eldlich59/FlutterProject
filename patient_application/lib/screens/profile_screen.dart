@@ -252,8 +252,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       // Cập nhật giới tính nếu đã chọn
       if (_selectedGender.isNotEmpty) {
-        updateData['gender'] =
-            _selectedGender; // _selectedGender đã là giá trị tiếng Anh rồi
+        updateData['gender'] = _selectedGender.toLowerCase();
       }
 
       // Cập nhật ngày sinh nếu có
@@ -595,9 +594,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         prefixIcon: Icon(Icons.person),
                       ),
                       items: const [
-                        DropdownMenuItem(value: 'Male', child: Text('Nam')),
-                        DropdownMenuItem(value: 'Female', child: Text('Nữ')),
-                        DropdownMenuItem(value: 'Other', child: Text('Khác')),
+                        DropdownMenuItem(value: 'male', child: Text('Nam')),
+                        DropdownMenuItem(value: 'female', child: Text('Nữ')),
+                        DropdownMenuItem(value: 'other', child: Text('Khác')),
                       ],
                       onChanged: (value) {
                         if (value != null) {
@@ -897,12 +896,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String _mapGenderToVietnamese(String? gender) {
     if (gender == null) return 'Chưa cập nhật';
 
-    switch (gender) {
-      case 'Male':
+    switch (gender.toLowerCase()) {
+      case 'male':
         return 'Nam';
-      case 'Female':
+      case 'female':
         return 'Nữ';
-      case 'Other':
+      case 'other':
         return 'Khác';
       default:
         return gender;
