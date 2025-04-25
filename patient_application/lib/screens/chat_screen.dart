@@ -45,8 +45,46 @@ class _ChatListScreenState extends State<ChatListScreen> {
           .eq('patient_id', userId)
           .order('last_message_time', ascending: false);
 
+      // Debug log to see what we're getting
+      debugPrint('Received ${chatsData.length} chats');
+      debugPrint('Received ${doctorsData.length} doctors');
+
+      // Filter out doctors that already appear in recent chats
+      final Set<String> recentChatDoctorIds = {};
+
+      for (final chat in chatsData) {
+        // Make sure we correctly extract doctor ID from the profiles object
+        if (chat['profiles'] != null && chat['profiles']['id'] != null) {
+          final doctorId = chat['profiles']['id'].toString();
+          debugPrint('Adding doctor ID to filter: $doctorId');
+          recentChatDoctorIds.add(doctorId);
+        } else if (chat['doctor_id'] != null) {
+          // Alternative approach if doctor ID is stored directly
+          final doctorId = chat['doctor_id'].toString();
+          debugPrint('Adding doctor_id to filter: $doctorId');
+          recentChatDoctorIds.add(doctorId);
+        }
+      }
+
+      debugPrint(
+        'Filtered out ${recentChatDoctorIds.length} doctors from all doctors list',
+      );
+
+      // Make sure we're comparing string to string
+      final filteredDoctors =
+          doctorsData
+              .where(
+                (doctor) =>
+                    !recentChatDoctorIds.contains(doctor['id'].toString()),
+              )
+              .toList();
+
+      debugPrint(
+        'Filtered doctors list now has ${filteredDoctors.length} entries',
+      );
+
       setState(() {
-        _doctors = doctorsData;
+        _doctors = filteredDoctors;
         _recentChats = chatsData;
         _isLoading = false;
       });
@@ -59,7 +97,6 @@ class _ChatListScreenState extends State<ChatListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Chat với bác sĩ')),
       body:
           _isLoading
               ? const Center(child: CircularProgressIndicator())

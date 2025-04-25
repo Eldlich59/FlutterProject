@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:patient_application/models/patient.dart';
 import 'package:patient_application/main.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'dart:convert'; // Add this import at the top
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -130,8 +131,73 @@ class _ProfileScreenState extends State<ProfileScreen> {
             _dateOfBirthController.text = _patient?.formattedDateOfBirth ?? '';
             _selectedGender = _patient?.gender ?? '';
 
-            _allergies = _patient?.allergies?.toList() ?? [];
-            _chronicConditions = _patient?.chronicConditions?.toList() ?? [];
+            // Fix: Xử lý dữ liệu dị ứng và bệnh mãn tính
+            // Kiểm tra dữ liệu allergies từ database
+            if (data['allergies'] != null) {
+              debugPrint(
+                'Handling allergies type: ${data['allergies'].runtimeType}',
+              );
+
+              if (data['allergies'] is List) {
+                // Nếu là List, chuyển đổi về List<String>
+                _allergies = List<String>.from(
+                  data['allergies'].map((item) => item.toString()),
+                );
+              } else if (data['allergies'] is String) {
+                // Nếu là String (có thể là JSON string), thử parse
+                try {
+                  final dynamic parsed = jsonDecode(
+                    data['allergies'] as String,
+                  );
+                  if (parsed is List) {
+                    _allergies = List<String>.from(
+                      parsed.map((item) => item.toString()),
+                    );
+                  }
+                } catch (e) {
+                  debugPrint('Error parsing allergies: $e');
+                  _allergies = [];
+                }
+              } else {
+                _allergies = [];
+              }
+            } else {
+              _allergies = [];
+            }
+
+            // Tương tự với bệnh mãn tính
+            if (data['chronic_conditions'] != null) {
+              debugPrint(
+                'Handling chronic conditions type: ${data['chronic_conditions'].runtimeType}',
+              );
+
+              if (data['chronic_conditions'] is List) {
+                _chronicConditions = List<String>.from(
+                  data['chronic_conditions'].map((item) => item.toString()),
+                );
+              } else if (data['chronic_conditions'] is String) {
+                try {
+                  final dynamic parsed = jsonDecode(
+                    data['chronic_conditions'] as String,
+                  );
+                  if (parsed is List) {
+                    _chronicConditions = List<String>.from(
+                      parsed.map((item) => item.toString()),
+                    );
+                  }
+                } catch (e) {
+                  debugPrint('Error parsing chronic conditions: $e');
+                  _chronicConditions = [];
+                }
+              } else {
+                _chronicConditions = [];
+              }
+            } else {
+              _chronicConditions = [];
+            }
+
+            debugPrint('Processed allergies: $_allergies');
+            debugPrint('Processed chronic conditions: $_chronicConditions');
 
             debugPrint('Controllers đã được cập nhật với giá trị mới');
           });
@@ -325,120 +391,112 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  Future<void> _debugRawData() async {
-    try {
-      final userId = supabase.auth.currentUser?.id;
-      if (userId == null) {
-        debugPrint('DEBUG: userId is null');
-        return;
-      }
-
-      debugPrint('DEBUG: Fetching data for userId: $userId');
-
-      // Truy vấn trực tiếp không qua .maybeSingle()
-      final response = await supabase
-          .from('patients')
-          .select()
-          .eq('id', userId);
-
-      debugPrint('DEBUG: Raw response from Supabase: $response');
-
-      if (response.isNotEmpty) {
-        debugPrint('DEBUG: First row data: ${response[0]}');
-
-        // Hiển thị dialog với dữ liệu raw
-        if (mounted) {
-          showDialog(
-            context: context,
-            builder:
-                (context) => AlertDialog(
-                  title: const Text('Raw Database Data'),
-                  content: SingleChildScrollView(
-                    child: Text(response[0].toString()),
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('Đóng'),
-                    ),
-                  ],
-                ),
-          );
-        }
-      } else {
-        debugPrint('DEBUG: No data found');
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Không tìm thấy dữ liệu từ database')),
-          );
-        }
-      }
-    } catch (e) {
-      debugPrint('DEBUG: Error fetching raw data: $e');
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    // Log thông tin hiện tại của patient và controller
-    debugPrint('Current patient data: ${_patient?.toJson()}');
-    debugPrint(
-      'Current controller values: Name=${_fullNameController.text}, Height=${_heightController.text}',
-    );
-
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Hồ sơ cá nhân'),
-        actions: [
-          // Thêm nút debug
-          IconButton(
-            icon: const Icon(Icons.bug_report),
-            onPressed: _debugRawData,
-            tooltip: 'Debug Database',
-          ),
-          if (!_isEditing)
-            IconButton(
-              icon: const Icon(Icons.edit),
-              onPressed: () => setState(() => _isEditing = true),
-            )
-          else
-            IconButton(
-              icon: const Icon(Icons.close),
-              onPressed: () => setState(() => _isEditing = false),
-            ),
-        ],
-      ),
+      floatingActionButton:
+          !_isEditing
+              ? FloatingActionButton(
+                onPressed: () => setState(() => _isEditing = true),
+                backgroundColor: Theme.of(context).primaryColor,
+                child: const Icon(Icons.edit),
+                tooltip: 'Chỉnh sửa thông tin',
+              )
+              : null,
       body:
           _isLoading
               ? const Center(child: CircularProgressIndicator())
               : _patient == null
-              ? const Center(child: Text('Không tìm thấy thông tin bệnh nhân'))
-              : SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildProfileHeader(),
-                    const SizedBox(height: 24),
-                    _buildPersonalInfoSection(),
-                    const SizedBox(height: 24),
-                    _buildMedicalInfoSection(),
-                    const SizedBox(height: 24),
-                    _buildEmergencySection(),
-                    if (_isEditing) ...[
-                      const SizedBox(height: 32),
-                      Center(
-                        child: ElevatedButton(
-                          onPressed: _savePatientData,
-                          style: ElevatedButton.styleFrom(
-                            minimumSize: const Size(200, 45),
-                          ),
-                          child: const Text('Lưu thông tin'),
+              ? _buildEmptyState()
+              : Stack(
+                children: [
+                  RefreshIndicator(
+                    onRefresh: _loadPatientData,
+                    child: SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: EdgeInsets.only(
+                        left: 16,
+                        right: 16,
+                        top: 24,
+                        bottom: _isEditing ? 80 : 16,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildProfileHeader(),
+                          const SizedBox(height: 24),
+                          _buildPersonalInfoSection(),
+                          const SizedBox(height: 24),
+                          _buildMedicalInfoSection(),
+                          const SizedBox(height: 24),
+                          _buildEmergencySection(),
+                          const SizedBox(height: 32),
+                        ],
+                      ),
+                    ),
+                  ),
+                  if (_isEditing)
+                    Positioned(
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 16,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black12,
+                              blurRadius: 8,
+                              offset: const Offset(0, -3),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton(
+                                onPressed:
+                                    () => setState(() => _isEditing = false),
+                                style: OutlinedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 12,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                child: const Text('Huỷ'),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              flex: 2,
+                              child: ElevatedButton(
+                                onPressed: _savePatientData,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor:
+                                      Theme.of(context).primaryColor,
+                                  foregroundColor: Colors.white,
+                                  elevation: 0,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 12,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                child: const Text('Lưu thông tin'),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ],
-                  ],
-                ),
+                    ),
+                ],
               ),
     );
   }
@@ -748,20 +806,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         : 'Chưa cập nhật',
                   ),
                   const SizedBox(height: 8),
-                  Text(
+                  const Text(
                     'Dị ứng',
-                    style: const TextStyle(fontWeight: FontWeight.w500),
+                    style: TextStyle(fontWeight: FontWeight.w500),
                   ),
                   const SizedBox(height: 4),
-                  _buildChipList(_patient?.allergies),
+                  // Use local _allergies list instead of patient.allergies
+                  _buildChipList(_allergies),
 
                   const SizedBox(height: 8),
-                  Text(
+                  const Text(
                     'Bệnh mãn tính',
-                    style: const TextStyle(fontWeight: FontWeight.w500),
+                    style: TextStyle(fontWeight: FontWeight.w500),
                   ),
                   const SizedBox(height: 4),
-                  _buildChipList(_patient?.chronicConditions),
+                  // Use local _chronicConditions list instead of patient.chronicConditions
+                  _buildChipList(_chronicConditions),
                 ],
               ),
           ],
@@ -872,28 +932,44 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ).primaryColor.withOpacity(0.1),
               );
             }),
-            // Input field as a chip
-            InputChip(
-              label: SizedBox(
-                width: 100,
-                child: TextField(
-                  controller: controller,
-                  decoration: InputDecoration(
-                    hintText: hintText,
-                    border: InputBorder.none,
-                    isDense: true,
-                    contentPadding: EdgeInsets.zero,
+            // Add new item field
+            Container(
+              width: 150,
+              margin: const EdgeInsets.only(top: 4),
+              child: TextField(
+                controller: controller,
+                decoration: InputDecoration(
+                  hintText: hintText,
+                  isDense: true,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 8,
                   ),
-                  style: const TextStyle(fontSize: 14),
-                  onSubmitted: (value) {
-                    if (value.isNotEmpty) {
-                      onAdd(value);
-                      controller.clear();
-                    }
-                  },
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(20),
+                    borderSide: BorderSide(
+                      color: Theme.of(context).primaryColor,
+                    ),
+                  ),
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.add, size: 18),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    onPressed: () {
+                      if (controller.text.trim().isNotEmpty) {
+                        onAdd(controller.text.trim());
+                        controller.clear();
+                      }
+                    },
+                  ),
                 ),
+                onSubmitted: (value) {
+                  if (value.trim().isNotEmpty) {
+                    onAdd(value.trim());
+                    controller.clear();
+                  }
+                },
               ),
-              backgroundColor: Colors.grey.withOpacity(0.1),
             ),
           ],
         ),
@@ -914,5 +990,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       default:
         return gender;
     }
+  }
+
+  Widget _buildEmptyState() {
+    return const Center(child: Text('Không tìm thấy thông tin bệnh nhân'));
   }
 }

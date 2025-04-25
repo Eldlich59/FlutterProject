@@ -140,31 +140,35 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Y bạ điện tử'),
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: const [
-            Tab(text: 'Lịch sử khám'),
-            Tab(text: 'Đơn thuốc'),
-            Tab(text: 'Kết quả xét nghiệm'),
-          ],
-        ),
+      body: Column(
+        children: [
+          // Tab bar without AppBar
+          TabBar(
+            controller: _tabController,
+            tabs: const [
+              Tab(text: 'Lịch sử khám'),
+              Tab(text: 'Đơn thuốc'),
+              Tab(text: 'Kết quả xét nghiệm'),
+            ],
+          ),
+          // Content area
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : RefreshIndicator(
+                    onRefresh: _loadMedicalData,
+                    child: TabBarView(
+                      controller: _tabController,
+                      children: [
+                        _buildMedicalHistoryTab(),
+                        _buildPrescriptionsTab(),
+                        _buildTestResultsTab(),
+                      ],
+                    ),
+                  ),
+          ),
+        ],
       ),
-      body:
-          _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : RefreshIndicator(
-                onRefresh: _loadMedicalData,
-                child: TabBarView(
-                  controller: _tabController,
-                  children: [
-                    _buildMedicalHistoryTab(),
-                    _buildPrescriptionsTab(),
-                    _buildTestResultsTab(),
-                  ],
-                ),
-              ),
     );
   }
 

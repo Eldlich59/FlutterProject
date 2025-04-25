@@ -97,27 +97,23 @@ class _ArticlesScreenState extends State<ArticlesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Bản tin sức khỏe'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            tooltip: 'Tạo bài viết mới',
-            onPressed: () async {
-              final result = await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const CreateArticleScreen(),
-                ),
-              );
+      // Removed empty AppBar completely to eliminate unnecessary space
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const CreateArticleScreen(),
+            ),
+          );
 
-              // Refresh the articles list if a new article was created
-              if (result == true) {
-                _loadArticles();
-              }
-            },
-          ),
-        ],
+          // Refresh the articles list if a new article was created
+          if (result == true) {
+            _loadArticles();
+          }
+        },
+        tooltip: 'Tạo bài viết mới',
+        child: const Icon(Icons.add),
       ),
       body:
           _isLoading
