@@ -17,11 +17,39 @@ class _ChatListScreenState extends State<ChatListScreen> {
   List<Map<String, dynamic>> _doctors = [];
   List<Map<String, dynamic>> _recentChats = [];
   bool _isLoading = true;
+  String _searchQuery = ''; // Add search query state
+  final TextEditingController _searchController = TextEditingController(); // Add controller for search
 
   @override
   void initState() {
     super.initState();
     _loadDoctorsAndChats();
+    _searchController.addListener(_onSearchChanged); // Add listener
+  }
+  
+  @override
+  void dispose() {
+    _searchController.removeListener(_onSearchChanged);
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _onSearchChanged() {
+    setState(() {
+      _searchQuery = _searchController.text.toLowerCase();
+    });
+  }
+
+  // Filter doctors based on search query
+  List<Map<String, dynamic>> get _filteredDoctors {
+    if (_searchQuery.isEmpty) {
+      return _doctors;
+    }
+    return _doctors.where((doctor) {
+      final name = doctor['full_name']?.toString().toLowerCase() ?? '';
+      final specialty = doctor['specialty']?.toString().toLowerCase() ?? '';
+      return name.contains(_searchQuery) || specialty.contains(_searchQuery);
+    }).toList();
   }
 
   Future<void> _loadDoctorsAndChats() async {
@@ -32,29 +60,21 @@ class _ChatListScreenState extends State<ChatListScreen> {
       if (userId == null) return;
 
       // Tải danh sách bác sĩ
-      final doctorsData = await supabase
-          .from('profiles')
-          .select()
-          .eq('role', 'doctor')
-          .order('full_name');
+      final doctorsData = await supabase.from('profiles').select().eq('role', 'doctor');
 
       // Tải danh sách cuộc trò chuyện gần đây
       final chatsData = await supabase
           .from('chat_rooms')
-          .select('*, profiles(*)')
+          .select('*, profiles:doctor_id (*)')
           .eq('patient_id', userId)
           .order('last_message_time', ascending: false);
 
-      // Debug log to see what we're getting
-      debugPrint('Received ${chatsData.length} chats');
-      debugPrint('Received ${doctorsData.length} doctors');
-
-      // Filter out doctors that already appear in recent chats
+      // Lọc ra danh sách bác sĩ đã có cuộc trò chuyện gần đây để tránh hiển thị trùng lặp
       final Set<String> recentChatDoctorIds = {};
-
+      
       for (final chat in chatsData) {
-        // Make sure we correctly extract doctor ID from the profiles object
         if (chat['profiles'] != null && chat['profiles']['id'] != null) {
+          // Nếu profiles có id (doctor_id), thêm vào danh sách
           final doctorId = chat['profiles']['id'].toString();
           debugPrint('Adding doctor ID to filter: $doctorId');
           recentChatDoctorIds.add(doctorId);
@@ -144,11 +164,11 @@ class _ChatListScreenState extends State<ChatListScreen> {
                                 ListView.separated(
                                   shrinkWrap: true,
                                   physics: const NeverScrollableScrollPhysics(),
-                                  itemCount: _doctors.length,
+                                  itemCount: _filteredDoctors.length,
                                   separatorBuilder:
                                       (context, index) => const Divider(),
                                   itemBuilder: (context, index) {
-                                    final doctor = _doctors[index];
+                                    final doctor = _filteredDoctors[index];
                                     return _buildDoctorItem(doctor);
                                   },
                                 ),
@@ -157,11 +177,18 @@ class _ChatListScreenState extends State<ChatListScreen> {
                           ),
                         ),
               ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _showCreateChatDialog,
+        tooltip: 'Tạo cuộc trò chuyện mới',
+        heroTag: 'createChatButton',
+        child: const Icon(Icons.add_comment),
+      ),
     );
   }
 
   Widget _buildSearchBar() {
     return TextField(
+      controller: _searchController,
       decoration: InputDecoration(
         hintText: 'Tìm kiếm bác sĩ',
         prefixIcon: const Icon(Icons.search),
@@ -176,9 +203,6 @@ class _ChatListScreenState extends State<ChatListScreen> {
           vertical: 16,
         ),
       ),
-      onChanged: (value) {
-        // Thực hiện tìm kiếm
-      },
     );
   }
 
@@ -309,6 +333,197 @@ class _ChatListScreenState extends State<ChatListScreen> {
               onPressed: _loadDoctorsAndChats,
               icon: const Icon(Icons.refresh),
               label: const Text('Tải lại'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showCreateChatDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Tạo cuộc trò chuyện mới'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextField(
+                controller: _searchController,
+                decoration: const InputDecoration(
+                  labelText: 'Tìm bác sĩ',
+                  prefixIcon: Icon(Icons.search),
+                  hintText: 'Nhập tên hoặc chuyên khoa...',
+                ),
+                onChanged: (value) {
+                  setState(() {
+                    _searchQuery = value.toLowerCase();
+                  });
+                },
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Chọn bác sĩ để bắt đầu cuộc trò chuyện:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Flexible(
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: _filteredDoctors.length > 5 ? 5 : _filteredDoctors.length,
+                  itemBuilder: (context, index) {
+                    final doctor = _filteredDoctors[index];
+                    return ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: CircleAvatar(
+                        backgroundImage:
+                            doctor['avatar_url'] != null
+                                ? CachedNetworkImageProvider(doctor['avatar_url'])
+                                : const AssetImage('assets/images/default_avatar.png') as ImageProvider,
+                      ),
+                      title: Text(doctor['full_name'] ?? 'Bác sĩ'),
+                      subtitle: Text(doctor['specialty'] ?? 'Chuyên khoa'),
+                      onTap: () {
+                        Navigator.pop(context); // Close dialog
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ChatScreen(
+                              doctorId: doctor['id'],
+                              doctorName: doctor['full_name'] ?? 'Bác sĩ',
+                              doctorAvatar: doctor['avatar_url'],
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Hủy'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _showAllDoctorsDialog();
+            },
+            child: const Text('Xem tất cả bác sĩ'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAllDoctorsDialog() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.9,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        expand: false,
+        builder: (context, scrollController) => Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  const Text(
+                    'Danh sách bác sĩ',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: TextField(
+                decoration: InputDecoration(
+                  hintText: 'Tìm kiếm bác sĩ',
+                  prefixIcon: const Icon(Icons.search),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                onChanged: (value) {
+                  setState(() {
+                    _searchQuery = value.toLowerCase();
+                  });
+                },
+              ),
+            ),
+            Expanded(
+              child: ListView.builder(
+                controller: scrollController,
+                padding: const EdgeInsets.all(16),
+                itemCount: _filteredDoctors.length,
+                itemBuilder: (context, index) {
+                  final doctor = _filteredDoctors[index];
+                  return Card(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    child: ListTile(
+                      leading: CircleAvatar(
+                        backgroundImage:
+                            doctor['avatar_url'] != null
+                                ? CachedNetworkImageProvider(doctor['avatar_url'])
+                                : const AssetImage('assets/images/default_avatar.png') as ImageProvider,
+                      ),
+                      title: Text(
+                        doctor['full_name'] ?? 'Bác sĩ',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(doctor['specialty'] ?? 'Chuyên khoa'),
+                          if (doctor['hospital'] != null)
+                            Text(doctor['hospital'], style: const TextStyle(fontSize: 12)),
+                        ],
+                      ),
+                      trailing: ElevatedButton(
+                        onPressed: () {
+                          Navigator.pop(context); // Close modal
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ChatScreen(
+                                doctorId: doctor['id'],
+                                doctorName: doctor['full_name'] ?? 'Bác sĩ',
+                                doctorAvatar: doctor['avatar_url'],
+                              ),
+                            ),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                        ),
+                        child: const Text('Trò chuyện'),
+                      ),
+                    ),
+                  );
+                },
+              ),
             ),
           ],
         ),
