@@ -224,6 +224,7 @@ class _HealthMetricsScreenState extends State<HealthMetricsScreen>
         onPressed: _showAddMetricDialog,
         icon: const Icon(Icons.add),
         label: const Text('Thêm chỉ số'),
+        heroTag: 'healthMetricsButton',
         tooltip: 'Thêm chỉ số mới',
       ),
     );

@@ -399,8 +399,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ? FloatingActionButton(
                 onPressed: () => setState(() => _isEditing = true),
                 backgroundColor: Theme.of(context).primaryColor,
-                child: const Icon(Icons.edit),
                 tooltip: 'Chỉnh sửa thông tin',
+                heroTag: 'profileEditButton',
+                child: const Icon(Icons.edit),
               )
               : null,
       body:

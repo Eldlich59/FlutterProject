@@ -364,6 +364,8 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
               ),
       floatingActionButton: FloatingActionButton(
         onPressed: _navigateToBookAppointment,
+        tooltip: 'Đặt lịch khám',
+        heroTag: 'appointmentsButton',
         child: const Icon(Icons.add),
       ),
     );

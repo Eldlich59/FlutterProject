@@ -56,7 +56,8 @@ class MainNavigationScreen extends StatefulWidget {
   State<MainNavigationScreen> createState() => _MainNavigationScreenState();
 }
 
-class _MainNavigationScreenState extends State<MainNavigationScreen> {
+class _MainNavigationScreenState extends State<MainNavigationScreen>
+    with AutomaticKeepAliveClientMixin {
   int _selectedIndex = 0;
 
   final List<Widget> _screens = [
@@ -76,6 +77,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     'Hồ sơ y tế',
     'Chat với bác sĩ',
   ];
+
+  final PageStorageBucket _bucket = PageStorageBucket();
 
   void _onItemTapped(int index) {
     if (mounted) {
@@ -127,6 +130,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Call super.build for AutomaticKeepAliveClientMixin
+    super.build(context);
+    
     return Scaffold(
       appBar: AppBar(
         title: Text(_titles[_selectedIndex]),
@@ -177,9 +183,15 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           ),
         ],
       ),
-      // Use SafeArea to prevent content from being hidden under system UI
+      // Use PageStorage to maintain scroll position and state
       body: SafeArea(
-        child: IndexedStack(index: _selectedIndex, children: _screens),
+        child: PageStorage(
+          bucket: _bucket,
+          child: IndexedStack(
+            index: _selectedIndex,
+            children: _screens,
+          ),
+        ),
       ),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed, // Needed for more than 3 items
@@ -225,4 +237,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       ),
     );
   }
+
+  @override
+  bool get wantKeepAlive => true;
 }
