@@ -778,34 +778,54 @@ class _ChatScreenState extends State<ChatScreen> {
 
   void _setupMessagesStream() {
     if (_chatRoomId == null) {
-      // Initialize with empty stream if chatRoomId is null
       debugPrint('Không thể thiết lập stream tin nhắn vì chatRoomId là null');
       return;
     }
 
-    _messagesStream = supabase
-        .from('chat_messages')
-        .stream(primaryKey: ['id'])
-        .eq('chat_room_id', _chatRoomId as Object)
-        .order('created_at')
-        .map((events) => events.map((e) => e as Map<String, dynamic>).toList());
-
-    _messagesStream?.listen((messages) {
-      setState(() {
-        _messages = messages;
-      });
-
-      // Cuộn xuống tin nhắn mới nhất
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (_scrollController.hasClients) {
-          _scrollController.animateTo(
-            _scrollController.position.maxScrollExtent,
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeOut,
+    try {
+      _messagesStream = supabase
+          .from('chat_messages')
+          .stream(primaryKey: ['id'])
+          .eq('chat_room_id', _chatRoomId as Object)
+          .order(
+            'created_at',
+            ascending: true,
+          ) // Thay đổi thành ascending: true để tin nhắn cũ hiển thị trên cùng, mới nhất ở dưới
+          .map(
+            (events) => events.map((e) => e as Map<String, dynamic>).toList(),
           );
-        }
-      });
-    });
+
+      _messagesStream?.listen(
+        (messages) {
+          if (mounted) {
+            setState(() {
+              _messages = messages;
+            });
+
+            // Cuộn xuống tin nhắn mới nhất sau khi UI được cập nhật
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (_scrollController.hasClients) {
+                try {
+                  _scrollController.animateTo(
+                    _scrollController.position.maxScrollExtent,
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeOut,
+                  );
+                } catch (e) {
+                  debugPrint('Lỗi khi cuộn xuống tin nhắn mới: $e');
+                }
+              }
+            });
+          }
+        },
+        onError: (error) {
+          debugPrint('Lỗi từ stream tin nhắn: $error');
+        },
+        cancelOnError: false, // Không hủy stream khi có lỗi
+      );
+    } catch (e) {
+      debugPrint('Lỗi khi thiết lập stream tin nhắn: $e');
+    }
   }
 
   Future<void> _loadMessages() async {
@@ -816,7 +836,10 @@ class _ChatScreenState extends State<ChatScreen> {
           .from('chat_messages')
           .select()
           .eq('chat_room_id', _chatRoomId as Object)
-          .order('created_at');
+          .order(
+            'created_at',
+            ascending: true,
+          ); // Thay đổi thành ascending: true để hiển thị tin nhắn cũ ở trên, mới ở dưới
 
       setState(() {
         _messages = messagesData;
@@ -841,39 +864,80 @@ class _ChatScreenState extends State<ChatScreen> {
     final message = _messageController.text.trim();
     if (message.isEmpty || _isSending || _chatRoomId == null) return;
 
+    // Lưu bản sao của tin nhắn để khôi phục nếu có lỗi
+    final messageContent = message;
+
     setState(() => _isSending = true);
     _messageController.clear();
 
     try {
       final userId = supabase.auth.currentUser?.id;
-      if (userId == null) return;
+      if (userId == null) {
+        throw Exception("Người dùng chưa đăng nhập");
+      }
 
-      // Thêm tin nhắn vào cơ sở dữ liệu
+      // Tạo timestamp cho tin nhắn
+      final timestamp = DateTime.now().toIso8601String();
+
+      // Bước 1: Thêm tin nhắn vào cơ sở dữ liệu
       await supabase.from('chat_messages').insert({
         'chat_room_id': _chatRoomId,
         'sender_id': userId,
-        'message': message,
-        'created_at': DateTime.now().toIso8601String(),
+        'message': messageContent,
+        'created_at': timestamp,
       });
 
-      // Cập nhật thông tin phòng chat
-      await supabase
-          .from('chat_rooms')
-          .update({
-            'last_message': message,
-            'last_message_time': DateTime.now().toIso8601String(),
-            'unread_count': 1, // Đối với bác sĩ, tin nhắn này chưa đọc
-          })
-          .eq('id', _chatRoomId as Object);
+      // Bước 2: Cập nhật thông tin phòng chat - Không sử dụng RPC
+      try {
+        // Lấy giá trị unread_doctor hiện tại
+        final chatRoomData =
+            await supabase
+                .from('chat_rooms')
+                .select('unread_doctor')
+                .eq('id', _chatRoomId as Object)
+                .single();
+
+        final currentUnreadCount = chatRoomData['unread_doctor'] ?? 0;
+
+        await supabase
+            .from('chat_rooms')
+            .update({
+              'last_message': messageContent,
+              'last_message_time': timestamp,
+              'unread_count': 1,
+              'unread_doctor':
+                  currentUnreadCount + 1, // Tăng giá trị thay vì dùng RPC
+            })
+            .eq('id', _chatRoomId as Object);
+      } catch (updateError) {
+        // Nếu cập nhật phòng chat gặp lỗi, ghi log nhưng không ảnh hưởng đến người dùng
+        // vì tin nhắn đã được thêm thành công
+        debugPrint('Lỗi khi cập nhật thông tin phòng chat: $updateError');
+        // Không hiển thị lỗi cho người dùng vì tin nhắn vẫn được gửi thành công
+      }
     } catch (e) {
       debugPrint('Lỗi khi gửi tin nhắn: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Không thể gửi tin nhắn. Vui lòng thử lại.'),
-        ),
-      );
+
+      // Khôi phục tin nhắn trong ô nhập liệu nếu gửi thất bại
+      if (mounted) {
+        _messageController.text = messageContent;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Không thể gửi tin nhắn: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            action: SnackBarAction(
+              label: 'Thử lại',
+              textColor: Colors.white,
+              onPressed: () => _sendMessage(),
+            ),
+          ),
+        );
+      }
     } finally {
-      setState(() => _isSending = false);
+      if (mounted) {
+        setState(() => _isSending = false);
+      }
     }
   }
 
