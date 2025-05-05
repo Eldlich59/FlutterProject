@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:patient_application/main.dart';
 import 'package:patient_application/models/doctor.dart';
-import 'package:uuid/uuid.dart';
+import 'package:patient_application/models/hospital.dart';
 
 class BookAppointmentScreen extends StatefulWidget {
   const BookAppointmentScreen({super.key, this.preselectedDoctor});
@@ -17,25 +17,20 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
   bool _isLoadingDoctors = true;
+  bool _isLoadingHospitals = true;
   List<Doctor> _doctors = [];
+  List<Hospital> _hospitals = [];
   Doctor? _selectedDoctor;
+  Hospital? _selectedHospital;
   DateTime _selectedDate = DateTime.now().add(const Duration(days: 1));
   TimeOfDay _selectedTime = const TimeOfDay(hour: 9, minute: 0);
   final TextEditingController _notesController = TextEditingController();
-
-  // Clinic location options
-  final List<String> _clinicLocations = [
-    'Phòng khám Đa khoa ABC, 123 Đường Lê Lợi, Quận 1, TP.HCM',
-    'Bệnh viện Quốc tế XYZ, 456 Đường Nguyễn Huệ, Quận 3, TP.HCM',
-    'Trung tâm Y tế DEF, 789 Đường Võ Văn Tần, Quận 5, TP.HCM',
-  ];
-  String _selectedLocation =
-      'Phòng khám Đa khoa ABC, 123 Đường Lê Lợi, Quận 1, TP.HCM';
 
   @override
   void initState() {
     super.initState();
     _loadDoctors();
+    _loadHospitals();
 
     if (widget.preselectedDoctor != null) {
       _selectedDoctor = widget.preselectedDoctor;
@@ -57,34 +52,6 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
         _doctors =
             doctorsData.map<Doctor>((json) => Doctor.fromJson(json)).toList();
 
-        // If there are no doctors in the database, create some sample data for testing
-        if (_doctors.isEmpty) {
-          _doctors = [
-            Doctor(
-              id: const Uuid().v4(),
-              name: 'Nguyễn Văn A',
-              specialty: 'Nội khoa',
-              avatarUrl: 'https://randomuser.me/api/portraits/men/32.jpg',
-              bio:
-                  'Bác sĩ chuyên khoa Nội tổng quát với hơn 15 năm kinh nghiệm',
-            ),
-            Doctor(
-              id: const Uuid().v4(),
-              name: 'Trần Thị B',
-              specialty: 'Da liễu',
-              avatarUrl: 'https://randomuser.me/api/portraits/women/44.jpg',
-              bio: 'Chuyên gia về các bệnh lý da liễu và thẩm mỹ da',
-            ),
-            Doctor(
-              id: const Uuid().v4(),
-              name: 'Lê Hoàng C',
-              specialty: 'Tim mạch',
-              avatarUrl: 'https://randomuser.me/api/portraits/men/67.jpg',
-              bio: 'Bác sĩ Tim mạch, tốt nghiệp Đại học Y Dược TP.HCM',
-            ),
-          ];
-        }
-
         // If a doctor was preselected, make sure it's in our list
         if (widget.preselectedDoctor != null &&
             !_doctors.any(
@@ -99,37 +66,68 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
         }
       });
     } catch (e) {
-      // If the doctors table doesn't exist yet, continue with sample data
+      // Show error message instead of using sample data
       debugPrint('Error loading doctors: $e');
       setState(() {
-        _doctors = [
-          Doctor(
-            id: '1',
-            name: 'Nguyễn Văn A',
-            specialty: 'Nội khoa',
-            avatarUrl: 'https://randomuser.me/api/portraits/men/32.jpg',
-            bio: 'Bác sĩ chuyên khoa Nội tổng quát với hơn 15 năm kinh nghiệm',
-          ),
-          Doctor(
-            id: '2',
-            name: 'Trần Thị B',
-            specialty: 'Da liễu',
-            avatarUrl: 'https://randomuser.me/api/portraits/women/44.jpg',
-            bio: 'Chuyên gia về các bệnh lý da liễu và thẩm mỹ da',
-          ),
-          Doctor(
-            id: '3',
-            name: 'Lê Hoàng C',
-            specialty: 'Tim mạch',
-            avatarUrl: 'https://randomuser.me/api/portraits/men/67.jpg',
-            bio: 'Bác sĩ Tim mạch, tốt nghiệp Đại học Y Dược TP.HCM',
-          ),
-        ];
-
-        _selectedDoctor ??= _doctors.first;
+        _doctors = [];
+        _selectedDoctor = null;
       });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Không thể tải danh sách bác sĩ. Vui lòng kiểm tra kết nối và thử lại sau.',
+            ),
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
     } finally {
       setState(() => _isLoadingDoctors = false);
+    }
+  }
+
+  Future<void> _loadHospitals() async {
+    setState(() => _isLoadingHospitals = true);
+    try {
+      // Query hospitals from the database
+      final hospitalsData = await supabase
+          .from('hospitals')
+          .select()
+          .eq('is_active', true)
+          .order('name');
+
+      setState(() {
+        _hospitals =
+            hospitalsData
+                .map<Hospital>((json) => Hospital.fromJson(json))
+                .toList();
+
+        if (_hospitals.isNotEmpty) {
+          _selectedHospital = _hospitals.first;
+        }
+      });
+    } catch (e) {
+      // Show error message instead of using sample data
+      debugPrint('Error loading hospitals: $e');
+      setState(() {
+        _hospitals = [];
+        _selectedHospital = null;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Không thể tải danh sách bệnh viện/phòng khám. Vui lòng kiểm tra kết nối và thử lại sau.',
+            ),
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    } finally {
+      setState(() => _isLoadingHospitals = false);
     }
   }
 
@@ -187,6 +185,13 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
       return;
     }
 
+    if (_selectedHospital == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Vui lòng chọn địa điểm khám')),
+      );
+      return;
+    }
+
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
 
@@ -214,7 +219,9 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
           'doctor_avatar_url': _selectedDoctor!.avatarUrl,
           'date_time': appointmentDateTime.toIso8601String(),
           'status': 'scheduled',
-          'location': _selectedLocation,
+          'location': _selectedHospital!.address,
+          'hospital_id': _selectedHospital!.id,
+          'hospital_name': _selectedHospital!.name,
           'notes': _notesController.text.trim(),
         });
 
@@ -245,7 +252,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
       appBar: AppBar(title: const Text('Đặt lịch khám')),
       resizeToAvoidBottomInset: true,
       body:
-          _isLoadingDoctors
+          _isLoadingDoctors || _isLoadingHospitals
               ? const Center(child: CircularProgressIndicator())
               : SafeArea(
                 child: Padding(
@@ -383,8 +390,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                                               fontSize: 14,
                                               color: Colors.grey[700],
                                             ),
-                                            maxLines:
-                                                3, // Giới hạn số dòng cho bio
+                                            maxLines: 3,
                                             overflow: TextOverflow.ellipsis,
                                           ),
                                         ],
@@ -407,7 +413,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                           Row(
                             children: [
                               Expanded(
-                                flex: 1, // Xác định tỉ lệ chia rõ ràng
+                                flex: 1,
                                 child: InkWell(
                                   onTap: () => _selectDate(context),
                                   child: InputDecorator(
@@ -432,11 +438,9 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                                   ),
                                 ),
                               ),
-                              const SizedBox(
-                                width: 12,
-                              ), // Giảm khoảng cách để tránh tràn
+                              const SizedBox(width: 12),
                               Expanded(
-                                flex: 1, // Xác định tỉ lệ chia rõ ràng
+                                flex: 1,
                                 child: InkWell(
                                   onTap: () => _selectTime(context),
                                   child: InputDecorator(
@@ -466,8 +470,8 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                             style: Theme.of(context).textTheme.titleMedium,
                           ),
                           const SizedBox(height: 8),
-                          DropdownButtonFormField<String>(
-                            value: _selectedLocation,
+                          DropdownButtonFormField<Hospital>(
+                            value: _selectedHospital,
                             decoration: InputDecoration(
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
@@ -479,34 +483,107 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                               prefixIcon: const Icon(Icons.location_on),
                             ),
                             isExpanded: true,
-                            isDense: true, // Thêm dòng này giúp giảm chiều cao
+                            isDense: true,
                             menuMaxHeight: 300,
                             icon: const Icon(Icons.arrow_drop_down),
                             items:
-                                _clinicLocations.map((String location) {
-                                  return DropdownMenuItem<String>(
-                                    value: location,
+                                _hospitals.map((Hospital hospital) {
+                                  return DropdownMenuItem<Hospital>(
+                                    value: hospital,
                                     child: Text(
-                                      location,
-                                      maxLines: 1, // Giới hạn chỉ 1 dòng
+                                      '${hospital.name}, ${hospital.address}',
+                                      maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                       style: const TextStyle(fontSize: 14),
                                     ),
                                   );
                                 }).toList(),
-                            onChanged: (String? newValue) {
+                            onChanged: (Hospital? newValue) {
                               if (newValue != null) {
                                 setState(() {
-                                  _selectedLocation = newValue;
+                                  _selectedHospital = newValue;
                                 });
                               }
                             },
                             validator:
                                 (value) =>
-                                    value == null || value.isEmpty
+                                    value == null
                                         ? 'Vui lòng chọn địa điểm khám'
                                         : null,
                           ),
+
+                          if (_selectedHospital != null &&
+                              (_selectedHospital!.description != null ||
+                                  _selectedHospital!.operatingHours !=
+                                      null)) ...[
+                            const SizedBox(height: 8),
+                            Card(
+                              margin: EdgeInsets.zero,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(12),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    if (_selectedHospital!.description != null)
+                                      Text(
+                                        _selectedHospital!.description!,
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: Colors.grey[700],
+                                        ),
+                                      ),
+                                    if (_selectedHospital!.description !=
+                                            null &&
+                                        _selectedHospital!.operatingHours !=
+                                            null)
+                                      const SizedBox(height: 8),
+                                    if (_selectedHospital!.operatingHours !=
+                                        null)
+                                      Row(
+                                        children: [
+                                          const Icon(
+                                            Icons.access_time,
+                                            size: 16,
+                                            color: Colors.grey,
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            _selectedHospital!.operatingHours!,
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              color: Colors.grey[700],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    if (_selectedHospital!.phoneNumber != null)
+                                      const SizedBox(height: 8),
+                                    if (_selectedHospital!.phoneNumber != null)
+                                      Row(
+                                        children: [
+                                          const Icon(
+                                            Icons.phone,
+                                            size: 16,
+                                            color: Colors.grey,
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            _selectedHospital!.phoneNumber!,
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              color: Colors.grey[700],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
 
                           const SizedBox(height: 24),
 
