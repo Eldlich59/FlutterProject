@@ -46,7 +46,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
     if (_searchQuery.isEmpty) {
       return _doctors;
     }
-    // Assuming Supabase columns are 'name' and 'specialty'
+    // Sửa từ 'full_name' thành 'name' cho khớp với model Doctor
     return _doctors.where((doctor) {
       final name = doctor['name']?.toString().toLowerCase() ?? '';
       final specialty = doctor['specialty']?.toString().toLowerCase() ?? '';
