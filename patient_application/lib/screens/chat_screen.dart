@@ -18,7 +18,8 @@ class _ChatListScreenState extends State<ChatListScreen> {
   List<Map<String, dynamic>> _recentChats = [];
   bool _isLoading = true;
   String _searchQuery = ''; // Add search query state
-  final TextEditingController _searchController = TextEditingController(); // Add controller for search
+  final TextEditingController _searchController =
+      TextEditingController(); // Add controller for search
 
   @override
   void initState() {
@@ -26,7 +27,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
     _loadDoctorsAndChats();
     _searchController.addListener(_onSearchChanged); // Add listener
   }
-  
+
   @override
   void dispose() {
     _searchController.removeListener(_onSearchChanged);
@@ -45,9 +46,13 @@ class _ChatListScreenState extends State<ChatListScreen> {
     if (_searchQuery.isEmpty) {
       return _doctors;
     }
+    // Assuming Supabase columns are 'name' and 'specialty'
     return _doctors.where((doctor) {
-      final name = doctor['full_name']?.toString().toLowerCase() ?? '';
+      final name = doctor['name']?.toString().toLowerCase() ?? '';
       final specialty = doctor['specialty']?.toString().toLowerCase() ?? '';
+      debugPrint(
+        'Filtering doctor: Name="$name", Specialty="$specialty", Query="$_searchQuery"',
+      );
       return name.contains(_searchQuery) || specialty.contains(_searchQuery);
     }).toList();
   }
@@ -55,62 +60,126 @@ class _ChatListScreenState extends State<ChatListScreen> {
   Future<void> _loadDoctorsAndChats() async {
     try {
       setState(() => _isLoading = true);
+      debugPrint('Starting to load doctors and chats...');
 
       final userId = supabase.auth.currentUser?.id;
-      if (userId == null) return;
+      if (userId == null) {
+        setState(() {
+          _doctors = [];
+          _recentChats = [];
+          _isLoading = false;
+        });
+        debugPrint('User not logged in. Cannot load doctors or chats.');
+        return;
+      }
+      debugPrint('User ID: $userId');
 
-      // Tải danh sách bác sĩ
-      final doctorsData = await supabase.from('profiles').select().eq('role', 'doctor');
+      // Tải danh sách bác sĩ từ bảng doctors
+      debugPrint('Fetching doctors from Supabase...');
+      final doctorsResponse = await supabase.from('doctors').select();
+      debugPrint('Raw doctors response from Supabase: $doctorsResponse');
 
-      // Tải danh sách cuộc trò chuyện gần đây
-      final chatsData = await supabase
+      List<Map<String, dynamic>> fetchedDoctors =
+          List<Map<String, dynamic>>.from(doctorsResponse);
+      debugPrint('Successfully fetched ${fetchedDoctors.length} doctors.');
+
+      // Tải danh sách chat rooms
+      debugPrint('Fetching chat rooms from Supabase...');
+      final chatsResponse = await supabase
           .from('chat_rooms')
-          .select('*, profiles:doctor_id (*)')
+          .select(
+            'id, patient_id, doctor_id, last_message, last_message_time, unread_count',
+          )
           .eq('patient_id', userId)
           .order('last_message_time', ascending: false);
 
-      // Lọc ra danh sách bác sĩ đã có cuộc trò chuyện gần đây để tránh hiển thị trùng lặp
-      final Set<String> recentChatDoctorIds = {};
-      
-      for (final chat in chatsData) {
-        if (chat['profiles'] != null && chat['profiles']['id'] != null) {
-          // Nếu profiles có id (doctor_id), thêm vào danh sách
-          final doctorId = chat['profiles']['id'].toString();
-          debugPrint('Adding doctor ID to filter: $doctorId');
-          recentChatDoctorIds.add(doctorId);
-        } else if (chat['doctor_id'] != null) {
-          // Alternative approach if doctor ID is stored directly
-          final doctorId = chat['doctor_id'].toString();
-          debugPrint('Adding doctor_id to filter: $doctorId');
-          recentChatDoctorIds.add(doctorId);
+      debugPrint('Raw chat rooms response from Supabase: $chatsResponse');
+      List<Map<String, dynamic>> fetchedChats = List<Map<String, dynamic>>.from(
+        chatsResponse,
+      );
+      debugPrint('Successfully fetched ${fetchedChats.length} recent chats.');
+
+      // Lấy thông tin bác sĩ cho mỗi chat room
+      List<Map<String, dynamic>> enhancedChats = [];
+      final Map<String, Map<String, dynamic>> doctorsMap = {};
+
+      // Tạo một map của bác sĩ dựa trên ID để truy cập nhanh
+      for (final doctor in fetchedDoctors) {
+        if (doctor['id'] != null) {
+          doctorsMap[doctor['id'].toString()] = doctor;
         }
       }
 
-      debugPrint(
-        'Filtered out ${recentChatDoctorIds.length} doctors from all doctors list',
-      );
+      // Thêm thông tin bác sĩ vào cuộc trò chuyện
+      for (final chat in fetchedChats) {
+        final doctorId = chat['doctor_id']?.toString();
+        if (doctorId != null && doctorsMap.containsKey(doctorId)) {
+          final doctorInfo = doctorsMap[doctorId]!;
+          // Thêm thông tin bác sĩ vào chat
+          final enhancedChat = {
+            ...chat,
+            'doctors': doctorInfo, // Thêm thông tin bác sĩ dưới key 'doctors'
+          };
+          enhancedChats.add(enhancedChat);
+          debugPrint(
+            'Added doctor info to chat: ${doctorInfo['name']} (ID: $doctorId)',
+          );
+        } else {
+          debugPrint(
+            'Could not find doctor info for chat with doctor_id: $doctorId',
+          );
+          // Vẫn giữ lại chat mà không có thông tin bác sĩ
+          enhancedChats.add(chat);
+        }
+      }
 
-      // Make sure we're comparing string to string
-      final filteredDoctors =
-          doctorsData
-              .where(
-                (doctor) =>
-                    !recentChatDoctorIds.contains(doctor['id'].toString()),
-              )
-              .toList();
+      // Lấy danh sách ID bác sĩ đã có cuộc trò chuyện
+      final Set<String> recentChatDoctorIds = {};
+      for (final chat in enhancedChats) {
+        if (chat['doctor_id'] != null) {
+          final doctorId = chat['doctor_id'].toString();
+          recentChatDoctorIds.add(doctorId);
+        }
+      }
+      debugPrint('Doctor IDs from recent chats: $recentChatDoctorIds');
+
+      // Lọc danh sách bác sĩ để hiển thị trong phần "Tất cả bác sĩ"
+      final allDoctorsToShow =
+          fetchedDoctors.where((doctor) {
+            final doctorId = doctor['id']?.toString();
+            return doctorId != null && !recentChatDoctorIds.contains(doctorId);
+          }).toList();
 
       debugPrint(
-        'Filtered doctors list now has ${filteredDoctors.length} entries',
+        'Filtered doctors list now has ${allDoctorsToShow.length} entries',
       );
 
       setState(() {
-        _doctors = filteredDoctors;
-        _recentChats = chatsData;
+        _doctors = allDoctorsToShow;
+        _recentChats = enhancedChats;
         _isLoading = false;
       });
-    } catch (e) {
-      debugPrint('Lỗi khi tải danh sách bác sĩ và cuộc trò chuyện: $e');
-      setState(() => _isLoading = false);
+      debugPrint('State updated. isLoading: $_isLoading');
+    } catch (e, stackTrace) {
+      debugPrint('--- ERROR loading doctors/chats ---');
+      debugPrint('Error: $e');
+      debugPrint('StackTrace: $stackTrace');
+      debugPrint('------------------------------------');
+
+      setState(() {
+        _doctors = [];
+        _recentChats = [];
+        _isLoading = false;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi khi tải dữ liệu: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -150,7 +219,8 @@ class _ChatListScreenState extends State<ChatListScreen> {
                                         (context, index) => const Divider(),
                                     itemBuilder: (context, index) {
                                       final chat = _recentChats[index];
-                                      final doctor = chat['profiles'];
+                                      final doctor =
+                                          chat['doctors']; // Thay đổi từ profiles sang doctors
                                       return _buildChatItem(doctor, chat);
                                     },
                                   ),
@@ -207,23 +277,39 @@ class _ChatListScreenState extends State<ChatListScreen> {
   }
 
   Widget _buildChatItem(
-    Map<String, dynamic> doctor,
+    Map<String, dynamic>? doctor, // Make doctor nullable
     Map<String, dynamic> chat,
   ) {
-    final lastMessageTime = DateTime.parse(chat['last_message_time'] ?? '');
+    // Handle cases where doctor data might be missing in the chat relation
+    if (doctor == null) {
+      debugPrint('Chat item is missing doctor data: $chat');
+      // Optionally return an empty container or a placeholder
+      return const SizedBox.shrink(); // Or return a ListTile indicating missing data
+    }
+
+    // Safely access doctor properties, assuming Supabase columns are 'name', 'avatar_url'
+    final doctorName = doctor['name'] ?? 'Bác sĩ không rõ';
+    final doctorAvatar = doctor['avatar_url'];
+    debugPrint(
+      'Building chat item for doctor: $doctorName, Avatar: $doctorAvatar',
+    );
+
+    final lastMessageTime =
+        DateTime.tryParse(chat['last_message_time'] ?? '') ?? DateTime.now();
     final timeAgo = timeago.format(lastMessageTime, locale: 'vi');
+    final unreadCount = chat['unread_count'] ?? 0; // Default to 0 if null
 
     return ListTile(
       leading: CircleAvatar(
         radius: 26,
         backgroundImage:
-            doctor['avatar_url'] != null
-                ? CachedNetworkImageProvider(doctor['avatar_url'])
+            doctorAvatar != null && doctorAvatar.isNotEmpty
+                ? CachedNetworkImageProvider(doctorAvatar)
                 : const AssetImage('assets/images/default_avatar.png')
                     as ImageProvider,
       ),
       title: Text(
-        doctor['full_name'] ?? 'Bác sĩ',
+        doctorName,
         style: const TextStyle(fontWeight: FontWeight.bold),
       ),
       subtitle: Row(
@@ -242,12 +328,12 @@ class _ChatListScreenState extends State<ChatListScreen> {
         ],
       ),
       trailing:
-          chat['unread_count'] > 0
+          unreadCount > 0
               ? CircleAvatar(
                 radius: 10,
                 backgroundColor: Theme.of(context).primaryColor,
                 child: Text(
-                  chat['unread_count'].toString(),
+                  unreadCount.toString(),
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 12,
@@ -257,14 +343,27 @@ class _ChatListScreenState extends State<ChatListScreen> {
               )
               : null,
       onTap: () {
+        // Ensure doctor ID is available before navigating
+        final doctorId = doctor['id']?.toString();
+        if (doctorId == null) {
+          debugPrint('Cannot navigate to chat: Doctor ID is missing.');
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Không thể mở cuộc trò chuyện, thiếu thông tin bác sĩ.',
+              ),
+            ),
+          );
+          return;
+        }
         Navigator.push(
           context,
           MaterialPageRoute(
             builder:
                 (context) => ChatScreen(
-                  doctorId: doctor['id'],
-                  doctorName: doctor['full_name'] ?? 'Bác sĩ',
-                  doctorAvatar: doctor['avatar_url'],
+                  doctorId: doctorId,
+                  doctorName: doctorName, // Use the safe variable
+                  doctorAvatar: doctorAvatar, // Use the safe variable
                   chatRoomId: chat['id'],
                 ),
           ),
@@ -274,24 +373,36 @@ class _ChatListScreenState extends State<ChatListScreen> {
   }
 
   Widget _buildDoctorItem(Map<String, dynamic> doctor) {
+    // Log the data received for this doctor item
+    debugPrint('Building doctor item for "All Doctors": $doctor');
+
+    // IMPORTANT: Ensure these keys match your Supabase 'doctors' table columns!
+    final doctorName = doctor['name'] ?? 'Bác sĩ không rõ';
+    final specialty = doctor['specialty'] ?? 'Chuyên khoa không rõ';
+    final avatarUrl = doctor['avatar_url'];
+    final doctorId = doctor['id']?.toString(); // Get ID for navigation
+
+    if (doctorId == null) {
+      debugPrint(
+        'Skipping doctor item build: Doctor ID is missing. Data: $doctor',
+      );
+      return const SizedBox.shrink(); // Don't build item if ID is missing
+    }
+
     return ListTile(
       leading: CircleAvatar(
         radius: 26,
         backgroundImage:
-            doctor['avatar_url'] != null
-                ? CachedNetworkImageProvider(doctor['avatar_url'])
+            avatarUrl != null && avatarUrl.isNotEmpty
+                ? CachedNetworkImageProvider(avatarUrl)
                 : const AssetImage('assets/images/default_avatar.png')
                     as ImageProvider,
       ),
       title: Text(
-        doctor['full_name'] ?? 'Bác sĩ',
+        doctorName,
         style: const TextStyle(fontWeight: FontWeight.bold),
       ),
-      subtitle: Text(
-        doctor['specialty'] ?? 'Chuyên khoa',
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      ),
+      subtitle: Text(specialty, maxLines: 1, overflow: TextOverflow.ellipsis),
       trailing: const Icon(Icons.chat_bubble_outline),
       onTap: () {
         Navigator.push(
@@ -299,9 +410,10 @@ class _ChatListScreenState extends State<ChatListScreen> {
           MaterialPageRoute(
             builder:
                 (context) => ChatScreen(
-                  doctorId: doctor['id'],
-                  doctorName: doctor['full_name'] ?? 'Bác sĩ',
-                  doctorAvatar: doctor['avatar_url'],
+                  doctorId: doctorId, // Use the retrieved ID
+                  doctorName: doctorName,
+                  doctorAvatar: avatarUrl,
+                  // No chatRoomId needed when starting a new chat from this list
                 ),
           ),
         );
@@ -343,83 +455,93 @@ class _ChatListScreenState extends State<ChatListScreen> {
   void _showCreateChatDialog() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Tạo cuộc trò chuyện mới'),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              TextField(
-                controller: _searchController,
-                decoration: const InputDecoration(
-                  labelText: 'Tìm bác sĩ',
-                  prefixIcon: Icon(Icons.search),
-                  hintText: 'Nhập tên hoặc chuyên khoa...',
-                ),
-                onChanged: (value) {
-                  setState(() {
-                    _searchQuery = value.toLowerCase();
-                  });
-                },
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Chọn bác sĩ để bắt đầu cuộc trò chuyện:',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              Flexible(
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: _filteredDoctors.length > 5 ? 5 : _filteredDoctors.length,
-                  itemBuilder: (context, index) {
-                    final doctor = _filteredDoctors[index];
-                    return ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: CircleAvatar(
-                        backgroundImage:
-                            doctor['avatar_url'] != null
-                                ? CachedNetworkImageProvider(doctor['avatar_url'])
-                                : const AssetImage('assets/images/default_avatar.png') as ImageProvider,
-                      ),
-                      title: Text(doctor['full_name'] ?? 'Bác sĩ'),
-                      subtitle: Text(doctor['specialty'] ?? 'Chuyên khoa'),
-                      onTap: () {
-                        Navigator.pop(context); // Close dialog
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => ChatScreen(
-                              doctorId: doctor['id'],
-                              doctorName: doctor['full_name'] ?? 'Bác sĩ',
-                              doctorAvatar: doctor['avatar_url'],
-                            ),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Tạo cuộc trò chuyện mới'),
+            content: SizedBox(
+              width: double.maxFinite,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextField(
+                    controller: _searchController,
+                    decoration: const InputDecoration(
+                      labelText: 'Tìm bác sĩ',
+                      prefixIcon: Icon(Icons.search),
+                      hintText: 'Nhập tên hoặc chuyên khoa...',
+                    ),
+                    onChanged: (value) {
+                      setState(() {
+                        _searchQuery = value.toLowerCase();
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Chọn bác sĩ để bắt đầu cuộc trò chuyện:',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  Flexible(
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      itemCount:
+                          _filteredDoctors.length > 5
+                              ? 5
+                              : _filteredDoctors.length,
+                      itemBuilder: (context, index) {
+                        final doctor = _filteredDoctors[index];
+                        return ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: CircleAvatar(
+                            backgroundImage:
+                                doctor['avatar_url'] != null
+                                    ? CachedNetworkImageProvider(
+                                      doctor['avatar_url'],
+                                    )
+                                    : const AssetImage(
+                                          'assets/images/default_avatar.png',
+                                        )
+                                        as ImageProvider,
                           ),
+                          title: Text(doctor['name'] ?? 'Bác sĩ'),
+                          subtitle: Text(doctor['specialty'] ?? 'Chuyên khoa'),
+                          onTap: () {
+                            Navigator.pop(context); // Close dialog
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder:
+                                    (context) => ChatScreen(
+                                      doctorId: doctor['id'],
+                                      doctorName: doctor['name'] ?? 'Bác sĩ',
+                                      doctorAvatar: doctor['avatar_url'],
+                                    ),
+                              ),
+                            );
+                          },
                         );
                       },
-                    );
-                  },
-                ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Hủy'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  _showAllDoctorsDialog();
+                },
+                child: const Text('Xem tất cả bác sĩ'),
               ),
             ],
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Hủy'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _showAllDoctorsDialog();
-            },
-            child: const Text('Xem tất cả bác sĩ'),
-          ),
-        ],
-      ),
     );
   }
 
@@ -430,104 +552,121 @@ class _ChatListScreenState extends State<ChatListScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.9,
-        minChildSize: 0.5,
-        maxChildSize: 0.95,
-        expand: false,
-        builder: (context, scrollController) => Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  const Text(
-                    'Danh sách bác sĩ',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                  const Spacer(),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
-            ),
-            const Divider(),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: TextField(
-                decoration: InputDecoration(
-                  hintText: 'Tìm kiếm bác sĩ',
-                  prefixIcon: const Icon(Icons.search),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                onChanged: (value) {
-                  setState(() {
-                    _searchQuery = value.toLowerCase();
-                  });
-                },
-              ),
-            ),
-            Expanded(
-              child: ListView.builder(
-                controller: scrollController,
-                padding: const EdgeInsets.all(16),
-                itemCount: _filteredDoctors.length,
-                itemBuilder: (context, index) {
-                  final doctor = _filteredDoctors[index];
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    child: ListTile(
-                      leading: CircleAvatar(
-                        backgroundImage:
-                            doctor['avatar_url'] != null
-                                ? CachedNetworkImageProvider(doctor['avatar_url'])
-                                : const AssetImage('assets/images/default_avatar.png') as ImageProvider,
-                      ),
-                      title: Text(
-                        doctor['full_name'] ?? 'Bác sĩ',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+      builder:
+          (context) => DraggableScrollableSheet(
+            initialChildSize: 0.9,
+            minChildSize: 0.5,
+            maxChildSize: 0.95,
+            expand: false,
+            builder:
+                (context, scrollController) => Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
                         children: [
-                          Text(doctor['specialty'] ?? 'Chuyên khoa'),
-                          if (doctor['hospital'] != null)
-                            Text(doctor['hospital'], style: const TextStyle(fontSize: 12)),
+                          const Text(
+                            'Danh sách bác sĩ',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const Spacer(),
+                          IconButton(
+                            icon: const Icon(Icons.close),
+                            onPressed: () => Navigator.pop(context),
+                          ),
                         ],
                       ),
-                      trailing: ElevatedButton(
-                        onPressed: () {
-                          Navigator.pop(context); // Close modal
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ChatScreen(
-                                doctorId: doctor['id'],
-                                doctorName: doctor['full_name'] ?? 'Bác sĩ',
-                                doctorAvatar: doctor['avatar_url'],
+                    ),
+                    const Divider(),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: TextField(
+                        decoration: InputDecoration(
+                          hintText: 'Tìm kiếm bác sĩ',
+                          prefixIcon: const Icon(Icons.search),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        onChanged: (value) {
+                          setState(() {
+                            _searchQuery = value.toLowerCase();
+                          });
+                        },
+                      ),
+                    ),
+                    Expanded(
+                      child: ListView.builder(
+                        controller: scrollController,
+                        padding: const EdgeInsets.all(16),
+                        itemCount: _filteredDoctors.length,
+                        itemBuilder: (context, index) {
+                          final doctor = _filteredDoctors[index];
+                          return Card(
+                            margin: const EdgeInsets.only(bottom: 8),
+                            child: ListTile(
+                              leading: CircleAvatar(
+                                backgroundImage:
+                                    doctor['avatar_url'] != null
+                                        ? CachedNetworkImageProvider(
+                                          doctor['avatar_url'],
+                                        )
+                                        : const AssetImage(
+                                              'assets/images/default_avatar.png',
+                                            )
+                                            as ImageProvider,
+                              ),
+                              title: Text(
+                                doctor['name'] ?? 'Bác sĩ',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(doctor['specialty'] ?? 'Chuyên khoa'),
+                                  if (doctor['hospital'] != null)
+                                    Text(
+                                      doctor['hospital'],
+                                      style: const TextStyle(fontSize: 12),
+                                    ),
+                                ],
+                              ),
+                              trailing: ElevatedButton(
+                                onPressed: () {
+                                  Navigator.pop(context); // Close modal
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder:
+                                          (context) => ChatScreen(
+                                            doctorId: doctor['id'],
+                                            doctorName:
+                                                doctor['name'] ?? 'Bác sĩ',
+                                            doctorAvatar: doctor['avatar_url'],
+                                          ),
+                                    ),
+                                  );
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                ),
+                                child: const Text('Trò chuyện'),
                               ),
                             ),
                           );
                         },
-                        style: ElevatedButton.styleFrom(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                        ),
-                        child: const Text('Trò chuyện'),
                       ),
                     ),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
+                  ],
+                ),
+          ),
     );
   }
 }
@@ -558,7 +697,8 @@ class _ChatScreenState extends State<ChatScreen> {
   String? _chatRoomId;
   bool _isLoading = true;
   bool _isSending = false;
-  late Stream<List<Map<String, dynamic>>> _messagesStream;
+  // Change from late to nullable
+  Stream<List<Map<String, dynamic>>>? _messagesStream;
 
   @override
   void initState() {
@@ -605,6 +745,8 @@ class _ChatScreenState extends State<ChatScreen> {
                 'last_message_time': DateTime.now().toIso8601String(),
                 'last_message': '',
                 'unread_count': 0,
+                'unread_doctor': 0, // Số tin nhắn chưa đọc của bác sĩ
+                'unread_patient': 0, // Số tin nhắn chưa đọc của bệnh nhân
               }).select();
 
           if (newRoom.isNotEmpty) {
@@ -613,16 +755,19 @@ class _ChatScreenState extends State<ChatScreen> {
         }
       }
 
-      // Cập nhật trạng thái đã đọc
+      // Cập nhật trạng thái đã đọc cho bệnh nhân
       if (_chatRoomId != null) {
         await supabase
             .from('chat_rooms')
-            .update({'unread_count': 0})
+            .update({'unread_patient': 0})
             .eq('id', _chatRoomId as Object);
       }
 
       // Thiết lập stream để lắng nghe tin nhắn mới
       _setupMessagesStream();
+
+      // Tải tin nhắn cũ
+      await _loadMessages();
 
       setState(() => _isLoading = false);
     } catch (e) {
@@ -632,7 +777,11 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _setupMessagesStream() {
-    if (_chatRoomId == null) return;
+    if (_chatRoomId == null) {
+      // Initialize with empty stream if chatRoomId is null
+      debugPrint('Không thể thiết lập stream tin nhắn vì chatRoomId là null');
+      return;
+    }
 
     _messagesStream = supabase
         .from('chat_messages')
@@ -641,7 +790,7 @@ class _ChatScreenState extends State<ChatScreen> {
         .order('created_at')
         .map((events) => events.map((e) => e as Map<String, dynamic>).toList());
 
-    _messagesStream.listen((messages) {
+    _messagesStream?.listen((messages) {
       setState(() {
         _messages = messages;
       });
@@ -657,6 +806,35 @@ class _ChatScreenState extends State<ChatScreen> {
         }
       });
     });
+  }
+
+  Future<void> _loadMessages() async {
+    if (_chatRoomId == null) return;
+
+    try {
+      final messagesData = await supabase
+          .from('chat_messages')
+          .select()
+          .eq('chat_room_id', _chatRoomId as Object)
+          .order('created_at');
+
+      setState(() {
+        _messages = messagesData;
+      });
+
+      // Cuộn xuống tin nhắn mới nhất
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_scrollController.hasClients) {
+          _scrollController.animateTo(
+            _scrollController.position.maxScrollExtent,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOut,
+          );
+        }
+      });
+    } catch (e) {
+      debugPrint('Lỗi khi tải tin nhắn: $e');
+    }
   }
 
   Future<void> _sendMessage() async {
@@ -733,7 +911,8 @@ class _ChatScreenState extends State<ChatScreen> {
                 children: [
                   Expanded(
                     child: StreamBuilder<List<Map<String, dynamic>>>(
-                      stream: _messagesStream,
+                      // Handle null _messagesStream with an empty stream
+                      stream: _messagesStream ?? Stream.value([]),
                       builder: (context, snapshot) {
                         if (snapshot.connectionState ==
                                 ConnectionState.waiting &&

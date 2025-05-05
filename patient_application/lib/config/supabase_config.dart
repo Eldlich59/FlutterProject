@@ -21,13 +21,12 @@ Future<void> initializeSupabase() async {
             'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN5d2lvamhpaHJka3pwb3JxYmx0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ2MTcxMDAsImV4cCI6MjA2MDE5MzEwMH0.konPbBj9358ZJKKzVktlBmTCOAJWEvEU9fhFPHJjkSo',
       ),
     );
-    
+
     supabaseInitialized = true;
     debugPrint('Supabase initialized successfully');
-    
+
     // Verify tables exist or catch errors
     await _verifyDatabaseTables();
-    
   } catch (e) {
     debugPrint('Error initializing Supabase: $e');
     supabaseInitialized = false;
@@ -40,12 +39,14 @@ Future<void> _verifyDatabaseTables() async {
   try {
     final tables = [
       'patients',
-      'profiles',
+      'doctors',
       'health_metrics',
       'medical_records',
-      'articles'
+      'articles',
+      'chat_rooms',
+      'chat_messages',
     ];
-    
+
     for (final table in tables) {
       try {
         // Try a simple query on each table to verify it exists
@@ -68,7 +69,7 @@ Future<bool> tableExists(String tableName) async {
     return true;
   } catch (e) {
     // If error contains "relation does not exist", table doesn't exist
-    if (e.toString().contains("relation") && 
+    if (e.toString().contains("relation") &&
         e.toString().contains("does not exist")) {
       return false;
     }
