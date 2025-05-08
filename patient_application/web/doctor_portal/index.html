@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctor's Chat Portal</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="styles.css">
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="../favicon.png">
+</head>
+<body>
+    <!-- Selected Doctor Info Bar -->
+    <div id="selected-doctor-bar" class="d-none">
+        <div class="container-fluid">
+            <div class="row align-items-center p-2">
+                <div class="col-auto">
+                    <img id="selected-doctor-avatar" src="" alt="Doctor" class="avatar me-2">
+                </div>
+                <div class="col">
+                    <div id="selected-doctor-name" class="fw-bold mb-0">Tên bác sĩ</div>
+                    <small id="selected-doctor-specialty" class="text-muted">Chuyên khoa</small>
+                </div>
+                <div class="col-auto">
+                    <button id="change-doctor" class="btn btn-sm btn-outline-light">
+                        <i class="fas fa-exchange-alt"></i> Đổi bác sĩ
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container-fluid">
+        <div class="row min-vh-100">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-3 sidebar">
+                <div class="sidebar-header">
+                    <h3>Doctor's Portal</h3>
+                    <span id="doctor-name">Dr. </span>
+                    <span id="connection-status" class="badge bg-secondary">Offline</span>
+                </div>
+                <div class="search-container mb-3">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                        <input type="text" id="search-patient" class="form-control" placeholder="Tìm kiếm bệnh nhân...">
+                    </div>
+                </div>
+                <div class="tabs">
+                    <ul class="nav nav-tabs" id="chatTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="active-tab" data-bs-toggle="tab" data-bs-target="#active-chats" type="button" role="tab">Đang chờ</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="all-tab" data-bs-toggle="tab" data-bs-target="#all-chats" type="button" role="tab">Tất cả</button>
+                        </li>
+                    </ul>
+                </div>
+                <div class="tab-content">
+                    <div class="tab-pane fade show active" id="active-chats" role="tabpanel">
+                        <div class="patient-list" id="waiting-patients">
+                            <!-- Waiting patients will be listed here -->
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="all-chats" role="tabpanel">
+                        <div class="patient-list" id="all-patients">
+                            <!-- All patients will be listed here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Chat Area -->
+            <div class="col-md-9 col-lg-9 chat-area">
+                <!-- Initial state when no chat is selected -->
+                <div id="no-chat-selected" class="h-100 d-flex align-items-center justify-content-center">
+                    <div class="text-center">
+                        <i class="fas fa-comments fa-4x text-muted mb-3"></i>
+                        <h3>Chọn một bệnh nhân để bắt đầu trò chuyện</h3>
+                        <p class="text-muted">Hoặc chờ tin nhắn mới từ bệnh nhân</p>
+                    </div>
+                </div>
+
+                <!-- Chat interface when a patient is selected -->
+                <div id="chat-interface" class="d-none">
+                    <div class="chat-header">
+                        <div class="d-flex align-items-center">
+                            <img id="patient-avatar" src="../icons/Icon-192.png" alt="Patient" class="avatar">
+                            <div>
+                                <h5 id="patient-name" class="mb-0">Tên bệnh nhân</h5>
+                                <small id="patient-info" class="text-muted">Thông tin bệnh nhân</small>
+                            </div>
+                        </div>
+                        <div>
+                            <button class="btn btn-sm btn-outline-secondary" id="view-profile">
+                                <i class="fas fa-user-md"></i> Hồ sơ
+                            </button>
+                            <button class="btn btn-sm btn-outline-primary" id="view-medical-records">
+                                <i class="fas fa-file-medical"></i> Hồ sơ y tế
+                            </button>
+                        </div>
+                    </div>
+                    <div class="chat-messages" id="message-container">
+                        <!-- Messages will be displayed here -->
+                    </div>
+                    <div class="chat-input">
+                        <form id="message-form" class="d-flex align-items-center">
+                            <div class="input-group">
+                                <button type="button" class="btn btn-outline-secondary" id="attach-file">
+                                    <i class="fas fa-paperclip"></i>
+                                </button>
+                                <input type="text" id="message-input" class="form-control" placeholder="Nhập tin nhắn...">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-paper-plane"></i>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Patient Profile Modal -->
+    <div class="modal fade" id="patientProfileModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Thông tin bệnh nhân</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="patient-profile-content">
+                    <!-- Patient profile will be displayed here -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Doctor Selection Modal -->
+    <div class="modal fade" id="doctorSelectionModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Chọn bác sĩ</h5>
+                </div>
+                <div class="modal-body">
+                    <p>Vui lòng chọn một bác sĩ từ danh sách dưới đây để tiếp tục:</p>
+                    <div class="doctor-list" id="doctor-list">
+                        <!-- Doctors will be populated here -->
+                        <div class="text-center">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2">Đang tải danh sách bác sĩ...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Socket.io Client -->
+    <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
+    <!-- Supabase Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Fix Supabase global variable -->
+    <script>
+        // Make supabase client accessible globally
+        const supabaseClient = supabase;
+    </script>
+    <!-- Custom Scripts -->
+    <script src="config.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
