@@ -169,11 +169,59 @@ function selectDoctor(doctor) {
     // Hide the doctor selection modal
     doctorSelectionModal.hide();
     
-    // Show selected doctor info bar
-    updateDoctorBar();
-    
-    // Continue with application initialization
-    handleDoctorSelection();
+    // Ensure doctor exists in the users table before continuing
+    ensureDoctorInUsersTable(doctor).then(() => {
+        // Show selected doctor info bar
+        updateDoctorBar();
+        
+        // Continue with application initialization
+        handleDoctorSelection();
+    }).catch(error => {
+        console.error('Error ensuring doctor in users table:', error);
+        // Still continue with the application even if synchronization fails
+        updateDoctorBar();
+        handleDoctorSelection();
+    });
+}
+
+// Function to ensure that the doctor exists in the users table for authentication purposes
+async function ensureDoctorInUsersTable(doctor) {
+    try {
+        // First check if the doctor already exists in the users table
+        const { data, error } = await supabase
+            .from('users')
+            .select('id')
+            .eq('id', doctor.id)
+            .maybeSingle();
+        
+        // If doctor exists in users table, we're done
+        if (data) {
+            console.log('Doctor already exists in users table');
+            return;
+        }
+        
+        // If user table doesn't exist or doctor isn't in it, create the entry
+        const userData = {
+            id: doctor.id,
+            email: doctor.email || `doctor_${doctor.id}@example.com`,
+            doctor_id: doctor.id,
+            user_type: 'doctor',
+            created_at: new Date().toISOString(),
+            display_name: doctor.name
+        };
+        
+        // Insert the doctor into the users table
+        const { error: insertError } = await supabase
+            .from('users')
+            .upsert([userData]);
+        
+        if (insertError) throw insertError;
+        
+        console.log('Successfully added doctor to users table');
+    } catch (error) {
+        console.error('Error ensuring doctor in users table:', error);
+        throw error; // Re-throw the error to be handled by the caller
+    }
 }
 
 function updateDoctorBar() {
@@ -252,30 +300,74 @@ function handleSocketError(error) {
     connectionStatus.className = 'badge bg-danger';
 }
 
+// Define handleIncomingMessage function to fix the error
+function handleIncomingMessage(data) {
+    if (!data || !data.chatRoomId) return;
+    
+    // Handle incoming message from socket
+    const message = {
+        id: data.messageId || 'socket-' + Date.now(),
+        chat_room_id: data.chatRoomId,
+        sender_id: data.senderId,
+        message: data.message,
+        created_at: data.timestamp || new Date().toISOString()
+    };
+    
+    // Add message to local storage
+    handleNewMessage(message);
+    
+    // Update chat room with latest message
+    updateChatRoom({
+        id: data.chatRoomId,
+        last_message: data.message,
+        last_message_time: data.timestamp || new Date().toISOString(),
+        unread_doctor: data.senderId !== selectedDoctor.id ? 1 : 0
+    });
+}
+
 // Supabase Subscriptions
 function setupSupabaseSubscriptions() {
-    // Subscribe to chat rooms changes
-    supabase
-        .from(REALTIME_SETTINGS.CHAT_ROOM_CHANNEL)
-        .on('*', handleChatRoomChange)
-        .subscribe();
+    try {
+        // Subscribe to chat rooms changes - using the proper Supabase realtime client approach
+        const chatRoomSubscription = supabase
+            .channel(REALTIME_SETTINGS.CHAT_ROOM_CHANNEL)
+            .on('postgres_changes', {
+                event: '*',
+                schema: 'public',
+                table: REALTIME_SETTINGS.CHAT_ROOM_CHANNEL
+            }, handleChatRoomChange)
+            .subscribe();
+        
+        console.log('Successfully subscribed to chat room changes');
+    } catch (error) {
+        console.error('Error setting up Supabase subscriptions:', error);
+    }
     
     // Will set up message subscriptions for individual chat rooms when they are selected
 }
 
 function setupMessageSubscription(chatRoomId) {
     // Unsubscribe from previous subscription if any
-    supabase.removeAllSubscriptions();
-    
-    // Subscribe to new messages for this chat room
-    supabase
-        .from(REALTIME_SETTINGS.CHAT_MESSAGE_CHANNEL)
-        .on('INSERT', payload => {
-            if (payload.new.chat_room_id === chatRoomId) {
+    try {
+        supabase.removeAllChannels();
+        
+        // Subscribe to new messages for this chat room using the proper method
+        const messageSubscription = supabase
+            .channel(`messages-${chatRoomId}`)
+            .on('postgres_changes', {
+                event: 'INSERT',
+                schema: 'public',
+                table: REALTIME_SETTINGS.CHAT_MESSAGE_CHANNEL,
+                filter: `chat_room_id=eq.${chatRoomId}`
+            }, payload => {
                 handleNewMessage(payload.new);
-            }
-        })
-        .subscribe();
+            })
+            .subscribe();
+            
+        console.log(`Successfully subscribed to messages for chat room ${chatRoomId}`);
+    } catch (error) {
+        console.error('Error setting up message subscription:', error);
+    }
 }
 
 // Data Loading Functions
