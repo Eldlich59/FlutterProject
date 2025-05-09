@@ -860,12 +860,8 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
-  Future<void> _sendMessage() async {
-    final message = _messageController.text.trim();
-    if (message.isEmpty || _isSending || _chatRoomId == null) return;
-
-    // Lưu bản sao của tin nhắn để khôi phục nếu có lỗi
-    final messageContent = message;
+  Future<void> _sendMessage(String messageContent) async {
+    if (messageContent.trim().isEmpty) return;
 
     setState(() => _isSending = true);
     _messageController.clear();
@@ -880,9 +876,13 @@ class _ChatScreenState extends State<ChatScreen> {
       final timestamp = DateTime.now().toIso8601String();
 
       // Bước 1: Thêm tin nhắn vào cơ sở dữ liệu
+      // Thêm doctor_id vào tin nhắn để biết tin nhắn được gửi đến bác sĩ nào
       await supabase.from('chat_messages').insert({
         'chat_room_id': _chatRoomId,
         'sender_id': userId,
+        'doctor_id':
+            widget
+                .doctorId, // Thêm doctor_id để biết tin nhắn gửi đến bác sĩ nào
         'message': messageContent,
         'created_at': timestamp,
       });
@@ -929,7 +929,7 @@ class _ChatScreenState extends State<ChatScreen> {
             action: SnackBarAction(
               label: 'Thử lại',
               textColor: Colors.white,
-              onPressed: () => _sendMessage(),
+              onPressed: () => _sendMessage(messageContent),
             ),
           ),
         );
@@ -1043,6 +1043,8 @@ class _ChatScreenState extends State<ChatScreen> {
     final timeString =
         '${messageTime.hour}:${messageTime.minute.toString().padLeft(2, '0')}';
 
+    // Kiểm tra xem tin nhắn có phải của bác sĩ không
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -1140,7 +1142,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   ),
                 ),
                 textInputAction: TextInputAction.send,
-                onSubmitted: (_) => _sendMessage(),
+                onSubmitted: _sendMessage,
               ),
             ),
             const SizedBox(width: 8),
@@ -1161,7 +1163,7 @@ class _ChatScreenState extends State<ChatScreen> {
                           ),
                         )
                         : const Icon(Icons.send, color: Colors.white),
-                onPressed: _sendMessage,
+                onPressed: () => _sendMessage(_messageController.text),
               ),
             ),
           ],

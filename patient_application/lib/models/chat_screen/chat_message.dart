@@ -4,6 +4,7 @@ class ChatMessage {
   final String id;
   final String chatRoomId;
   final String senderId;
+  final String? doctorId; // Thêm trường doctorId để khớp với database
   final String message;
   final DateTime createdAt;
   final bool isRead;
@@ -16,6 +17,7 @@ class ChatMessage {
     required this.id,
     required this.chatRoomId,
     required this.senderId,
+    this.doctorId, // Thêm doctorId vào constructor
     required this.message,
     required this.createdAt,
     this.isRead = false,
@@ -31,6 +33,7 @@ class ChatMessage {
       id: json['id'],
       chatRoomId: json['chat_room_id'],
       senderId: json['sender_id'],
+      doctorId: json['doctor_id'], // Đọc giá trị doctor_id từ JSON
       message: json['message'] ?? '',
       createdAt:
           json['created_at'] != null
@@ -48,6 +51,7 @@ class ChatMessage {
       'id': id,
       'chat_room_id': chatRoomId,
       'sender_id': senderId,
+      'doctor_id': doctorId, // Thêm doctorId vào JSON
       'message': message,
       'created_at': createdAt.toIso8601String(),
       'is_read': isRead,
@@ -61,6 +65,7 @@ class ChatMessage {
     String? id,
     String? chatRoomId,
     String? senderId,
+    String? doctorId, // Thêm doctorId vào copyWith
     String? message,
     DateTime? createdAt,
     bool? isRead,
@@ -71,6 +76,7 @@ class ChatMessage {
       id: id ?? this.id,
       chatRoomId: chatRoomId ?? this.chatRoomId,
       senderId: senderId ?? this.senderId,
+      doctorId: doctorId ?? this.doctorId, // Thêm doctorId vào copyWith
       message: message ?? this.message,
       createdAt: createdAt ?? this.createdAt,
       isRead: isRead ?? this.isRead,

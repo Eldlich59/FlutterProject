@@ -200,6 +200,8 @@ async function ensureDoctorInUsersTable(doctor) {
             return;
         }
         
+        console.log('Doctor does not exist in users table, creating entry...');
+        
         // If user table doesn't exist or doctor isn't in it, create the entry
         const userData = {
             id: doctor.id,
@@ -213,9 +215,12 @@ async function ensureDoctorInUsersTable(doctor) {
         // Insert the doctor into the users table
         const { error: insertError } = await supabase
             .from('users')
-            .upsert([userData]);
+            .upsert([userData], { onConflict: 'id' });
         
-        if (insertError) throw insertError;
+        if (insertError) {
+            console.error('Error inserting doctor into users table:', insertError);
+            throw insertError;
+        }
         
         console.log('Successfully added doctor to users table');
     } catch (error) {
@@ -645,6 +650,7 @@ async function handleSendMessage(event) {
             id: 'temp-' + Date.now(),
             chat_room_id: selectedChatRoom,
             sender_id: selectedDoctor.id,
+            doctor_id: selectedDoctor.id, // Thêm doctor_id để xác định người gửi là bác sĩ
             message: messageText,
             created_at: timestamp
         };
@@ -665,6 +671,7 @@ async function handleSendMessage(event) {
             .insert([{
                 chat_room_id: selectedChatRoom,
                 sender_id: selectedDoctor.id,
+                doctor_id: selectedDoctor.id, // Thêm doctor_id để xác định người gửi là bác sĩ
                 message: messageText,
                 created_at: timestamp
             }]);
@@ -677,6 +684,7 @@ async function handleSendMessage(event) {
                 chatRoomId: selectedChatRoom,
                 message: messageText,
                 senderId: selectedDoctor.id,
+                doctorId: selectedDoctor.id, // Thêm doctorId vào thông tin message socket
                 recipientId: currentPatient.id,
                 timestamp: timestamp
             });
@@ -688,12 +696,22 @@ async function handleSendMessage(event) {
 
 async function updateChatRoomWithMessage(chatRoomId, message, timestamp) {
     try {
+        // Lấy giá trị unread_patient hiện tại
+        const chatRoomData = await supabase
+            .from('chat_rooms')
+            .select('unread_patient')
+            .eq('id', chatRoomId)
+            .single();
+        
+        const currentUnreadCount = chatRoomData['unread_patient'] ?? 0;
+        
+        // Cập nhật phòng chat với giá trị mới
         const { error } = await supabase
             .from('chat_rooms')
             .update({
                 last_message: message,
                 last_message_time: timestamp,
-                unread_patient: supabase.sql('unread_patient + 1')
+                unread_patient: currentUnreadCount + 1 // Tăng giá trị thay vì dùng sql()
             })
             .eq('id', chatRoomId);
         
