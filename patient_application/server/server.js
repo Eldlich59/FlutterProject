@@ -2,6 +2,8 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
+// Import the doctor authentication module
+const { validateDoctor } = require('./doctorAuth');
 
 const app = express();
 app.use(cors());
@@ -17,7 +19,7 @@ const io = new Server(server, {
 // Theo dõi người dùng đã kết nối
 const connectedUsers = {};
 
-io.on('connection', (socket) => {
+io.on('connection', async (socket) => {
   console.log('Người dùng đã kết nối:', socket.id);
   
   // Lưu thông tin người dùng từ xác thực
@@ -25,6 +27,17 @@ io.on('connection', (socket) => {
   const userType = socket.handshake.auth.userType;
   
   if (userId) {
+    // For doctor role, validate without inserting into users table
+    if (userType === 'doctor') {
+      const validation = await validateDoctor(userId);
+      if (!validation.success) {
+        console.log(`Bác sĩ với ID ${userId} không hợp lệ`);
+        socket.disconnect();
+        return;
+      }
+      console.log(`Bác sĩ với ID ${userId} đã xác thực thành công`);
+    }
+    
     connectedUsers[userId] = {
       socketId: socket.id,
       userType: userType

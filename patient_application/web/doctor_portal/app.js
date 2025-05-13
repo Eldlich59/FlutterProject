@@ -149,83 +149,37 @@ function createDoctorListItem(doctor) {
 }
 
 function selectDoctor(doctor) {
-    // Set the selected doctor
-    selectedDoctor = doctor;
-    
-    // Update UI to show selected doctor
-    document.querySelectorAll('.doctor-item').forEach(item => {
-        item.classList.remove('selected');
-    });
-    
-    // Find the doctor item and add selected class
-    const doctorItems = document.querySelectorAll('.doctor-item');
-    for (const item of doctorItems) {
-        const nameElement = item.querySelector('.doctor-name');
-        if (nameElement && nameElement.textContent === doctor.name) {
-            item.classList.add('selected');
-        }
-    }
-    
-    // Hide the doctor selection modal
-    doctorSelectionModal.hide();
-    
-    // Ensure doctor exists in the users table before continuing
-    ensureDoctorInUsersTable(doctor).then(() => {
-        // Show selected doctor info bar
-        updateDoctorBar();
-        
-        // Continue with application initialization
-        handleDoctorSelection();
-    }).catch(error => {
-        console.error('Error ensuring doctor in users table:', error);
-        // Still continue with the application even if synchronization fails
-        updateDoctorBar();
-        handleDoctorSelection();
-    });
-}
-
-// Function to ensure that the doctor exists in the users table for authentication purposes
-async function ensureDoctorInUsersTable(doctor) {
     try {
-        // First check if the doctor already exists in the users table
-        const { data, error } = await supabase
-            .from('users')
-            .select('id')
-            .eq('id', doctor.id)
-            .maybeSingle();
+        // Set the selected doctor
+        selectedDoctor = doctor;
         
-        // If doctor exists in users table, we're done
-        if (data) {
-            console.log('Doctor already exists in users table');
-            return;
+        // Update UI to show selected doctor
+        document.querySelectorAll('.doctor-item').forEach(item => {
+            item.classList.remove('selected');
+        });
+        
+        // Find the doctor item and add selected class
+        const doctorItems = document.querySelectorAll('.doctor-item');
+        for (const item of doctorItems) {
+            const nameElement = item.querySelector('.doctor-name');
+            if (nameElement && nameElement.textContent === doctor.name) {
+                item.classList.add('selected');
+            }
         }
         
-        console.log('Doctor does not exist in users table, creating entry...');
+        // Hide the doctor selection modal
+        doctorSelectionModal.hide();
         
-        // If user table doesn't exist or doctor isn't in it, create the entry
-        const userData = {
-            id: doctor.id,
-            email: doctor.email || `doctor_${doctor.id}@example.com`,
-            doctor_id: doctor.id,
-            user_type: 'doctor',
-            created_at: new Date().toISOString(),
-            display_name: doctor.name
-        };
+        // IMPORTANT: Doctors are no longer synchronized with the users table
+        // We now use doctor_id directly in messages and chat_rooms tables
+        console.log('Doctor selected successfully without users table synchronization');
         
-        // Insert the doctor into the users table
-        const { error: insertError } = await supabase
-            .from('users')
-            .upsert([userData], { onConflict: 'id' });
-        
-        if (insertError) {
-            console.error('Error inserting doctor into users table:', insertError);
-            throw insertError;
-        }
-        
-        console.log('Successfully added doctor to users table');
+        // Continue with the application
+        updateDoctorBar();
+        handleDoctorSelection();
     } catch (error) {
-        console.error('Error ensuring doctor in users table:', error);
-        throw error; // Re-throw the error to be handled by the caller
+        console.error('Error in doctor selection:', error);
+        alert('Có lỗi xảy ra khi chọn bác sĩ. Vui lòng thử lại.');
     }
 }
 
@@ -268,10 +222,10 @@ function handleDoctorSelection() {
 // Socket.io Functions
 function connectSocket() {
     try {
-        // Connect to Socket.io server
+        // Connect to Socket.io server using doctor ID directly - no need to use user ID
         socket = io(SOCKET_URL, {
             auth: {
-                userId: selectedDoctor.id,
+                userId: selectedDoctor.id, // Used as is - no attempt to look up in users table
                 userType: DOCTOR_ROLE
             }
         });
@@ -314,6 +268,7 @@ function handleIncomingMessage(data) {
         id: data.messageId || 'socket-' + Date.now(),
         chat_room_id: data.chatRoomId,
         sender_id: data.senderId,
+        sender_type: data.senderType || (data.senderId === selectedDoctor?.id ? 'doctor' : 'patient'), // Xác định loại người gửi
         message: data.message,
         created_at: data.timestamp || new Date().toISOString()
     };
@@ -511,10 +466,10 @@ function renderMessages(chatRoomId) {
     if (chatMessages.length === 0) {
         messageContainer.innerHTML = '<div class="text-center text-muted my-4">Chưa có tin nhắn. Hãy bắt đầu cuộc trò chuyện.</div>';
         return;
-    }
-    
-    chatMessages.forEach(msg => {
-        const isFromDoctor = msg.sender_id === selectedDoctor.id;
+    }      chatMessages.forEach(msg => {
+        // Xác định tin nhắn từ bác sĩ dựa vào sender_type hoặc sender_id
+        const isFromDoctor = msg.sender_type === 'doctor' || msg.sender_id === selectedDoctor.id;
+            
         const messageDiv = createMessageElement(msg, isFromDoctor);
         messageContainer.appendChild(messageDiv);
     });
@@ -643,14 +598,12 @@ async function handleSendMessage(event) {
     messageInput.value = '';
     
     try {
-        const timestamp = new Date().toISOString();
-        
-        // First add to local UI for immediate feedback
+        const timestamp = new Date().toISOString();        // First add to local UI for immediate feedback
         const newMessage = {
             id: 'temp-' + Date.now(),
             chat_room_id: selectedChatRoom,
-            sender_id: selectedDoctor.id,
-            doctor_id: selectedDoctor.id, // Thêm doctor_id để xác định người gửi là bác sĩ
+            sender_id: selectedDoctor.id, // Sử dụng ID của bác sĩ làm sender_id 
+            sender_type: 'doctor', // Phân biệt loại người gửi
             message: messageText,
             created_at: timestamp
         };
@@ -662,35 +615,33 @@ async function handleSendMessage(event) {
         // Update UI
         renderMessages(selectedChatRoom);
         
-        // Update chat room with latest message
-        await updateChatRoomWithMessage(selectedChatRoom, messageText, timestamp);
+        // Use our new chat utility to send messages without user table synchronization
+        const result = await window.chatUtils.sendChatMessage(
+            supabase, 
+            selectedChatRoom, 
+            selectedDoctor.id, 
+            messageText
+        );
         
-        // Send to Supabase
-        const { data, error } = await supabase
-            .from('chat_messages')
-            .insert([{
-                chat_room_id: selectedChatRoom,
-                sender_id: selectedDoctor.id,
-                doctor_id: selectedDoctor.id, // Thêm doctor_id để xác định người gửi là bác sĩ
-                message: messageText,
-                created_at: timestamp
-            }]);
-        
-        if (error) throw error;
-        
-        // Emit through Socket.io to notify the patient in real-time
+        if (!result.success) {
+            throw new Error('Failed to send message: ' + (result.error?.message || 'Unknown error'));
+        }
+          // Emit through Socket.io to notify the patient in real-time
         if (socket && socket.connected) {
             socket.emit('chat:message', {
                 chatRoomId: selectedChatRoom,
                 message: messageText,
                 senderId: selectedDoctor.id,
-                doctorId: selectedDoctor.id, // Thêm doctorId vào thông tin message socket
+                doctorId: selectedDoctor.id, // Include doctorId in socket message
+                senderType: 'doctor', // Thêm senderType để phân biệt loại người gửi
                 recipientId: currentPatient.id,
                 timestamp: timestamp
             });
         }
     } catch (error) {
         console.error('Error sending message:', error);
+        // Keep the message in the input if sending fails
+        messageInput.value = messageText;
     }
 }
 
