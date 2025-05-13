@@ -34,7 +34,7 @@ class ChatMessage {
       id: json['id'],
       chatRoomId: json['chat_room_id'],
       senderId: json['sender_id'],
-      // Đọc giá trị doctor_id từ JSON
+      senderType: json['sender_type'], // Đọc trường sender_type từ JSON
       message: json['message'] ?? '',
       createdAt:
           json['created_at'] != null
@@ -52,6 +52,7 @@ class ChatMessage {
       'id': id,
       'chat_room_id': chatRoomId,
       'sender_id': senderId,
+      'sender_type': senderType, // Thêm trường sender_type vào JSON
       'message': message,
       'created_at': createdAt.toIso8601String(),
       'is_read': isRead,
@@ -65,7 +66,7 @@ class ChatMessage {
     String? id,
     String? chatRoomId,
     String? senderId,
-    String? doctorId, // Thêm doctorId vào copyWith
+    String? senderType, // Thêm senderType vào copyWith
     String? message,
     DateTime? createdAt,
     bool? isRead,
@@ -76,6 +77,7 @@ class ChatMessage {
       id: id ?? this.id,
       chatRoomId: chatRoomId ?? this.chatRoomId,
       senderId: senderId ?? this.senderId,
+      senderType: senderType ?? this.senderType, // Giữ lại senderType khi copy
       message: message ?? this.message,
       createdAt: createdAt ?? this.createdAt,
       isRead: isRead ?? this.isRead,

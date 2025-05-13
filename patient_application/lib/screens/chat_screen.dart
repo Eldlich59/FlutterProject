@@ -790,19 +790,74 @@ class _ChatScreenState extends State<ChatScreen> {
           .order(
             'created_at',
             ascending: true,
-          ) // Thay đổi thành ascending: true để tin nhắn cũ hiển thị trên cùng, mới nhất ở dưới
-          .map(
-            (events) => events.map((e) => e as Map<String, dynamic>).toList(),
-          );
+          ) // Sử dụng ascending: true để tin nhắn cũ nhất ở đầu danh sách
+          .map((events) {
+            // Sắp xếp lại một lần nữa theo thời gian tạo để đảm bảo thứ tự đúng
+            final sortedEvents =
+                events.map((e) => e as Map<String, dynamic>).toList();
+            sortedEvents.sort((a, b) {
+              final timeA =
+                  DateTime.parse(a['created_at']).millisecondsSinceEpoch;
+              final timeB =
+                  DateTime.parse(b['created_at']).millisecondsSinceEpoch;
 
+              // First compare by timestamp
+              final timeCompare = timeA.compareTo(timeB);
+              if (timeCompare != 0) return timeCompare;
+
+              // If timestamps are identical, compare by ID to ensure stable ordering
+              return (a['id'] ?? '').toString().compareTo(
+                (b['id'] ?? '').toString(),
+              );
+            });
+            return sortedEvents;
+          });
       _messagesStream?.listen(
         (messages) {
           if (mounted) {
+            // Đảm bảo tin nhắn được sắp xếp theo thời gian tạo
+            final sortedMessages = List<Map<String, dynamic>>.from(messages);
+            sortedMessages.sort((a, b) {
+              final timeA =
+                  DateTime.parse(a['created_at']).millisecondsSinceEpoch;
+              final timeB =
+                  DateTime.parse(b['created_at']).millisecondsSinceEpoch;
+
+              // First compare by timestamp
+              final timeCompare = timeA.compareTo(timeB);
+              if (timeCompare != 0) return timeCompare;
+
+              // If timestamps are identical, compare by ID to ensure stable ordering
+              return (a['id'] ?? '').toString().compareTo(
+                (b['id'] ?? '').toString(),
+              );
+            }); // Log thứ tự tin nhắn sau khi sắp xếp
+            debugPrint(
+              '========== Thứ tự tin nhắn sau khi sắp xếp: ==========',
+            );
+            for (var i = 0; i < sortedMessages.length; i++) {
+              final msg = sortedMessages[i];
+              final time = DateTime.parse(msg['created_at']);
+              final sender =
+                  msg['sender_id'] == supabase.auth.currentUser?.id
+                      ? 'Bệnh nhân'
+                      : 'Bác sĩ';
+              final msgId = msg['id'] ?? 'unknown';
+              final timeMs = time.millisecondsSinceEpoch;
+              debugPrint(
+                '[$i] ${time.toIso8601String()} ($timeMs): $sender - ID: $msgId - "${msg['message']}"',
+              );
+            }
+            debugPrint(
+              '======================================================',
+            );
+
             setState(() {
-              _messages = messages;
+              _messages = sortedMessages;
             });
 
-            // Cuộn xuống tin nhắn mới nhất sau khi UI được cập nhật
+            // Scroll to bottom to show newest messages after a brief delay
+            // to ensure layout is complete
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (_scrollController.hasClients) {
                 try {
@@ -812,7 +867,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     curve: Curves.easeOut,
                   );
                 } catch (e) {
-                  debugPrint('Lỗi khi cuộn xuống tin nhắn mới: $e');
+                  debugPrint('Lỗi khi cuộn đến tin nhắn mới: $e');
                 }
               }
             });
@@ -839,13 +894,26 @@ class _ChatScreenState extends State<ChatScreen> {
           .order(
             'created_at',
             ascending: true,
-          ); // Thay đổi thành ascending: true để hiển thị tin nhắn cũ ở trên, mới ở dưới
+          ); // Sử dụng ascending: true để tin nhắn cũ nhất ở đầu danh sách      // Đảm bảo tin nhắn được sắp xếp đúng theo thời gian tạo
+      final List<Map<String, dynamic>> sortedMessages =
+          List<Map<String, dynamic>>.from(messagesData);
+      sortedMessages.sort((a, b) {
+        final timeA = DateTime.parse(a['created_at']).millisecondsSinceEpoch;
+        final timeB = DateTime.parse(b['created_at']).millisecondsSinceEpoch;
 
-      setState(() {
-        _messages = messagesData;
+        // First compare by timestamp
+        final timeCompare = timeA.compareTo(timeB);
+        if (timeCompare != 0) return timeCompare;
+
+        // If timestamps are identical, compare by ID to ensure stable ordering
+        return (a['id'] ?? '').toString().compareTo((b['id'] ?? '').toString());
       });
 
-      // Cuộn xuống tin nhắn mới nhất
+      setState(() {
+        _messages = sortedMessages;
+      });
+
+      // Scroll to the bottom to see newest messages
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (_scrollController.hasClients) {
           _scrollController.animateTo(
@@ -941,6 +1009,95 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  // Kiểm tra xem có nên thêm khoảng cách giữa các tin nhắn không
+  bool _shouldAddExtraSpace(
+    List<Map<String, dynamic>> messages,
+    int currentIndex,
+  ) {
+    if (currentIndex == 0) {
+      return true; // Tin nhắn đầu tiên cần khoảng cách phía trên
+    }
+
+    // Lấy người gửi của tin nhắn hiện tại và tin nhắn trước đó
+    final currentSenderId = messages[currentIndex]['sender_id'];
+    final previousSenderId = messages[currentIndex - 1]['sender_id'];
+
+    // Thêm khoảng cách nếu người gửi khác nhau
+    if (currentSenderId != previousSenderId) {
+      debugPrint(
+        'Thêm khoảng cách vì tin nhắn từ người gửi khác nhau: $currentIndex',
+      );
+      return true;
+    }
+
+    // Thêm khoảng cách nếu tin nhắn cách nhau quá lâu (>5 phút) dù cùng người gửi
+    try {
+      final currentMsgTime = DateTime.parse(
+        messages[currentIndex]['created_at'],
+      );
+      final prevMsgTime = DateTime.parse(
+        messages[currentIndex - 1]['created_at'],
+      );
+      final timeDiff = currentMsgTime.difference(prevMsgTime).inMinutes;
+
+      if (timeDiff > 5) {
+        debugPrint(
+          'Thêm khoảng cách vì tin nhắn cách nhau quá lâu: $timeDiff phút',
+        );
+        return true;
+      }
+    } catch (e) {
+      debugPrint('Lỗi khi kiểm tra thời gian giữa các tin nhắn: $e');
+    }
+
+    // Mặc định là không thêm khoảng cách
+    return false;
+  }
+
+  // Create a widget to display timestamp between messages
+  Widget _buildTimestampWidget(DateTime timestamp) {
+    // Format the timestamp - show full date if not today, otherwise just time
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final messageDay = DateTime(timestamp.year, timestamp.month, timestamp.day);
+
+    String timeText;
+    if (messageDay == today) {
+      // Today, just show time
+      timeText =
+          '${timestamp.hour.toString().padLeft(2, '0')}:${timestamp.minute.toString().padLeft(2, '0')}';
+    } else if (messageDay == today.subtract(const Duration(days: 1))) {
+      // Yesterday
+      timeText =
+          'Hôm qua, ${timestamp.hour.toString().padLeft(2, '0')}:${timestamp.minute.toString().padLeft(2, '0')}';
+    } else {
+      // Another day
+      timeText =
+          '${timestamp.day}/${timestamp.month}/${timestamp.year}, ${timestamp.hour.toString().padLeft(2, '0')}:${timestamp.minute.toString().padLeft(2, '0')}';
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16.0),
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade200,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Text(
+            timeText,
+            style: TextStyle(
+              color: Colors.grey.shade700,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -1015,8 +1172,7 @@ class _ChatScreenState extends State<ChatScreen> {
                               ],
                             ),
                           );
-                        }
-
+                        } // Hiển thị tin nhắn từ trên xuống dưới (cũ ở trên, mới ở dưới)
                         return ListView.builder(
                           controller: _scrollController,
                           padding: const EdgeInsets.all(16),
@@ -1026,7 +1182,43 @@ class _ChatScreenState extends State<ChatScreen> {
                             final userId = supabase.auth.currentUser?.id;
                             final isMe = message['sender_id'] == userId;
 
-                            return _buildMessageBubble(message, isMe);
+                            // Thêm khoảng cách phía trên nếu tin nhắn có người gửi khác với tin nhắn trước đó
+                            final bool shouldAddExtraSpace =
+                                _shouldAddExtraSpace(messages, index);
+
+                            // Debug log để theo dõi thứ tự tin nhắn
+                            debugPrint(
+                              'Hiển thị tin nhắn thứ $index: ${message['message']}, Từ: ${isMe ? 'Bệnh nhân' : 'Bác sĩ'}',
+                            );
+
+                            // Add timestamp widget if there's a significant time gap
+                            final bool shouldAddTimestamp =
+                                index == 0 ||
+                                (index > 0 &&
+                                    DateTime.parse(message['created_at'])
+                                            .difference(
+                                              DateTime.parse(
+                                                messages[index -
+                                                    1]['created_at'],
+                                              ),
+                                            )
+                                            .inMinutes >
+                                        5);
+
+                            return Column(
+                              children: [
+                                if (shouldAddTimestamp)
+                                  _buildTimestampWidget(
+                                    DateTime.parse(message['created_at']),
+                                  ),
+                                _buildMessageBubble(message, isMe),
+                                // Add a small space between consecutive messages from same sender
+                                if (index < messages.length - 1 &&
+                                    message['sender_id'] ==
+                                        messages[index + 1]['sender_id'])
+                                  const SizedBox(height: 4),
+                              ],
+                            );
                           },
                         );
                       },
@@ -1043,15 +1235,19 @@ class _ChatScreenState extends State<ChatScreen> {
     final timeString =
         '${messageTime.hour}:${messageTime.minute.toString().padLeft(2, '0')}';
 
-    // Kiểm tra xem tin nhắn có phải của bác sĩ không
+    // Debug log để xem thông tin tin nhắn
+    debugPrint(
+      'Message: ${message['message']}, From: ${isMe ? 'Me' : 'Doctor'}, Time: ${message['created_at']} (${messageTime.millisecondsSinceEpoch})',
+    );
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
         mainAxisAlignment:
             isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
+          // Chỉ hiển thị avatar của bác sĩ ở bên trái khi tin nhắn từ bác sĩ
           if (!isMe) ...[
             CircleAvatar(
               radius: 16,
@@ -1063,7 +1259,17 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
             const SizedBox(width: 8),
           ],
-          Flexible(
+
+          // Khoảng trống cố định ở bên trái cho tin nhắn của bệnh nhân để căn chỉnh
+          if (isMe) const SizedBox(width: 40),
+
+          // Message bubble with constrained width
+          ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth:
+                  MediaQuery.of(context).size.width *
+                  0.7, // Limit bubble width to 70% of screen
+            ),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
@@ -1071,7 +1277,20 @@ class _ChatScreenState extends State<ChatScreen> {
                     isMe
                         ? Theme.of(context).primaryColor
                         : Colors.grey.shade200,
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(isMe ? 20 : 5),
+                  topRight: Radius.circular(isMe ? 5 : 20),
+                  bottomLeft: Radius.circular(20),
+                  bottomRight: Radius.circular(20),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.08),
+                    blurRadius: 4,
+                    offset: const Offset(0, 1),
+                    spreadRadius: 0.5,
+                  ),
+                ],
               ),
               child: Column(
                 crossAxisAlignment:
@@ -1079,7 +1298,10 @@ class _ChatScreenState extends State<ChatScreen> {
                 children: [
                   Text(
                     message['message'] ?? '',
-                    style: TextStyle(color: isMe ? Colors.white : Colors.black),
+                    style: TextStyle(
+                      color: isMe ? Colors.white : Colors.black87,
+                      fontSize: 15,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -1096,7 +1318,9 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
             ),
           ),
-          if (isMe) const SizedBox(width: 24),
+
+          // Khoảng trống cố định ở bên phải cho tin nhắn của bác sĩ để căn chỉnh
+          if (!isMe) const SizedBox(width: 40),
         ],
       ),
     );
