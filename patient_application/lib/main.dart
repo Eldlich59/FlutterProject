@@ -132,7 +132,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
   Widget build(BuildContext context) {
     // Call super.build for AutomaticKeepAliveClientMixin
     super.build(context);
-    
+
     return Scaffold(
       appBar: AppBar(
         title: Text(_titles[_selectedIndex]),
@@ -187,10 +187,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
       body: SafeArea(
         child: PageStorage(
           bucket: _bucket,
-          child: IndexedStack(
-            index: _selectedIndex,
-            children: _screens,
-          ),
+          child: IndexedStack(index: _selectedIndex, children: _screens),
         ),
       ),
       bottomNavigationBar: BottomNavigationBar(

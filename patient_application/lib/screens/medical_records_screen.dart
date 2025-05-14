@@ -153,19 +153,20 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen>
           ),
           // Content area
           Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : RefreshIndicator(
-                    onRefresh: _loadMedicalData,
-                    child: TabBarView(
-                      controller: _tabController,
-                      children: [
-                        _buildMedicalHistoryTab(),
-                        _buildPrescriptionsTab(),
-                        _buildTestResultsTab(),
-                      ],
+            child:
+                _isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : RefreshIndicator(
+                      onRefresh: _loadMedicalData,
+                      child: TabBarView(
+                        controller: _tabController,
+                        children: [
+                          _buildMedicalHistoryTab(),
+                          _buildPrescriptionsTab(),
+                          _buildTestResultsTab(),
+                        ],
+                      ),
                     ),
-                  ),
           ),
         ],
       ),

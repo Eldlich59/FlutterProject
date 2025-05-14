@@ -1183,8 +1183,7 @@ class _ChatScreenState extends State<ChatScreen> {
                             final isMe = message['sender_id'] == userId;
 
                             // Thêm khoảng cách phía trên nếu tin nhắn có người gửi khác với tin nhắn trước đó
-                            final bool shouldAddExtraSpace =
-                                _shouldAddExtraSpace(messages, index);
+                            _shouldAddExtraSpace(messages, index);
 
                             // Debug log để theo dõi thứ tự tin nhắn
                             debugPrint(
