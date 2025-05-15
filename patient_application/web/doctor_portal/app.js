@@ -297,57 +297,32 @@ function setupSupabaseSubscriptions() {
                 table: REALTIME_SETTINGS.CHAT_ROOM_CHANNEL
             }, handleChatRoomChange)
             .subscribe();
-            
-        // Global subscription for all new messages to selected doctor
-        // This ensures we get notified of ALL incoming messages regardless of which chat room is active
-        const globalMessageSubscription = supabase
-            .channel('global-messages')
-            .on('postgres_changes', {
-                event: 'INSERT',
-                schema: 'public',
-                table: REALTIME_SETTINGS.CHAT_MESSAGE_CHANNEL,
-                filter: `doctor_id=eq.${selectedDoctor?.id}`
-            }, payload => {
-                console.log('New message received via global subscription:', payload.new);
-                handleGlobalMessage(payload.new);
-            })
-            .subscribe();
         
-        console.log('Successfully subscribed to chat room changes and global messages');
+        console.log('Successfully subscribed to chat room changes');
     } catch (error) {
         console.error('Error setting up Supabase subscriptions:', error);
     }
     
-    // Will set up additional message subscriptions for individual chat rooms when they are selected
+    // Will set up message subscriptions for individual chat rooms when they are selected
 }
 
 function setupMessageSubscription(chatRoomId) {
-    // Store current channel name to avoid duplicate subscriptions
-    window.currentMessageChannel = `messages-${chatRoomId}`;
-    
+    // Unsubscribe from previous subscription if any
     try {
-        // Remove only the specific channel for previous chat room if exists
-        if (window.previousMessageChannel) {
-            supabase.channel(window.previousMessageChannel).unsubscribe();
-            console.log(`Unsubscribed from previous channel: ${window.previousMessageChannel}`);
-        }
+        supabase.removeAllChannels();
         
-        // Subscribe to new messages for this chat room
+        // Subscribe to new messages for this chat room using the proper method
         const messageSubscription = supabase
-            .channel(window.currentMessageChannel)
+            .channel(`messages-${chatRoomId}`)
             .on('postgres_changes', {
                 event: 'INSERT',
                 schema: 'public',
                 table: REALTIME_SETTINGS.CHAT_MESSAGE_CHANNEL,
                 filter: `chat_room_id=eq.${chatRoomId}`
             }, payload => {
-                console.log('New message received via realtime subscription:', payload.new);
                 handleNewMessage(payload.new);
             })
             .subscribe();
-        
-        // Save this channel name for future cleanup
-        window.previousMessageChannel = window.currentMessageChannel;
             
         console.log(`Successfully subscribed to messages for chat room ${chatRoomId}`);
     } catch (error) {
@@ -498,9 +473,10 @@ function renderMessages(chatRoomId) {
         const messageDiv = createMessageElement(msg, isFromDoctor);
         messageContainer.appendChild(messageDiv);
     });
-    
-    // Scroll to bottom
-    messageContainer.scrollTop = messageContainer.scrollHeight;
+      // Enhanced scroll to bottom with delay to ensure DOM is fully updated
+    setTimeout(() => {
+        messageContainer.scrollTop = messageContainer.scrollHeight;
+    }, 100);
 }
 
 function createMessageElement(message, isFromDoctor) {
@@ -636,9 +612,13 @@ async function handleSendMessage(event) {
         // Add to local messages
         if (!messages[selectedChatRoom]) messages[selectedChatRoom] = [];
         messages[selectedChatRoom].push(newMessage);
-        
-        // Update UI
+          // Update UI
         renderMessages(selectedChatRoom);
+        
+        // Make sure to scroll to the bottom after sending
+        if (window.scrollUtils) {
+            window.scrollUtils.scrollMessageContainerToBottom();
+        }
         
         // Use our new chat utility to send messages without user table synchronization
         const result = await window.chatUtils.sendChatMessage(
@@ -793,27 +773,19 @@ async function loadPatientInfo(patientId) {
 }
 
 function handleNewMessage(message) {
-    console.log('Processing new message:', message);
-    
     // Add message to local state
     if (!messages[message.chat_room_id]) {
         messages[message.chat_room_id] = [];
     }
     
-    // Check if message already exists (avoid duplicates)
-    const messageExists = messages[message.chat_room_id].some(msg => msg.id === message.id);
-    if (messageExists) {
-        console.log('Message already exists in chat history, skipping', message.id);
-        return;
-    }
-    
     messages[message.chat_room_id].push(message);
-    
-    // If this is for the currently selected chat, render it
+      // If this is for the currently selected chat, render it
     if (selectedChatRoom === message.chat_room_id) {
         renderMessages(message.chat_room_id);
-        // Mark as read since we're viewing it
-        markAsRead(message.chat_room_id);
+        // Add an extra scroll to ensure new messages are visible
+        setTimeout(() => {
+            messageContainer.scrollTop = messageContainer.scrollHeight;
+        }, 200);
     }
 }
 
@@ -841,9 +813,11 @@ function showTypingIndicator() {
     typingDiv.id = 'typing-indicator';
     typingDiv.className = 'message message-received';
     typingDiv.innerHTML = '<div>Bệnh nhân đang nhập...</div>';
-    
-    messageContainer.appendChild(typingDiv);
-    messageContainer.scrollTop = messageContainer.scrollHeight;
+      messageContainer.appendChild(typingDiv);
+    // Enhanced scroll to bottom with delay to ensure DOM is fully updated
+    setTimeout(() => {
+        messageContainer.scrollTop = messageContainer.scrollHeight;
+    }, 100);
 }
 
 function hideTypingIndicator() {
@@ -954,62 +928,4 @@ function formatDate(dateString) {
     
     const date = new Date(dateString);
     return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`;
-}
-
-function handleGlobalMessage(message) {
-    console.log('Processing new message from global subscription:', message);
-    
-    // Add message to local state if the chat room exists
-    if (!messages[message.chat_room_id]) {
-        messages[message.chat_room_id] = [];
-    }
-    
-    // Check if message already exists (avoid duplicates)
-    const messageExists = messages[message.chat_room_id].some(msg => msg.id === message.id);
-    if (messageExists) {
-        console.log('Message already exists in chat history, skipping', message.id);
-        return;
-    }
-    
-    messages[message.chat_room_id].push(message);
-    
-    // Update chat room in local state
-    const roomIndex = chatRooms.findIndex(room => room.id === message.chat_room_id);
-    if (roomIndex >= 0) {
-        // Increment the unread count for doctor
-        chatRooms[roomIndex].unread_doctor = (chatRooms[roomIndex].unread_doctor || 0) + 1;
-        chatRooms[roomIndex].last_message = message.message;
-        chatRooms[roomIndex].last_message_time = message.created_at;
-        
-        // Update UI to show new message notification
-        renderChatRooms();
-    } else {
-        // If the room doesn't exist in local state, reload chat rooms
-        loadChatRoomsForSelectedDoctor().then(() => {
-            loadPatients().then(() => {
-                renderChatRooms();
-            });
-        });
-    }
-    
-    // If this is the currently selected chat room, render the message immediately
-    if (selectedChatRoom === message.chat_room_id) {
-        renderMessages(message.chat_room_id);
-        // Mark as read since the doctor is currently viewing this chat
-        markAsRead(message.chat_room_id);
-    } else {
-        // Play notification sound for new message
-        playNotificationSound();
-    }
-}
-
-// Function to play notification sound
-function playNotificationSound() {
-    try {
-        const notificationSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2356/2356-preview.mp3');
-        notificationSound.volume = 0.5;
-        notificationSound.play();
-    } catch (error) {
-        console.error('Error playing notification sound:', error);
-    }
 }

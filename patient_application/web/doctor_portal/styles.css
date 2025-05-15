@@ -151,6 +151,8 @@ body.has-doctor-bar .container-fluid {
     overflow-y: auto;
     display: flex;
     flex-direction: column;
+    max-height: calc(100vh - 180px); /* Ensure there's a maximum height */
+    height: 100%;
 }
 
 .message {
