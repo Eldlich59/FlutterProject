@@ -208,7 +208,9 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
           _selectedDate.day,
           _selectedTime.hour,
           _selectedTime.minute,
-        );        // Create appointment in database
+        );
+
+        // Create appointment in database
         await supabase.from('appointments').insert({
           'patient_id': userId,
           'doctor_id': _selectedDoctor!.id,

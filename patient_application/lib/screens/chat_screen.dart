@@ -736,13 +736,14 @@ class _ChatScreenState extends State<ChatScreen> {
         if (existingRoom != null) {
           _chatRoomId = existingRoom['id'];
         } else {
-          // Tạo phòng chat mới
+          // Tạo phòng chat mới với timestamp UTC
+          final utcNow = DateTime.now().toUtc().toIso8601String();
           final newRoom =
               await supabase.from('chat_rooms').insert({
                 'patient_id': userId,
                 'doctor_id': widget.doctorId,
-                'created_at': DateTime.now().toIso8601String(),
-                'last_message_time': DateTime.now().toIso8601String(),
+                'created_at': utcNow,
+                'last_message_time': utcNow,
                 'last_message': '',
                 'unread_count': 0,
                 'unread_doctor': 0, // Số tin nhắn chưa đọc của bác sĩ
@@ -795,14 +796,44 @@ class _ChatScreenState extends State<ChatScreen> {
             // Sắp xếp lại một lần nữa theo thời gian tạo để đảm bảo thứ tự đúng
             final sortedEvents =
                 events.map((e) => e as Map<String, dynamic>).toList();
+
+            // Log các timestamp trước khi sắp xếp
+            debugPrint('========== Timestamps trước khi sắp xếp: ==========');
+            for (var event in sortedEvents) {
+              final rawTime = event['created_at'];
+              debugPrint('Raw timestamp: $rawTime');
+            }
+
             sortedEvents.sort((a, b) {
-              final timeA =
-                  DateTime.parse(a['created_at']).millisecondsSinceEpoch;
-              final timeB =
-                  DateTime.parse(b['created_at']).millisecondsSinceEpoch;
+              // Chuẩn hóa timestamps về UTC để đảm bảo chúng được so sánh một cách nhất quán
+              DateTime timeA, timeB;
+
+              try {
+                // Xử lý timestamp từ web có thể ở nhiều định dạng
+                timeA = DateTime.parse(a['created_at']).toUtc();
+                timeB = DateTime.parse(b['created_at']).toUtc();
+              } catch (e) {
+                // Nếu có lỗi parse, ghi log và sử dụng giá trị mặc định
+                debugPrint('Lỗi khi parse timestamp: $e');
+                debugPrint('Timestamp A gây lỗi: ${a['created_at']}');
+                debugPrint('Timestamp B gây lỗi: ${b['created_at']}');
+
+                // Sử dụng thời gian hiện tại làm giá trị mặc định
+                timeA =
+                    a['created_at'] != null
+                        ? DateTime.now().toUtc()
+                        : DateTime(1970).toUtc();
+                timeB =
+                    b['created_at'] != null
+                        ? DateTime.now().toUtc()
+                        : DateTime(1970).toUtc();
+              }
+
+              final timeAMs = timeA.millisecondsSinceEpoch;
+              final timeBMs = timeB.millisecondsSinceEpoch;
 
               // First compare by timestamp
-              final timeCompare = timeA.compareTo(timeB);
+              final timeCompare = timeAMs.compareTo(timeBMs);
               if (timeCompare != 0) return timeCompare;
 
               // If timestamps are identical, compare by ID to ensure stable ordering
@@ -810,6 +841,17 @@ class _ChatScreenState extends State<ChatScreen> {
                 (b['id'] ?? '').toString(),
               );
             });
+
+            // Log các timestamp sau khi sắp xếp
+            debugPrint('========== Timestamps sau khi sắp xếp: ==========');
+            for (var event in sortedEvents) {
+              final time = DateTime.parse(event['created_at']).toUtc();
+              final sender = event['sender_id'];
+              debugPrint(
+                'Timestamp: ${time.toIso8601String()} (${time.millisecondsSinceEpoch}), Sender: $sender',
+              );
+            }
+
             return sortedEvents;
           });
       _messagesStream?.listen(
@@ -818,26 +860,50 @@ class _ChatScreenState extends State<ChatScreen> {
             // Đảm bảo tin nhắn được sắp xếp theo thời gian tạo
             final sortedMessages = List<Map<String, dynamic>>.from(messages);
             sortedMessages.sort((a, b) {
-              final timeA =
-                  DateTime.parse(a['created_at']).millisecondsSinceEpoch;
-              final timeB =
-                  DateTime.parse(b['created_at']).millisecondsSinceEpoch;
+              // Chuẩn hóa timestamps về UTC để đảm bảo chúng được so sánh một cách nhất quán
+              DateTime timeA, timeB;
+
+              try {
+                // Xử lý timestamp từ web có thể ở nhiều định dạng
+                timeA = DateTime.parse(a['created_at']).toUtc();
+                timeB = DateTime.parse(b['created_at']).toUtc();
+              } catch (e) {
+                // Nếu có lỗi parse, ghi log và sử dụng giá trị mặc định
+                debugPrint('Lỗi khi parse timestamp trong listener: $e');
+                debugPrint('Timestamp A gây lỗi: ${a['created_at']}');
+                debugPrint('Timestamp B gây lỗi: ${b['created_at']}');
+
+                // Sử dụng thời gian hiện tại làm giá trị mặc định
+                timeA =
+                    a['created_at'] != null
+                        ? DateTime.now().toUtc()
+                        : DateTime(1970).toUtc();
+                timeB =
+                    b['created_at'] != null
+                        ? DateTime.now().toUtc()
+                        : DateTime(1970).toUtc();
+              }
+
+              final timeAMs = timeA.millisecondsSinceEpoch;
+              final timeBMs = timeB.millisecondsSinceEpoch;
 
               // First compare by timestamp
-              final timeCompare = timeA.compareTo(timeB);
+              final timeCompare = timeAMs.compareTo(timeBMs);
               if (timeCompare != 0) return timeCompare;
 
               // If timestamps are identical, compare by ID to ensure stable ordering
               return (a['id'] ?? '').toString().compareTo(
                 (b['id'] ?? '').toString(),
               );
-            }); // Log thứ tự tin nhắn sau khi sắp xếp
+            });
+
+            // Log thứ tự tin nhắn sau khi sắp xếp
             debugPrint(
               '========== Thứ tự tin nhắn sau khi sắp xếp: ==========',
             );
             for (var i = 0; i < sortedMessages.length; i++) {
               final msg = sortedMessages[i];
-              final time = DateTime.parse(msg['created_at']);
+              final time = DateTime.parse(msg['created_at']).toUtc();
               final sender =
                   msg['sender_id'] == supabase.auth.currentUser?.id
                       ? 'Bệnh nhân'
@@ -894,20 +960,66 @@ class _ChatScreenState extends State<ChatScreen> {
           .order(
             'created_at',
             ascending: true,
-          ); // Sử dụng ascending: true để tin nhắn cũ nhất ở đầu danh sách      // Đảm bảo tin nhắn được sắp xếp đúng theo thời gian tạo
+          ); // Sử dụng ascending: true để tin nhắn cũ nhất ở đầu danh sách
+
+      // Đảm bảo tin nhắn được sắp xếp đúng theo thời gian tạo
       final List<Map<String, dynamic>> sortedMessages =
           List<Map<String, dynamic>>.from(messagesData);
+
       sortedMessages.sort((a, b) {
-        final timeA = DateTime.parse(a['created_at']).millisecondsSinceEpoch;
-        final timeB = DateTime.parse(b['created_at']).millisecondsSinceEpoch;
+        // Chuẩn hóa timestamps về UTC để đảm bảo chúng được so sánh một cách nhất quán
+        DateTime timeA, timeB;
+
+        try {
+          // Xử lý timestamp từ web có thể ở nhiều định dạng
+          timeA = DateTime.parse(a['created_at']).toUtc();
+          timeB = DateTime.parse(b['created_at']).toUtc();
+        } catch (e) {
+          // Nếu có lỗi parse, ghi log và sử dụng giá trị mặc định
+          debugPrint('Lỗi khi parse timestamp trong _loadMessages: $e');
+          debugPrint('Timestamp A gây lỗi: ${a['created_at']}');
+          debugPrint('Timestamp B gây lỗi: ${b['created_at']}');
+
+          // Sử dụng thời gian hiện tại làm giá trị mặc định
+          timeA =
+              a['created_at'] != null
+                  ? DateTime.now().toUtc()
+                  : DateTime(1970).toUtc();
+          timeB =
+              b['created_at'] != null
+                  ? DateTime.now().toUtc()
+                  : DateTime(1970).toUtc();
+        }
+
+        final timeAMs = timeA.millisecondsSinceEpoch;
+        final timeBMs = timeB.millisecondsSinceEpoch;
 
         // First compare by timestamp
-        final timeCompare = timeA.compareTo(timeB);
+        final timeCompare = timeAMs.compareTo(timeBMs);
         if (timeCompare != 0) return timeCompare;
 
         // If timestamps are identical, compare by ID to ensure stable ordering
         return (a['id'] ?? '').toString().compareTo((b['id'] ?? '').toString());
       });
+
+      // Log sorted messages
+      debugPrint(
+        '========== Tin nhắn từ _loadMessages sau khi sắp xếp: ==========',
+      );
+      for (var i = 0; i < sortedMessages.length; i++) {
+        final msg = sortedMessages[i];
+        final time = DateTime.parse(msg['created_at']).toUtc();
+        final sender =
+            msg['sender_id'] == supabase.auth.currentUser?.id
+                ? 'Bệnh nhân'
+                : 'Bác sĩ';
+        debugPrint(
+          '[$i] ${time.toIso8601String()} (${time.millisecondsSinceEpoch}): $sender - "${msg['message']}"',
+        );
+      }
+      debugPrint(
+        '================================================================',
+      );
 
       setState(() {
         _messages = sortedMessages;
@@ -940,8 +1052,9 @@ class _ChatScreenState extends State<ChatScreen> {
         throw Exception("Người dùng chưa đăng nhập");
       }
 
-      // Tạo timestamp cho tin nhắn
-      final timestamp = DateTime.now().toIso8601String();
+      // Tạo timestamp cho tin nhắn - luôn sử dụng UTC để đảm bảo tính nhất quán
+      final timestamp = DateTime.now().toUtc().toIso8601String();
+      debugPrint('Sending message with UTC timestamp: $timestamp');
 
       // Bước 1: Thêm tin nhắn vào cơ sở dữ liệu
       // Thêm doctor_id vào tin nhắn để biết tin nhắn được gửi đến bác sĩ nào
@@ -971,7 +1084,7 @@ class _ChatScreenState extends State<ChatScreen> {
             .from('chat_rooms')
             .update({
               'last_message': messageContent,
-              'last_message_time': timestamp,
+              'last_message_time': timestamp, // Sử dụng cùng timestamp UTC
               'unread_count': 1,
               'unread_doctor':
                   currentUnreadCount + 1, // Tăng giá trị thay vì dùng RPC
@@ -1056,24 +1169,30 @@ class _ChatScreenState extends State<ChatScreen> {
 
   // Create a widget to display timestamp between messages
   Widget _buildTimestampWidget(DateTime timestamp) {
+    // Đảm bảo timestamp ở múi giờ địa phương
+    final localTimestamp = timestamp.toLocal();
+
     // Format the timestamp - show full date if not today, otherwise just time
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final messageDay = DateTime(timestamp.year, timestamp.month, timestamp.day);
-
+    final messageDay = DateTime(
+      localTimestamp.year,
+      localTimestamp.month,
+      localTimestamp.day,
+    );
     String timeText;
     if (messageDay == today) {
       // Today, just show time
       timeText =
-          '${timestamp.hour.toString().padLeft(2, '0')}:${timestamp.minute.toString().padLeft(2, '0')}';
+          '${localTimestamp.hour.toString().padLeft(2, '0')}:${localTimestamp.minute.toString().padLeft(2, '0')}';
     } else if (messageDay == today.subtract(const Duration(days: 1))) {
       // Yesterday
       timeText =
-          'Hôm qua, ${timestamp.hour.toString().padLeft(2, '0')}:${timestamp.minute.toString().padLeft(2, '0')}';
+          'Hôm qua, ${localTimestamp.hour.toString().padLeft(2, '0')}:${localTimestamp.minute.toString().padLeft(2, '0')}';
     } else {
       // Another day
       timeText =
-          '${timestamp.day}/${timestamp.month}/${timestamp.year}, ${timestamp.hour.toString().padLeft(2, '0')}:${timestamp.minute.toString().padLeft(2, '0')}';
+          '${localTimestamp.day}/${localTimestamp.month}/${localTimestamp.year}, ${localTimestamp.hour.toString().padLeft(2, '0')}:${localTimestamp.minute.toString().padLeft(2, '0')}';
     }
 
     return Padding(
@@ -1230,13 +1349,16 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Widget _buildMessageBubble(Map<String, dynamic> message, bool isMe) {
-    final messageTime = DateTime.parse(message['created_at']);
+    // Đảm bảo thời gian được chuyển đổi từ UTC sang múi giờ địa phương
+    final utcMessageTime = DateTime.parse(message['created_at']).toUtc();
+    final localMessageTime = utcMessageTime.toLocal();
+
     final timeString =
-        '${messageTime.hour}:${messageTime.minute.toString().padLeft(2, '0')}';
+        '${localMessageTime.hour.toString().padLeft(2, '0')}:${localMessageTime.minute.toString().padLeft(2, '0')}';
 
     // Debug log để xem thông tin tin nhắn
     debugPrint(
-      'Message: ${message['message']}, From: ${isMe ? 'Me' : 'Doctor'}, Time: ${message['created_at']} (${messageTime.millisecondsSinceEpoch})',
+      'Message: ${message['message']}, From: ${isMe ? 'Me' : 'Doctor'}, UTC Time: ${utcMessageTime.toIso8601String()}, Local Time: ${localMessageTime.toIso8601String()} (${localMessageTime.millisecondsSinceEpoch})',
     );
 
     return Padding(
